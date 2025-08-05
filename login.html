@@ -14,62 +14,59 @@
   <!-- Подключение ЕДИНОГО файла стилей -->
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  <header class="page-header">
-    <div class="page-header__left"></div>
-    <div class="page-header__center">
-      <span id="current-date">…</span>
-      <span id="current-time">–:–:–</span>
-    </div>
-    <div class="page-header__right">
-      <label class="theme-switch" title="Сменить тему">
-        <input type="checkbox" id="theme-toggle" />
-        <span class="slider">
-           <span class="slider-thumb">
-                <i class="fas fa-moon"></i>
-                <i class="fas fa-sun"></i>
-           </span>
-        </span>
-      </label>
-    </div>
-  </header>
+<body class="login-body">
 
   <main class="login-main">
-    <form id="login-form" class="login-box" novalidate>
-      <h1 class="login-title">VIPавто</h1>
-      <h2 class="login-subtitle">облачный бортовой журнал</h2>
-
-      <div class="form-group">
-        <label for="username">Логин</label>
-        <div class="input-wrapper">
-            <i class="fas fa-user input-icon"></i>
-            <input type="text" id="username" placeholder="Введите логин" required autocomplete="username" />
-        </div>
-        <span class="error-message"></span>
-      </div>
-
-      <div class="form-group">
-        <label for="password">Пароль</label>
-        <div class="input-wrapper">
-            <i class="fas fa-lock input-icon"></i>
-            <input type="password" id="password" placeholder="Введите пароль" required autocomplete="current-password" />
-            <i class="fas fa-eye toggle-password" id="toggle-password"></i>
-        </div>
-        <span class="error-message"></span>
-      </div>
-
-      <div class="form-options">
-        <label class="checkbox-wrap">
-          <input type="checkbox" id="remember-me" />
-          Запомнить меня
+    <div class="login-box">
+      <div class="login-header">
+        <h1 class="login-title">
+          <span class="title-vip">VIP</span><span class="title-auto">авто</span>
+        </h1>
+        <label class="theme-switch" title="Сменить тему">
+          <input type="checkbox" id="theme-toggle" />
+          <span class="slider">
+            <span class="slider-thumb">
+                  <i class="fas fa-moon"></i>
+                  <i class="fas fa-sun"></i>
+            </span>
+          </span>
         </label>
       </div>
+      <h2 class="login-subtitle">облачный бортовой журнал</h2>
 
-      <button type="submit" class="btn-login">
-        <i class="fas fa-arrow-right-to-bracket btn-fa"></i>
-        Войти
-      </button>
-    </form>
+      <form id="login-form" novalidate>
+        <div class="form-group">
+          <label for="username">Логин</label>
+          <div class="input-wrapper">
+              <i class="fas fa-user input-icon"></i>
+              <input type="text" id="username" placeholder="Введите логин" required autocomplete="username" />
+          </div>
+          <span class="error-message"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Пароль</label>
+          <div class="input-wrapper">
+              <i class="fas fa-lock input-icon"></i>
+              <input type="password" id="password" placeholder="Введите пароль" required autocomplete="current-password" />
+              <i class="fas fa-eye toggle-password" id="toggle-password"></i>
+          </div>
+          <span class="error-message"></span>
+        </div>
+
+        <div class="form-options">
+          <label class="checkbox-wrap">
+            <input type="checkbox" id="remember-me" />
+            Запомнить меня
+          </label>
+        </div>
+
+        <button type="submit" class="btn-login">
+          <i class="fas fa-arrow-right-to-bracket btn-fa"></i>
+          Войти
+        </button>
+      </form>
+    </div>
 
     <div class="page-footer">
       <small>Версия 2.5.1-final © VIPавто, 2025</small>
