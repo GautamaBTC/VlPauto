@@ -31,7 +31,7 @@ input, button, textarea, select { font: inherit; }
   --text-muted: #909399;
 
   /* Акценты и кнопки */
-  --accent: #2563EB; /* Приятный синий, как договаривались */
+  --accent: #2563EB; /* ПРИЯТНЫЙ СИНИЙ ВМЕСТО БИРЮЗОВОГО */
   --btn-text: #FFFFFF;
 
   /* Уведомления и статусы */
@@ -59,7 +59,7 @@ html[data-theme="dark"] {
   --text-muted: #A3A6AD;
 
   /* Акценты и кнопки */
-  --accent: #FFD166; /* Золотой акцент, как в эталоне */
+  --accent: #FFD166; /* ЗОЛОТОЙ АКЦЕНТ, КАК В ЭТАЛОНЕ */
   --btn-text: #1D1D1D;
 
   /* Уведомления и статусы */
@@ -78,13 +78,18 @@ body { min-height: 100%; font-family: 'Inter', sans-serif; background: var(--bg)
 .page-header__left, .page-header__center, .page-header__right { flex: 1; display: flex; align-items: center; }
 .page-header__left { justify-content: flex-start; }
 .page-header__center { flex-direction: column; justify-content: center; gap: 4px; }
-.page-header__right { justify-content: flex-end; }
+.page-header__right { justify-content: flex-end; gap: 1rem; }
 #current-date { font-size: 0.9rem; color: var(--text-muted); white-space: nowrap; }
 #current-time { font-size: 1.5rem; font-weight: 500; color: var(--text); line-height: 1.1; }
 .app-title { font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 0.6rem; }
 .logo-icon { color: var(--accent); }
 .auto-text { color: var(--text); }
 html[data-theme="dark"] .auto-text { color: var(--accent); }
+
+.user-profile-menu { display: flex; align-items: center; gap: 1rem; }
+#user-name-display { font-weight: 500; color: var(--text-muted); }
+.btn-logout { font-size: 1.2rem; color: var(--text-muted); transition: color 0.2s; }
+.btn-logout:hover { color: var(--error); }
 
 /* 4. ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ (ЭТАЛОННЫЙ ДИЗАЙН) */
 .theme-switch { position: relative; display: inline-block; width: 54px; height: 28px; }
@@ -112,7 +117,7 @@ html[data-theme="dark"] .fa-moon { opacity: 1; transform: rotate(0deg); }
 
 /* 6. КОМПОНЕНТЫ: СЕКЦИИ И ОБЩИЕ СТИЛИ */
 .section { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 12px var(--shadow); }
-.section-header { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.section-header { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
 .section-header:last-child { margin-bottom: 0; }
 .section-title { font-size: 1.25rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 0.6rem; }
 .section-title i { color: var(--accent); }
@@ -124,16 +129,18 @@ html[data-theme="dark"] .fa-moon { opacity: 1; transform: rotate(0deg); }
 .input-icon { position: absolute; left: 16px; color: var(--text-muted); font-size: 1rem; pointer-events: none; }
 .form-control, .form-group input, .form-group select, .form-group textarea { width: 100%; height: 48px; padding: 0 16px; font-size: 1rem; background-color: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); transition: all 0.2s; }
 .form-group input:not([type="checkbox"]), .form-group select { padding-left: 48px; }
-.form-group textarea { height: auto; padding: 12px 16px; min-height: 80px; }
+.form-group textarea { height: auto; padding: 12px 16px; min-height: 80px; resize: vertical; }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
 .error-message { display: block; font-size: 0.85rem; color: var(--error); margin-top: 0.5rem; min-height: 1.2em; }
 
 /* 8. КНОПКИ (ЭТАЛОННЫЙ ДИЗАЙН) */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.8rem; padding: 12px 20px; font-size: 1rem; font-weight: 600; border-radius: 8px; transition: transform .2s, box-shadow .2s; background: var(--input-bg); border: 1px solid var(--border); }
-.btn:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
+.btn, .btn-login { display: inline-flex; align-items: center; justify-content: center; gap: 0.8rem; width: 100%; padding: 14px; font-size: 1rem; font-weight: 600; color: var(--btn-text); background: var(--accent); border: none; border-radius: 8px; cursor: pointer; transition: transform .2s, box-shadow .2s; }
+.btn-login:hover, .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px color-mix(in srgb, var(--accent) 30%, transparent); }
+.btn.btn-secondary { background: var(--input-bg); color: var(--text); border: 1px solid var(--border); }
+.btn.btn-secondary:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: none; }
+.btn.btn-sm { padding: 8px 12px; font-size: 0.8rem; width: auto; }
 .btn-accent { color: var(--btn-text); background: var(--accent); border: none; }
 .btn-accent:hover { transform: translateY(-2px); box-shadow: 0 4px 15px color-mix(in srgb, var(--accent) 30%, transparent); }
-.btn.btn-sm { padding: 8px 12px; font-size: 0.8rem; }
 .btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: none; }
 
 /* 9. ДАШБОРД */
@@ -150,6 +157,7 @@ html[data-theme="dark"] .fa-moon { opacity: 1; transform: rotate(0deg); }
 .leaderboard-table tr:last-child td { border-bottom: none; }
 .leaderboard-table tr.is-current-user { background-color: color-mix(in srgb, var(--accent) 10%, transparent); font-weight: 700; }
 .leaderboard-place { font-size: 1.2rem; font-weight: 700; width: 40px; text-align: center; }
+.leaderboard-place i { vertical-align: middle; }
 .leaderboard-place[data-place="1"] i { color: var(--gold); }
 .leaderboard-place[data-place="2"] i { color: var(--silver); }
 .leaderboard-place[data-place="3"] i { color: var(--bronze); }
@@ -161,7 +169,7 @@ html[data-theme="dark"] .fa-moon { opacity: 1; transform: rotate(0deg); }
 .order-master { font-weight: 600; font-size: 1rem; margin-bottom: 0.25rem; }
 .order-description { font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted); }
 .order-details { font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; }
-.order-actions { display: flex; gap: 0.5rem; }
+.order-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
 .order-amount { text-align: right; }
 .order-amount-value { font-size: 1.2rem; font-weight: 700; color: var(--accent); }
 .order-time { font-size: 0.8rem; color: var(--text-muted); }
@@ -199,17 +207,17 @@ html[data-theme="dark"] .fa-moon { opacity: 1; transform: rotate(0deg); }
 .notification.success { border-left-color: var(--success); }
 .notification.success i { color: var(--success); }
 
-/* 15. СТРАНИЦА ВХОДА (минимальные стили) */
+/* 15. СТРАНИЦА ВХОДА (ЭТАЛОННЫЙ ДИЗАЙН) */
 .login-main { display: grid; place-items: center; flex-grow: 1; padding: 20px; }
-.login-box { width: 100%; max-width: 380px; padding: 2.5rem; background: var(--panel-bg); border-radius: 16px; box-shadow: 0 10px 30px var(--shadow); border: 1px solid var(--border); }
+.login-box { width: 100%; max-width: 360px; padding: 2.5rem; background-color: var(--panel-bg); border-radius: 16px; box-shadow: 0 10px 30px var(--shadow); border: 1px solid var(--border); }
 .login-title { text-align: center; font-size: 2.2rem; font-weight: 700; margin-bottom: 0.3rem; }
 .login-subtitle { text-align: center; font-size: 1rem; color: var(--text-muted); margin-bottom: 2.5rem; }
 .form-options { margin-top: -0.5rem; margin-bottom: 2rem; }
 .checkbox-wrap { display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer; }
 .checkbox-wrap input { width: 16px; height: 16px; accent-color: var(--accent); }
-.btn-login { display: flex; align-items: center; justify-content: center; gap: 0.8rem; width: 100%; padding: 14px; font-size: 1rem; font-weight: 600; color: var(--btn-text); background: var(--accent); border-radius: 8px; transition: transform .2s, box-shadow .2s; }
-.btn-login:hover { transform: translateY(-2px); box-shadow: 0 4px 15px color-mix(in srgb, var(--accent) 30%, transparent); }
 .page-footer { flex-shrink: 0; text-align: center; padding: 2rem 1rem; font-size: 0.8rem; color: var(--text-muted); }
+.toggle-password { position: absolute; right: 0; padding: 15px; cursor: pointer; color: var(--text-muted); transition: color 0.2s; }
+.toggle-password:hover { color: var(--accent); }
 
 /* 16. АДАПТИВНОСТЬ */
 @media (max-width: 768px) {
@@ -217,16 +225,16 @@ html[data-theme="dark"] .fa-moon { opacity: 1; transform: rotate(0deg); }
   .main-content { padding: 15px; padding-top: calc(var(--header-height) + 15px); padding-bottom: calc(var(--nav-height) + 15px); }
   .page-header { padding: 5px 15px; }
   .app-title { font-size: 1.2rem; }
-  #current-time { font-size: 1rem; }
+  #current-time { font-size: 1.2rem; }
   #current-date { font-size: 0.7rem; }
   .dashboard { grid-template-columns: 1fr 1fr; }
   .login-box { padding: 1.5rem; }
 }
 
 @media (max-width: 480px) {
-  .page-header__center { display: none; }
+  .page-header__center, #user-name-display { display: none; }
   .order-item { flex-direction: column; align-items: stretch; }
   .order-amount { text-align: left; margin-top: 0.5rem; }
   .leaderboard-table td, .leaderboard-table th { padding: 10px 4px; font-size: 0.8rem; }
-  .leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4) { display: none; } /* Скрываем средний чек на маленьких экранах */
+  .leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4) { display: none; }
 }
