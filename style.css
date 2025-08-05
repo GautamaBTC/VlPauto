@@ -75,15 +75,14 @@ html[data-theme="dark"] .slider-thumb { transform: translateX(0px); }
 html[data-theme="dark"] .fa-sun { opacity: 0; transform: rotate(-360deg); }
 html[data-theme="dark"] .fa-moon { opacity: 1; transform: rotate(0deg); }
 
-/* 5. СТРАНИЦА ВХОДА (ИСПРАВЛЕННЫЙ ДИЗАЙН) */
+/* 5. СТРАНИЦА ВХОДА (ФИНАЛЬНЫЙ ДИЗАЙН) */
 .login-main { display: grid; place-items: center; flex-grow: 1; padding: 20px; }
 .login-box { width: 100%; max-width: 360px; padding: 2rem; background-color: var(--panel-bg); border-radius: 16px; box-shadow: 0 10px 30px var(--shadow); border: 1px solid var(--border); }
-.login-header { display: flex; justify-content: flex-start; margin-bottom: 1.5rem; }
+.login-header { display: flex; justify-content: flex-end; /* ИЗМЕНЕНИЕ: Перемещаем вправо */ margin-bottom: 1rem; }
 .title-container { text-align: center; margin-bottom: 2rem; }
 .login-title { font-size: 2.2rem; font-weight: 700; }
-.title-vip { color: var(--text-muted); }
-.title-auto { color: var(--text); }
-html[data-theme="dark"] .title-auto { color: var(--text); } /* В темной теме "авто" тоже основной цвет */
+.title-vip { color: var(--text-muted); /* ИЗМЕНЕНИЕ: VIP - серый */ }
+.title-auto { color: var(--text); /* ИЗМЕНЕНИЕ: авто - основной цвет (белый в темной теме) */ }
 .login-subtitle { font-size: 1rem; color: var(--text-muted); }
 .login-box form { width: 100%; }
 .form-group { margin-bottom: 1.5rem; }
