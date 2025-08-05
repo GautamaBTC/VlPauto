@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Бортовой журнал — VIPавто</title>
+  
+  <!-- Подключение шрифтов и иконок -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+
+  <!-- Подключение ЕДИНОГО файла стилей -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ==================== ХЕДЕР ==================== -->
+  <header class="page-header">
+    <div class="page-header__left">
+       <h1 class="app-title">
+        <i class="fas fa-car logo-icon"></i>
+        <span>VIP<span class="auto-text">авто</span></span>
+      </h1>
+    </div>
+    <div class="page-header__center">
+      <span id="current-date">…</span>
+      <span id="current-time">–:–:–</span>
+    </div>
+    <div class="page-header__right">
+      <label class="theme-switch" title="Сменить тему">
+        <input type="checkbox" id="theme-toggle" />
+        <span class="slider">
+           <span class="slider-thumb">
+                <i class="fas fa-moon"></i>
+                <i class="fas fa-sun"></i>
+           </span>
+        </span>
+      </label>
+    </div>
+  </header>
+  
+  <!-- ==================== ОСНОВНОЙ КОНТЕНТ ==================== -->
+  <main class="main-content">
+    <!-- Вкладка: Главная -->
+    <div id="home" class="tab-content active">
+      <div class="dashboard" id="dashboard-grid">
+        <!-- Блоки дашборда будут генерироваться JS -->
+      </div>
+      
+      <div class="section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-bolt"></i> Быстрые действия</h3>
+        </div>
+        <div class="quick-actions-grid">
+          <button class="btn btn-accent btn-block" id="quickAddOrderBtn"><i class="fas fa-plus"></i> Добавить заказ</button>
+          <button class="btn" id="viewSalaryBtn"><i class="fas fa-wallet"></i> Зарплата</button>
+          <button class="btn btn-danger" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Выйти</button>
+        </div>
+      </div>
+      
+      <div class="section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-tasks"></i> Заказы сегодня</h3>
+        </div>
+        <div id="todayOrdersList" class="orders-list-container">
+          <!-- Содержимое будет генерироваться JS -->
+        </div>
+      </div>
+    </div>
+    
+    <!-- Вкладка: Учет заказов -->
+    <div id="orders" class="tab-content">
+      <div class="section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-history"></i> История за 7 дней</h3>
+          <button class="btn btn-accent btn-sm" id="addOrderBtn"><i class="fas fa-plus"></i> Добавить</button>
+        </div>
+        <div id="ordersList" class="orders-list-container">
+          <!-- Содержимое будет генерироваться JS -->
+        </div>
+      </div>
+    </div>
+    
+    <!-- Вкладка: Финансы -->
+    <div id="finance" class="tab-content">
+      <div class="section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-calculator"></i> Расчет зарплат</h3>
+        </div>
+        <div id="salaryCalculationContainer">
+          <!-- Содержимое будет генерироваться JS -->
+        </div>
+      </div>
+      
+      <div class="section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-chart-pie"></i> Статистика недели</h3>
+        </div>
+        <div id="weekStatisticsContainer">
+          <!-- Содержимое будет генерироваться JS -->
+        </div>
+      </div>
+    </div>
+    
+    <!-- Вкладка: Архив -->
+    <div id="archive" class="tab-content">
+      <div class="section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-archive"></i> Архив</h3>
+        </div>
+        <div class="archive-controls">
+          <p class="archive-description">Выберите период для просмотра и экспорта данных.</p>
+          <div class="date-range-picker">
+            <input type="date" id="archiveStartDate" class="form-control">
+            <span>—</span>
+            <input type="date" id="archiveEndDate" class="form-control">
+          </div>
+          <button class="btn btn-accent" id="viewArchiveBtn"><i class="fas fa-search"></i> Показать</b
+        </div>
+        <div id="archiveListContainer" class="orders-list-container">
+          <!-- Содержимое будет генерироваться JS -->
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <!-- ==================== НАВИГАЦИЯ ==================== -->
+  <nav class="nav-container">
+    <div class="nav-tabs">
+      <button class="nav-tab active" data-tab="home"><i class="fas fa-home nav-tab-icon"></i><span>Главная</span></button>
+      <button class="nav-tab" data-tab="orders"><i class="fas fa-history nav-tab-icon"></i><span>История</span></button>
+      <button class="nav-tab" data-tab="finance"><i class="fas fa-wallet nav-tab-icon"></i><span>Финансы</span></button>
+      <button class="nav-tab" data-tab="archive"><i class="fas fa-archive nav-tab-icon"></i><span>Архив</span></button>
+    </div>
+  </nav>
+  
+  <!-- "Порталы" для динамического контента -->
+  <div id="modal-root"></div>
+  <div id="notification-root"></div>
+
+  <!-- Подключение библиотек и основного скрипта -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+  <script type="module" src="script.js"></script>
+</body>
+</html>
