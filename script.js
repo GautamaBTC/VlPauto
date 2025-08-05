@@ -6,8 +6,8 @@
 
 import { showNotification, formatCurrency, formatDate, createElement } from './js/utils.js';
 
-// URL вашего сервера
-const SERVER_URL = 'http://localhost:3000'; // Позже заменим на реальный адрес
+// URL сервера
+const SERVER_URL = 'http://localhost:3000';
 
 // --- Глобальное состояние приложения ---
 const state = {
@@ -15,39 +15,45 @@ const state = {
   token: null,
   socket: null,
   activeTab: 'home',
-  masters: [], // Список мастеров будет приходить с сервера
-  todayOrders: [],
-  weekOrders: [],
+  masters: [],
   weekStats: {},
   leaderboard: [],
-  salaryData: [],
-  archive: [],
+  // Данные, получаемые от сервера
+  data: {
+    todayOrders: [],
+    weekOrders: [],
+    salaryData: [],
+    archive: [],
+  },
 };
 
-// --- Инициализация приложения ---
+// --- Инициализация ---
 document.addEventListener('DOMContentLoaded', () => {
   initAuth();
-  if (!state.currentUser) return; // Если нет пользователя, ничего не делаем
+  if (!state.currentUser) return; // Прерываем, если нет пользователя
 
   initTheme();
-  initSocketConnection();
   initUI();
+  initSocketConnection();
 });
 
+
 /**
- * 1. АУТЕНТИФИКАЦИЯ И ЗАЩИТА СТРАНИЦЫ
+ * 1. АУТЕНТИФИКАЦИЯ
  */
 function initAuth() {
   state.token = localStorage.getItem('vipauto_token') || sessionStorage.getItem('vipauto_token');
   const userData = localStorage.getItem('vipauto_user') || sessionStorage.getItem('vipauto_user');
 
   if (!state.token || !userData) {
-    window.location.href = 'login.html'; // Если нет токена, отправляем на логин
+    window.location.href = 'login.html';
     return;
   }
   
   state.currentUser = JSON.parse(userData);
+  document.getElementById('user-name-display').textContent = state.currentUser.name;
 }
+
 
 /**
  * 2. УПРАВЛЕНИЕ ТЕМОЙ
@@ -67,69 +73,12 @@ function initTheme() {
   });
 }
 
-/**
- * 3. ПОДКЛЮЧЕНИЕ К СЕРВЕРУ (SOCKET.IO)
- */
-function initSocketConnection() {
-  state.socket = io(SERVER_URL, {
-    auth: { token: state.token } // Отправляем токен для авторизации сокет-соединения
-  });
-
-  // --- Обработчики событий от сервера ---
-  state.socket.on('connect', () => {
-    console.log('Успешно подключено к серверу');
-  });
-
-  state.socket.on('disconnect', () => {
-    showNotification('Соединение с сервером потеряно', 'error');
-  });
-
-  state.socket.on('connect_error', (err) => {
-    console.error('Ошибка подключения:', err.message);
-    // Если токен невалидный, разлогиниваем
-    if (err.message === 'Invalid token') {
-      logout();
-    }
-  });
-  
-  // Получаем начальные данные
-  state.socket.on('initialData', (data) => {
-    state.masters = data.masters;
-    updateAndRender(data);
-  });
-  
-  // Получаем обновления
-  state.socket.on('dataUpdate', (data) => {
-    updateAndRender(data);
-    showNotification('Данные обновлены', 'success');
-  });
-  
-  // Обработка ошибок от сервера
-  state.socket.on('serverError', (message) => {
-    showNotification(message, 'error');
-  });
-}
 
 /**
- * Обновляет состояние и перерисовывает активную вкладку
- */
-function updateAndRender(data) {
-    // Обновляем состояние на основе данных с сервера
-    if(data.todayOrders) state.todayOrders = data.todayOrders;
-    if(data.weekOrders) state.weekOrders = data.weekOrders;
-    if(data.weekStats) state.weekStats = data.weekStats;
-    if(data.leaderboard) state.leaderboard = data.leaderboard;
-    if(data.salaryData) state.salaryData = data.salaryData;
-
-    // Перерисовываем интерфейс
-    renderContent();
-}
-
-/**
- * 4. ИНИЦИАЛИЗАЦИЯ ИНТЕРФЕЙСА (UI)
+ * 3. UI И ОБРАБОТЧИКИ
  */
 function initUI() {
-  // --- Дата и время в хедере ---
+  // --- Дата и время ---
   const dateEl = document.getElementById('current-date');
   const timeEl = document.getElementById('current-time');
   const updateDateTime = () => {
@@ -140,11 +89,11 @@ function initUI() {
   updateDateTime();
   setInterval(updateDateTime, 1000);
 
-  // --- Навигация по вкладкам ---
+  // --- Навигация ---
   const navTabs = document.querySelector('.nav-tabs');
   navTabs.addEventListener('click', (e) => {
     const tabButton = e.target.closest('.nav-tab');
-    if (tabButton) {
+    if (tabButton && !tabButton.classList.contains('active')) {
       navTabs.querySelector('.active').classList.remove('active');
       tabButton.classList.add('active');
       state.activeTab = tabButton.dataset.tab;
@@ -155,50 +104,131 @@ function initUI() {
       renderContent();
     }
   });
-  
-  // --- Кнопка выхода ---
-  const logoutBtn = document.querySelector('#logoutBtn');
-  if(logoutBtn) logoutBtn.addEventListener('click', logout);
 
-  // Первоначальная отрисовка
-  renderContent();
+  // --- Кнопки ---
+  document.getElementById('logout-btn').addEventListener('click', logout);
+  document.getElementById('addOrderBtn').addEventListener('click', () => openOrderModal());
 }
 
+
 /**
- * 5. РЕНДЕРИНГ (ОТРИСОВКА КОНТЕНТА)
+ * 4. ПОДКЛЮЧЕНИЕ К СЕРВЕРУ (SOCKET.IO)
+ */
+function initSocketConnection() {
+  state.socket = io(SERVER_URL, { auth: { token: state.token } });
+
+  state.socket.on('connect', () => console.log('Подключено к серверу'));
+  state.socket.on('disconnect', () => showNotification('Соединение потеряно', 'error'));
+  state.socket.on('connect_error', (err) => {
+    if (err.message === 'Invalid token') logout();
+  });
+  
+  state.socket.on('initialData', (data) => {
+    state.masters = data.masters || [];
+    updateAndRender(data);
+  });
+  
+  state.socket.on('dataUpdate', (data) => {
+    updateAndRender(data);
+    showNotification('Данные обновлены', 'success');
+  });
+  
+  state.socket.on('serverError', (message) => showNotification(message, 'error'));
+}
+
+function updateAndRender(data) {
+    Object.assign(state.data, data);
+    if (data.weekStats) state.weekStats = data.weekStats;
+    if (data.leaderboard) state.leaderboard = data.leaderboard;
+    renderContent();
+}
+
+
+/**
+ * 5. РЕНДЕРИНГ КОНТЕНТА
  */
 function renderContent() {
-  // В зависимости от активной вкладки вызываем нужную функцию рендеринга
+  adjustUIVisibility();
   switch (state.activeTab) {
-    case 'home':
-      renderHomePage();
-      break;
-    case 'orders':
-      renderOrdersPage();
-      break;
-    case 'finance':
-      renderFinancePage();
-      break;
-    case 'archive':
-      renderArchivePage();
-      break;
+    case 'home': renderHomePage(); break;
+    case 'orders': renderOrdersPage(); break;
+    case 'finance': renderFinancePage(); break;
+    case 'archive': renderArchivePage(); break;
   }
 }
 
-// --- Функции рендеринга для каждой страницы ---
+function adjustUIVisibility() {
+  const financeTab = document.querySelector('.nav-tab[data-tab="finance"]');
+  if (state.currentUser.role === 'MASTER') {
+    // Для мастера, вкладка финансов может быть урезанной, но видимой
+    financeTab.style.display = 'flex';
+  } else {
+    financeTab.style.display = 'flex';
+  }
+}
+
+// --- Рендеринг страниц ---
 
 function renderHomePage() {
-  // Рендеринг дашборда
-  const dashboardGrid = document.getElementById('dashboard-grid');
-  dashboardGrid.innerHTML = `
+  renderDashboard();
+  renderLeaderboard(document.getElementById('leaderboard-container'));
+  renderOrdersList(document.getElementById('todayOrdersList'), state.data.todayOrders, { showMaster: true });
+}
+
+function renderOrdersPage() {
+  renderOrdersList(document.getElementById('ordersList'), state.data.weekOrders, { showMaster: true, showDate: true });
+}
+
+function renderFinancePage() {
+  const container = document.getElementById('finance');
+  container.innerHTML = ''; // Очищаем
+  
+  if (state.currentUser.role === 'DIRECTOR') {
+    // TODO: Рендеринг таблицы зарплат для директора
+    container.innerHTML = '<div class="empty-state"><p>Раздел расчета зарплат в разработке.</p></div>';
+  } else {
+    // Рендеринг урезанной версии для мастера
+    const overview = createElement('div', {className: 'master-finance-overview'});
+    const salary = state.data.salaryData.find(s => s.name === state.currentUser.name);
+    overview.innerHTML = `
+        <div class="master-finance-label">Ваша зарплата к выплате за неделю</div>
+        <div class="master-finance-amount">${formatCurrency(salary ? salary.total : 0)}</div>
+    `;
+    
+    const section = createElement('div', {className: 'section'});
+    section.innerHTML = `
+        <div class="section-header">
+            <h3 class="section-title"><i class="fas fa-list-alt"></i> Детализация ваших работ</h3>
+        </div>
+    `;
+    const listContainer = createElement('div', {className: 'orders-list-container'});
+    renderOrdersList(listContainer, state.data.weekOrders, { showDate: true });
+    
+    section.appendChild(listContainer);
+    container.appendChild(overview);
+    container.appendChild(section);
+  }
+}
+
+function renderArchivePage() {
+  // TODO: Логика для архива
+  document.getElementById('archiveListContainer').innerHTML = '<div class="empty-state"><p>Раздел архива в разработке.</p></div>';
+}
+
+
+// --- Рендеринг компонентов ---
+
+function renderDashboard() {
+  const grid = document.getElementById('dashboard-grid');
+  grid.innerHTML = `
     <div class="dashboard-item">
       <i class="fas fa-ruble-sign dashboard-icon"></i>
-      <div class="dashboard-value">${formatCurrency(state.weekStats.totalRevenue || 0)}</div>
+      <div class="dashboard-value">${formatCurrency(state.weekStats.revenue || 0)}</div>
       <div class="dashboard-label">${state.currentUser.role === 'DIRECTOR' ? 'Общая выручка' : 'Моя выручка'}</div>
     </div>
     <div class="dashboard-item">
       <i class="fas fa-box-open dashboard-icon"></i>
-      <div class="dashboard-value">${state.weekStats.totalOrders || 0}</div>
+      <div class="dashboard-value">${state.weekStats.ordersCount || 0}</div>
       <div class="dashboard-label">${state.currentUser.role === 'DIRECTOR' ? 'Всего заказов' : 'Мои заказы'}</div>
     </div>
     <div class="dashboard-item">
@@ -206,38 +236,13 @@ function renderHomePage() {
       <div class="dashboard-value">${formatCurrency(state.weekStats.avgCheck || 0)}</div>
       <div class="dashboard-label">Средний чек</div>
     </div>
-     <div class="dashboard-item">
+    <div class="dashboard-item">
       <i class="fas fa-users dashboard-icon"></i>
       <div class="dashboard-value">${state.masters.length}</div>
       <div class="dashboard-label">Мастеров в смене</div>
     </div>
   `;
-  
-  // Рендеринг доски лидеров
-  renderLeaderboard(document.getElementById('leaderboard-container'));
-  
-  // Рендеринг заказов на сегодня
-  renderOrdersList(document.getElementById('todayOrdersList'), state.todayOrders, { showMaster: true });
 }
-
-function renderOrdersPage() {
-    renderOrdersList(document.getElementById('ordersList'), state.weekOrders, { showMaster: true, showDate: true });
-}
-
-function renderFinancePage() {
-    const container = document.getElementById('finance');
-    if(state.currentUser.role === 'DIRECTOR') {
-        // Рендеринг для директора
-    } else {
-        // Рендеринг для мастера
-    }
-}
-
-function renderArchivePage() {
-  // Логика для архива
-}
-
-// --- Вспомогательные функции рендеринга ---
 
 function renderLeaderboard(container) {
   if (!container) return;
@@ -246,31 +251,18 @@ function renderLeaderboard(container) {
     return;
   }
   
-  const table = createElement('table', 'leaderboard-table');
+  const table = createElement('table', {className: 'leaderboard-table'});
   table.innerHTML = `
-    <thead>
-      <tr>
-        <th>Место</th>
-        <th>Мастер</th>
-        <th>Выручка</th>
-        <th>Заказы</th>
-      </tr>
-    </thead>
+    <thead><tr><th>Место</th><th>Мастер</th><th>Выручка</th><th>Заказы</th></tr></thead>
     <tbody>
       ${state.leaderboard.map((master, index) => `
         <tr class="${master.name === state.currentUser.name ? 'is-current-user' : ''}">
-          <td>
-            <span class="leaderboard-place" data-place="${index + 1}">
-              ${index < 3 ? `<i class="fas fa-trophy"></i>` : index + 1}
-            </span>
-          </td>
+          <td><span class="leaderboard-place" data-place="${index + 1}">${index < 3 ? `<i class="fas fa-trophy"></i>` : index + 1}</span></td>
           <td>${master.name}</td>
           <td>${formatCurrency(master.revenue)}</td>
           <td>${master.ordersCount}</td>
-        </tr>
-      `).join('')}
-    </tbody>
-  `;
+        </tr>`).join('')}
+    </tbody>`;
   container.innerHTML = '';
   container.appendChild(table);
 }
@@ -284,15 +276,13 @@ function renderOrdersList(container, orders, options = {}) {
   
   container.innerHTML = '';
   orders.forEach(order => {
-    const item = createElement('div', 'order-item');
-    
-    // Проверяем, можно ли редактировать/удалять заказ
+    const item = createElement('div', {className: 'order-item'});
     const canEdit = state.currentUser.role === 'DIRECTOR' || 
                    (state.currentUser.name === order.masterName && (new Date() - new Date(order.createdAt)) < 3600 * 1000);
 
     item.innerHTML = `
       <div class="order-info">
-        ${options.showMaster ? `<div class="order-master">${order.masterName}</div>` : ''}
+        ${(options.showMaster && state.currentUser.role === 'DIRECTOR') ? `<div class="order-master">${order.masterName}</div>` : ''}
         <p class="order-description">${order.description}</p>
         <div class="order-details">
           <span><i class="fas fa-tag"></i> ${order.paymentType}</span>
@@ -302,18 +292,25 @@ function renderOrdersList(container, orders, options = {}) {
       <div class="order-amount">
         <div class="order-amount-value">${formatCurrency(order.amount)}</div>
         <div class="order-time">${new Date(order.createdAt).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}</div>
-        <div class="order-actions">
-            ${canEdit ? `<button class="btn btn-sm" data-action="edit" data-id="${order.id}"><i class="fas fa-pen"></i></button>` : ''}
-            ${canEdit ? `<button class="btn btn-sm" data-action="delete" data-id="${order.id}"><i class="fas fa-trash"></i></button>` : ''}
-        </div>
+        ${canEdit ? `<div class="order-actions"><button class="btn btn-sm btn-secondary" data-id="${order.id}"><i class="fas fa-pen"></i></button><button class="btn btn-sm btn-secondary" data-id="${order.id}"><i class="fas fa-trash"></i></button></div>` : ''}
       </div>
     `;
     container.appendChild(item);
   });
 }
 
+
 /**
- * 6. ВЫХОД ИЗ СИСТЕМЫ
+ * 6. МОДАЛЬНЫЕ ОКНА
+ */
+function openOrderModal(orderToEdit = null) {
+  // TODO: Реализовать логику модального окна
+  showNotification('Функция добавления/редактирования в разработке', 'error');
+}
+
+
+/**
+ * 7. ВЫХОД ИЗ СИСТЕМЫ
  */
 function logout() {
   localStorage.removeItem('vipauto_token');
@@ -325,6 +322,3 @@ function logout() {
   }
   window.location.href = 'login.html';
 }
-
-// TODO: Добавить обработчики кликов для модальных окон, редактирования, удаления и т.д.
-// TODO: Реализовать рендеринг финансовых страниц для директора и мастера.
