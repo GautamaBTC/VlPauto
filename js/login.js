@@ -6,7 +6,7 @@
 import { showNotification } from './utils.js';
 
 // URL сервера. В будущем здесь будет публичный адрес.
-const SERVER_URL = 'http://localhost:3000';
+const SERVER_URL = 'https://afraid-states-ring.loca.lt';
 
 document.addEventListener('DOMContentLoaded', () => {
   // --- Блок 1: Хедер (Дата, время, тема) ---
