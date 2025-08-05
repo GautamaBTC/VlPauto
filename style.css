@@ -1,9 +1,4 @@
-/*────────────────────────────────────────────
-  style.css
-  Единый файл стилей для всего приложения VIPавто.
-  Основан на эталонном дизайне страницы входа.
-─────────────────────────────────────────────*/
-
+/* ... (секции 1-4 остаются без изменений) ... */
 /* 1. БАЗОВЫЙ СБРОС (ИЗ RESET.CSS) */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
@@ -60,7 +55,7 @@ body { min-height: 100%; font-family: 'Inter', sans-serif; background: var(--bg)
 
 /* 3. ХЕДЕР ПРИЛОЖЕНИЯ (index.html) */
 .page-header { padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; height: var(--header-height); position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: color-mix(in srgb, var(--panel-bg) 80%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
-/* ... (стили для хедера index.html остаются здесь) */
+/* ... (стили для хедера index.html) ... */
 
 /* 4. ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ (глобальный) */
 .theme-switch { position: relative; display: inline-block; width: 54px; height: 28px; }
@@ -77,13 +72,26 @@ html[data-theme="dark"] .fa-moon { opacity: 1; transform: rotate(0deg); }
 
 /* 5. СТРАНИЦА ВХОДА (ФИНАЛЬНЫЙ ДИЗАЙН) */
 .login-main { display: grid; place-items: center; flex-grow: 1; padding: 20px; }
-.login-box { width: 100%; max-width: 360px; padding: 2rem; background-color: var(--panel-bg); border-radius: 16px; box-shadow: 0 10px 30px var(--shadow); border: 1px solid var(--border); }
-.login-header { display: flex; justify-content: flex-end; /* ИЗМЕНЕНИЕ: Перемещаем вправо */ margin-bottom: 1rem; }
-.title-container { text-align: center; margin-bottom: 2rem; }
-.login-title { font-size: 2.2rem; font-weight: 700; }
-.title-vip { color: var(--text-muted); /* ИЗМЕНЕНИЕ: VIP - серый */ }
-.title-auto { color: var(--text); /* ИЗМЕНЕНИЕ: авто - основной цвет (белый в темной теме) */ }
-.login-subtitle { font-size: 1rem; color: var(--text-muted); }
+.login-box { width: 100%; max-width: 360px; padding: 2.5rem; background-color: var(--panel-bg); border-radius: 24px; box-shadow: 0 10px 30px var(--shadow); border: 1px solid var(--border); }
+
+.title-container {
+  display: flex;
+  justify-content: space-between; /* Разносит элементы по краям */
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.login-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  flex-grow: 1; /* Занимает все доступное место */
+  text-align: center; /* Центрирует текст внутри себя */
+  margin-right: -54px; /* Компенсируем ширину переключателя для идеального центрирования */
+}
+.title-vip { color: var(--text-muted); }
+.title-auto { color: var(--text); }
+
+.login-subtitle { text-align: center; font-size: 1rem; color: var(--text-muted); margin-bottom: 2.5rem; }
 .login-box form { width: 100%; }
 .form-group { margin-bottom: 1.5rem; }
 .form-group label { display: block; font-size: 0.9rem; font-weight: 500; margin-bottom: 8px; color: var(--text-muted); }
@@ -101,4 +109,4 @@ html[data-theme="dark"] .fa-moon { opacity: 1; transform: rotate(0deg); }
 .btn-login:hover { transform: translateY(-2px); box-shadow: 0 4px 15px color-mix(in srgb, var(--accent) 30%, transparent); }
 .page-footer { flex-shrink: 0; text-align: center; padding: 2rem 1rem; font-size: 0.8rem; color: var(--text-muted); }
 .error-message { display: block; font-size: 0.85rem; color: var(--error); margin-top: 0.5rem; min-height: 1.2em; }
-/* ... (здесь будут остальные стили для index.html) ... */
+/* ... (остальные стили для index.html) ... */
