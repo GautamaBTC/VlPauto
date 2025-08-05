@@ -1,4 +1,9 @@
-/* ... (секции 1-4 остаются без изменений) ... */
+/*────────────────────────────────────────────
+  style.css
+  Единый файл стилей для всего приложения VIPавто.
+  Основан на эталонном дизайне страницы входа.
+─────────────────────────────────────────────*/
+
 /* 1. БАЗОВЫЙ СБРОС (ИЗ RESET.CSS) */
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
@@ -76,7 +81,7 @@ html[data-theme="dark"] .fa-moon { opacity: 1; transform: rotate(0deg); }
 
 .title-container {
   display: flex;
-  justify-content: space-between; /* Разносит элементы по краям */
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
 }
@@ -84,9 +89,6 @@ html[data-theme="dark"] .fa-moon { opacity: 1; transform: rotate(0deg); }
 .login-title {
   font-size: 2.2rem;
   font-weight: 700;
-  flex-grow: 1; /* Занимает все доступное место */
-  text-align: center; /* Центрирует текст внутри себя */
-  margin-right: -54px; /* Компенсируем ширину переключателя для идеального центрирования */
 }
 .title-vip { color: var(--text-muted); }
 .title-auto { color: var(--text); }
@@ -109,4 +111,5 @@ html[data-theme="dark"] .fa-moon { opacity: 1; transform: rotate(0deg); }
 .btn-login:hover { transform: translateY(-2px); box-shadow: 0 4px 15px color-mix(in srgb, var(--accent) 30%, transparent); }
 .page-footer { flex-shrink: 0; text-align: center; padding: 2rem 1rem; font-size: 0.8rem; color: var(--text-muted); }
 .error-message { display: block; font-size: 0.85rem; color: var(--error); margin-top: 0.5rem; min-height: 1.2em; }
-/* ... (остальные стили для index.html) ... */
+
+/* ... (здесь будут остальные стили для index.html) ... */
