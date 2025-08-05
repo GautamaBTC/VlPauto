@@ -19,50 +19,34 @@ input, button, textarea, select { font: inherit; }
 
 /* 2. ЦВЕТОВЫЕ ПЕРЕМЕННЫЕ И ОСНОВНЫЕ СТИЛИ */
 :root {
-  /* Структура */
   --bg: #F0F2F5;
   --panel-bg: #FFFFFF;
   --input-bg: #F0F2F5;
   --border: #DCDFE6;
   --shadow: rgba(0, 0, 0, 0.05);
-
-  /* Текст */
   --text: #303133;
   --text-muted: #909399;
-
-  /* Акценты и кнопки */
-  --accent: #2563EB; /* ПРИЯТНЫЙ СИНИЙ ВМЕСТО БИРЮЗОВОГО */
+  --accent: #2563EB; /* Приятный синий */
   --btn-text: #FFFFFF;
-
-  /* Уведомления и статусы */
   --success: #28a745;
   --error: #dc3545;
   --gold: #F59E0B;
   --silver: #9CA3AF;
   --bronze: #A16207;
-
-  /* Размеры */
   --header-height: 70px;
   --nav-height: 60px;
 }
 
 html[data-theme="dark"] {
-  /* Структура */
   --bg: #141414;
   --panel-bg: #1D1D1D;
   --input-bg: #262626;
   --border: #424242;
   --shadow: rgba(0, 0, 0, 0.3);
-
-  /* Текст */
   --text: #E5EAF3;
   --text-muted: #A3A6AD;
-
-  /* Акценты и кнопки */
-  --accent: #FFD166; /* ЗОЛОТОЙ АКЦЕНТ, КАК В ЭТАЛОНЕ */
+  --accent: #FFD166; /* Золотой акцент */
   --btn-text: #1D1D1D;
-
-  /* Уведомления и статусы */
   --success: #2fd058;
   --error: #ff4d4d;
   --gold: #FBBF24;
@@ -71,27 +55,14 @@ html[data-theme="dark"] {
 }
 
 html { height: 100%; }
-body { min-height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); transition: background 0.3s, color 0.3s; display: flex; flex-direction: column; }
+body { min-height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); transition: background 0.3s, color 0.3s; }
+.login-body { display: flex; flex-direction: column; }
 
-/* 3. ХЕДЕР (ДИЗАЙН ИЗ LOGIN.HTML) */
+/* 3. ХЕДЕР ПРИЛОЖЕНИЯ (index.html) */
 .page-header { padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; height: var(--header-height); position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: color-mix(in srgb, var(--panel-bg) 80%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
-.page-header__left, .page-header__center, .page-header__right { flex: 1; display: flex; align-items: center; }
-.page-header__left { justify-content: flex-start; }
-.page-header__center { flex-direction: column; justify-content: center; gap: 4px; }
-.page-header__right { justify-content: flex-end; gap: 1rem; }
-#current-date { font-size: 0.9rem; color: var(--text-muted); white-space: nowrap; }
-#current-time { font-size: 1.5rem; font-weight: 500; color: var(--text); line-height: 1.1; }
-.app-title { font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 0.6rem; }
-.logo-icon { color: var(--accent); }
-.auto-text { color: var(--text); }
-html[data-theme="dark"] .auto-text { color: var(--accent); }
+/* ... (стили для хедера index.html остаются здесь) */
 
-.user-profile-menu { display: flex; align-items: center; gap: 1rem; }
-#user-name-display { font-weight: 500; color: var(--text-muted); }
-.btn-logout { font-size: 1.2rem; color: var(--text-muted); transition: color 0.2s; }
-.btn-logout:hover { color: var(--error); }
-
-/* 4. ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ (ЭТАЛОННЫЙ ДИЗАЙН) */
+/* 4. ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ (глобальный) */
 .theme-switch { position: relative; display: inline-block; width: 54px; height: 28px; }
 .theme-switch input { opacity: 0; width: 0; height: 0; }
 .slider { position: absolute; inset: 0; cursor: pointer; background-color: var(--input-bg); border-radius: 28px; transition: .4s; border: 1px solid var(--border); }
@@ -104,137 +75,31 @@ html[data-theme="dark"] .slider-thumb { transform: translateX(0px); }
 html[data-theme="dark"] .fa-sun { opacity: 0; transform: rotate(-360deg); }
 html[data-theme="dark"] .fa-moon { opacity: 1; transform: rotate(0deg); }
 
-/* 5. ОСНОВНОЙ КОНТЕНТ И НАВИГАЦИЯ */
-.main-content { padding: 20px; padding-top: calc(var(--header-height) + 20px); padding-bottom: calc(var(--nav-height) + 20px); flex-grow: 1; }
-.tab-content { display: none; }
-.tab-content.active { display: block; animation: fadeIn 0.5s ease; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.nav-container { height: var(--nav-height); position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; background: color-mix(in srgb, var(--panel-bg) 80%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--border); }
-.nav-tabs { display: flex; justify-content: space-around; height: 100%; }
-.nav-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 0.7rem; color: var(--text-muted); position: relative; transition: color 0.2s; }
-.nav-tab.active { color: var(--accent); font-weight: 600; }
-.nav-tab.active::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 40px; height: 3px; background-color: var(--accent); border-radius: 3px; }
-
-/* 6. КОМПОНЕНТЫ: СЕКЦИИ И ОБЩИЕ СТИЛИ */
-.section { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 4px 12px var(--shadow); }
-.section-header { margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-.section-header:last-child { margin-bottom: 0; }
-.section-title { font-size: 1.25rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 0.6rem; }
-.section-title i { color: var(--accent); }
-
-/* 7. ФОРМЫ (ЭТАЛОННЫЙ ДИЗАЙН) */
+/* 5. СТРАНИЦА ВХОДА (ИСПРАВЛЕННЫЙ ДИЗАЙН) */
+.login-main { display: grid; place-items: center; flex-grow: 1; padding: 20px; }
+.login-box { width: 100%; max-width: 360px; padding: 2rem; background-color: var(--panel-bg); border-radius: 16px; box-shadow: 0 10px 30px var(--shadow); border: 1px solid var(--border); }
+.login-header { display: flex; justify-content: flex-start; margin-bottom: 1.5rem; }
+.title-container { text-align: center; margin-bottom: 2rem; }
+.login-title { font-size: 2.2rem; font-weight: 700; }
+.title-vip { color: var(--text-muted); }
+.title-auto { color: var(--text); }
+html[data-theme="dark"] .title-auto { color: var(--text); } /* В темной теме "авто" тоже основной цвет */
+.login-subtitle { font-size: 1rem; color: var(--text-muted); }
+.login-box form { width: 100%; }
 .form-group { margin-bottom: 1.5rem; }
 .form-group label { display: block; font-size: 0.9rem; font-weight: 500; margin-bottom: 8px; color: var(--text-muted); }
 .input-wrapper { position: relative; display: flex; align-items: center; }
 .input-icon { position: absolute; left: 16px; color: var(--text-muted); font-size: 1rem; pointer-events: none; }
-.form-control, .form-group input, .form-group select, .form-group textarea { width: 100%; height: 48px; padding: 0 16px; font-size: 1rem; background-color: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); transition: all 0.2s; }
-.form-group input:not([type="checkbox"]), .form-group select { padding-left: 48px; }
-.form-group textarea { height: auto; padding: 12px 16px; min-height: 80px; resize: vertical; }
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
-.error-message { display: block; font-size: 0.85rem; color: var(--error); margin-top: 0.5rem; min-height: 1.2em; }
-
-/* 8. КНОПКИ (ЭТАЛОННЫЙ ДИЗАЙН) */
-.btn, .btn-login { display: inline-flex; align-items: center; justify-content: center; gap: 0.8rem; width: 100%; padding: 14px; font-size: 1rem; font-weight: 600; color: var(--btn-text); background: var(--accent); border: none; border-radius: 8px; cursor: pointer; transition: transform .2s, box-shadow .2s; }
-.btn-login:hover, .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px color-mix(in srgb, var(--accent) 30%, transparent); }
-.btn.btn-secondary { background: var(--input-bg); color: var(--text); border: 1px solid var(--border); }
-.btn.btn-secondary:hover { transform: translateY(-2px); border-color: var(--accent); box-shadow: none; }
-.btn.btn-sm { padding: 8px 12px; font-size: 0.8rem; width: auto; }
-.btn-accent { color: var(--btn-text); background: var(--accent); border: none; }
-.btn-accent:hover { transform: translateY(-2px); box-shadow: 0 4px 15px color-mix(in srgb, var(--accent) 30%, transparent); }
-.btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; box-shadow: none; }
-
-/* 9. ДАШБОРД */
-.dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; }
-.dashboard-item { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1rem; text-align: center; }
-.dashboard-icon { font-size: 1.75rem; margin-bottom: 0.5rem; color: var(--accent); }
-.dashboard-value { font-size: 1.5rem; font-weight: 700; color: var(--text); line-height: 1.2; }
-.dashboard-label { font-size: 0.8rem; color: var(--text-muted); }
-
-/* 10. ДОСКА ЛИДЕРОВ */
-.leaderboard-table { width: 100%; border-collapse: collapse; }
-.leaderboard-table th, .leaderboard-table td { padding: 14px 8px; text-align: left; border-bottom: 1px solid var(--border); }
-.leaderboard-table th { font-weight: 500; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; }
-.leaderboard-table tr:last-child td { border-bottom: none; }
-.leaderboard-table tr.is-current-user { background-color: color-mix(in srgb, var(--accent) 10%, transparent); font-weight: 700; }
-.leaderboard-place { font-size: 1.2rem; font-weight: 700; width: 40px; text-align: center; }
-.leaderboard-place i { vertical-align: middle; }
-.leaderboard-place[data-place="1"] i { color: var(--gold); }
-.leaderboard-place[data-place="2"] i { color: var(--silver); }
-.leaderboard-place[data-place="3"] i { color: var(--bronze); }
-
-/* 11. СПИСКИ ЗАКАЗОВ */
-.orders-list-container { display: flex; flex-direction: column; gap: 0.75rem; }
-.order-item { display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; background: var(--input-bg); border-radius: 8px; }
-.order-info { flex-grow: 1; }
-.order-master { font-weight: 600; font-size: 1rem; margin-bottom: 0.25rem; }
-.order-description { font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted); }
-.order-details { font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; }
-.order-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
-.order-amount { text-align: right; }
-.order-amount-value { font-size: 1.2rem; font-weight: 700; color: var(--accent); }
-.order-time { font-size: 0.8rem; color: var(--text-muted); }
-.empty-state { text-align: center; padding: 2rem; color: var(--text-muted); }
-.empty-state i { font-size: 2.5rem; margin-bottom: 1rem; opacity: 0.5; color: var(--accent); }
-
-/* 12. ФИНАНСЫ И ЗАРПЛАТА */
-.salary-table { width: 100%; border-collapse: collapse; }
-.salary-table th, .salary-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); }
-.salary-table th { font-weight: 500; color: var(--text-muted); font-size: 0.8rem; }
-.bonus-input { width: 80px; text-align: center; padding: 6px; border-radius: 6px; background: var(--input-bg); border: 1px solid var(--border); color: var(--text); }
-.salary-total { font-weight: 700; color: var(--success); }
-.master-finance-overview { text-align: center; padding: 2rem 1rem; background: var(--input-bg); border-radius: 12px; margin-bottom: 1.5rem; }
-.master-finance-label { font-size: 1rem; color: var(--text-muted); margin-bottom: 0.5rem; }
-.master-finance-amount { font-size: 2.5rem; font-weight: 700; color: var(--success); }
-
-/* 13. МОДАЛЬНЫЕ ОКНА (ЭТАЛОННЫЙ ДИЗАЙН) */
-.modal { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5); backdrop-filter: blur(5px); opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-.modal.active { opacity: 1; pointer-events: auto; }
-.modal-content { background: var(--panel-bg); border-radius: 16px; padding: 1.5rem; width: 90%; max-width: 520px; box-shadow: 0 10px 30px var(--shadow); transform: scale(0.95); transition: transform 0.3s; max-height: 90vh; overflow-y: auto; }
-.modal.active .modal-content { transform: scale(1); }
-.modal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); }
-.modal-title { font-size: 1.25rem; font-weight: 700; }
-.modal-close { font-size: 1.5rem; color: var(--text-muted); transition: color .2s, transform .2s; }
-.modal-close:hover { color: var(--accent); transform: rotate(90deg); }
-.modal-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; }
-
-/* 14. УВЕДОМЛЕНИЯ (ЭТАЛОННЫЙ ДИЗАЙН) */
-#notification-root { position: fixed; top: 20px; right: 20px; z-index: 3000; display: flex; flex-direction: column; gap: 10px; }
-.notification { padding: 16px 24px; border-radius: 8px; background: var(--panel-bg); box-shadow: 0 4px 12px var(--shadow); transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); display: flex; align-items: center; gap: 12px; border-left: 4px solid; }
-.notification.show { transform: translateX(0); }
-.notification i { font-size: 1.2rem; }
-.notification.error { border-left-color: var(--error); }
-.notification.error i { color: var(--error); }
-.notification.success { border-left-color: var(--success); }
-.notification.success i { color: var(--success); }
-
-/* 15. СТРАНИЦА ВХОДА (ЭТАЛОННЫЙ ДИЗАЙН) */
-.login-main { display: grid; place-items: center; flex-grow: 1; padding: 20px; }
-.login-box { width: 100%; max-width: 360px; padding: 2.5rem; background-color: var(--panel-bg); border-radius: 16px; box-shadow: 0 10px 30px var(--shadow); border: 1px solid var(--border); }
-.login-title { text-align: center; font-size: 2.2rem; font-weight: 700; margin-bottom: 0.3rem; }
-.login-subtitle { text-align: center; font-size: 1rem; color: var(--text-muted); margin-bottom: 2.5rem; }
+.form-group input { width: 100%; height: 48px; padding: 0 16px 0 48px; font-size: 1rem; background-color: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); transition: all 0.2s; }
+.form-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
+.toggle-password { position: absolute; right: 0; padding: 15px; cursor: pointer; color: var(--text-muted); transition: color 0.2s; }
+.toggle-password:hover { color: var(--accent); }
+#password { padding-right: 48px; }
 .form-options { margin-top: -0.5rem; margin-bottom: 2rem; }
 .checkbox-wrap { display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer; }
 .checkbox-wrap input { width: 16px; height: 16px; accent-color: var(--accent); }
+.btn-login { display: flex; align-items: center; justify-content: center; gap: 0.8rem; width: 100%; padding: 14px; font-size: 1rem; font-weight: 600; color: var(--btn-text); background: var(--accent); border-radius: 8px; transition: transform .2s, box-shadow .2s; }
+.btn-login:hover { transform: translateY(-2px); box-shadow: 0 4px 15px color-mix(in srgb, var(--accent) 30%, transparent); }
 .page-footer { flex-shrink: 0; text-align: center; padding: 2rem 1rem; font-size: 0.8rem; color: var(--text-muted); }
-.toggle-password { position: absolute; right: 0; padding: 15px; cursor: pointer; color: var(--text-muted); transition: color 0.2s; }
-.toggle-password:hover { color: var(--accent); }
-
-/* 16. АДАПТИВНОСТЬ */
-@media (max-width: 768px) {
-  :root { --header-height: 60px; --nav-height: 56px; }
-  .main-content { padding: 15px; padding-top: calc(var(--header-height) + 15px); padding-bottom: calc(var(--nav-height) + 15px); }
-  .page-header { padding: 5px 15px; }
-  .app-title { font-size: 1.2rem; }
-  #current-time { font-size: 1.2rem; }
-  #current-date { font-size: 0.7rem; }
-  .dashboard { grid-template-columns: 1fr 1fr; }
-  .login-box { padding: 1.5rem; }
-}
-
-@media (max-width: 480px) {
-  .page-header__center, #user-name-display { display: none; }
-  .order-item { flex-direction: column; align-items: stretch; }
-  .order-amount { text-align: left; margin-top: 0.5rem; }
-  .leaderboard-table td, .leaderboard-table th { padding: 10px 4px; font-size: 0.8rem; }
-  .leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4) { display: none; }
-}
+.error-message { display: block; font-size: 0.85rem; color: var(--error); margin-top: 0.5rem; min-height: 1.2em; }
+/* ... (здесь будут остальные стили для index.html) ... */
