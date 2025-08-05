@@ -5,9 +5,8 @@
 
 import { showNotification } from './utils.js';
 
-// URL вашего сервера. Для тестирования можно использовать localhost,
-// а для развертывания — публичный адрес.
-const SERVER_URL = 'http://localhost:3000'; // Позже заменим на реальный адрес
+// URL сервера. В будущем здесь будет публичный адрес.
+const SERVER_URL = 'http://localhost:3000';
 
 document.addEventListener('DOMContentLoaded', () => {
   // --- Блок 1: Хедер (Дата, время, тема) ---
@@ -16,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const themeToggle = document.getElementById('theme-toggle');
   const htmlEl = document.documentElement;
 
-  // Проверка на наличие элементов, чтобы избежать ошибок
   if (!dateEl || !timeEl || !themeToggle) {
     console.error('Не найдены обязательные элементы хедера.');
     return;
@@ -32,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     timeEl.textContent = now.toLocaleTimeString('ru-RU');
   }
   updateDateTime();
-  const timeInterval = setInterval(updateDateTime, 1000);
+  setInterval(updateDateTime, 1000);
 
   function applyTheme(theme) {
     htmlEl.setAttribute('data-theme', theme);
@@ -112,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (response.ok) {
         // Сервер подтвердил вход
-        // Сохраняем токен и данные пользователя
         const storage = rememberMe.checked ? localStorage : sessionStorage;
         storage.setItem('vipauto_token', result.token);
         storage.setItem('vipauto_user', JSON.stringify(result.user));
@@ -129,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(error.message || 'Ошибка сети. Сервер недоступен.', 'error');
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalBtnContent;
     }
