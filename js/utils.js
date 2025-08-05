@@ -42,7 +42,7 @@ export function showNotification(message, type = 'success') {
  * @returns {string} - Отформатированная строка.
  */
 export function formatCurrency(value) {
-  if (typeof value !== 'number') {
+  if (typeof value !== 'number' || isNaN(value)) {
     value = 0;
   }
   return new Intl.NumberFormat('ru-RU', {
@@ -59,21 +59,31 @@ export function formatCurrency(value) {
  * @returns {string} - Отформатированная строка.
  */
 export function formatDate(date) {
+  if (!date) return '';
   return new Date(date).toLocaleDateString('ru-RU');
 }
 
 /**
- * Создает простой элемент с классом и текстом.
+ * Создает простой HTML-элемент.
  * @param {string} tag - HTML-тег.
- * @param {string} className - CSS-класс.
- * @param {string} [textContent] - Текстовое содержимое.
+ * @param {object} [options] - Опции для элемента.
+ * @param {string} [options.className] - CSS-классы.
+ * @param {string} [options.textContent] - Текстовое содержимое.
+ * @param {object} [options.dataset] - Data-атрибуты.
  * @returns {HTMLElement} - Созданный элемент.
  */
-export function createElement(tag, className, textContent) {
+export function createElement(tag, options = {}) {
   const element = document.createElement(tag);
-  element.className = className;
-  if (textContent) {
-    element.textContent = textContent;
+  if (options.className) {
+    element.className = options.className;
+  }
+  if (options.textContent) {
+    element.textContent = options.textContent;
+  }
+  if (options.dataset) {
+    for (const key in options.dataset) {
+      element.dataset[key] = options.dataset[key];
+    }
   }
   return element;
 }
