@@ -15,7 +15,8 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <!-- ==================== ХЕДЕР ==================== -->
+
+  <!-- ==================== ХЕДЕР (КОПИЯ СТРАНИЦЫ ВХОДА) ==================== -->
   <header class="page-header">
     <div class="page-header__left">
        <h1 class="app-title">
@@ -48,14 +49,12 @@
         <!-- Блоки дашборда будут генерироваться JS -->
       </div>
       
-      <div class="section">
+      <div class="section" id="leaderboard-section">
         <div class="section-header">
-          <h3 class="section-title"><i class="fas fa-bolt"></i> Быстрые действия</h3>
+          <h3 class="section-title"><i class="fas fa-trophy"></i> Доска Лидеров</h3>
         </div>
-        <div class="quick-actions-grid">
-          <button class="btn btn-accent btn-block" id="quickAddOrderBtn"><i class="fas fa-plus"></i> Добавить заказ</button>
-          <button class="btn" id="viewSalaryBtn"><i class="fas fa-wallet"></i> Зарплата</button>
-          <button class="btn btn-danger" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Выйти</button>
+        <div id="leaderboard-container">
+          <!-- Содержимое будет генерироваться JS -->
         </div>
       </div>
       
@@ -69,12 +68,12 @@
       </div>
     </div>
     
-    <!-- Вкладка: Учет заказов -->
+    <!-- Вкладка: История -->
     <div id="orders" class="tab-content">
       <div class="section">
         <div class="section-header">
           <h3 class="section-title"><i class="fas fa-history"></i> История за 7 дней</h3>
-          <button class="btn btn-accent btn-sm" id="addOrderBtn"><i class="fas fa-plus"></i> Добавить</button>
+          <button class="btn btn-accent btn-sm" id="addOrderBtn"><i class="fas fa-plus"></i> Добавить заказ</button>
         </div>
         <div id="ordersList" class="orders-list-container">
           <!-- Содержимое будет генерироваться JS -->
@@ -84,23 +83,7 @@
     
     <!-- Вкладка: Финансы -->
     <div id="finance" class="tab-content">
-      <div class="section">
-        <div class="section-header">
-          <h3 class="section-title"><i class="fas fa-calculator"></i> Расчет зарплат</h3>
-        </div>
-        <div id="salaryCalculationContainer">
-          <!-- Содержимое будет генерироваться JS -->
-        </div>
-      </div>
-      
-      <div class="section">
-        <div class="section-header">
-          <h3 class="section-title"><i class="fas fa-chart-pie"></i> Статистика недели</h3>
-        </div>
-        <div id="weekStatisticsContainer">
-          <!-- Содержимое будет генерироваться JS -->
-        </div>
-      </div>
+      <!-- Содержимое будет разным для Директора и Мастера, генерируется JS -->
     </div>
     
     <!-- Вкладка: Архив -->
@@ -116,7 +99,7 @@
             <span>—</span>
             <input type="date" id="archiveEndDate" class="form-control">
           </div>
-          <button class="btn btn-accent" id="viewArchiveBtn"><i class="fas fa-search"></i> Показать</b
+          <button class="btn btn-accent" id="viewArchiveBtn"><i class="fas fa-search"></i> Показать</button>
         </div>
         <div id="archiveListContainer" class="orders-list-container">
           <!-- Содержимое будет генерироваться JS -->
