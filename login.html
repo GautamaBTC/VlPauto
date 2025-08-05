@@ -4,14 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Вход — VIPавто облачный бортовой журнал</title>
-
-  <!-- Подключение шрифтов и иконок -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
-  
-  <!-- Подключение ЕДИНОГО файла стилей -->
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="login-body">
@@ -19,9 +15,6 @@
   <main class="login-main">
     <div class="login-box">
       <div class="login-header">
-        <h1 class="login-title">
-          <span class="title-vip">VIP</span><span class="title-auto">авто</span>
-        </h1>
         <label class="theme-switch" title="Сменить тему">
           <input type="checkbox" id="theme-toggle" />
           <span class="slider">
@@ -32,7 +25,13 @@
           </span>
         </label>
       </div>
-      <h2 class="login-subtitle">облачный бортовой журнал</h2>
+
+      <div class="title-container">
+        <h1 class="login-title">
+          <span class="title-vip">VIP</span><span class="title-auto">авто</span>
+        </h1>
+        <h2 class="login-subtitle">облачный бортовой журнал</h2>
+      </div>
 
       <form id="login-form" novalidate>
         <div class="form-group">
@@ -73,10 +72,7 @@
     </div>
   </main>
   
-  <!-- "Портал" для уведомлений -->
   <div id="notification-root"></div>
-
-  <!-- Подключение скриптов -->
   <script type="module" src="js/login.js"></script>
 </body>
 </html>
