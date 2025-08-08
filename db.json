@@ -1,0 +1,81 @@
+{
+  "users": {
+    "director": {
+      "password": "Dir7wK9c",
+      "role": "DIRECTOR",
+      "name": "Александр Иванов"
+    },
+    "vladimir.ch": {
+      "password": "Vch4R5tG",
+      "role": "MASTER",
+      "name": "Владимир Ч."
+    },
+    "vladimir.a": {
+      "password": "Vla9L2mP",
+      "role": "MASTER",
+      "name": "Владимир А."
+    },
+    "andrey": {
+      "password": "And3Z8xY",
+      "role": "MASTER",
+      "name": "Андрей"
+    },
+    "danila": {
+      "password": "Dan6J1vE",
+      "role": "MASTER",
+      "name": "Данила"
+    },
+    "maxim": {
+      "password": "Max2B7nS",
+      "role": "MASTER",
+      "name": "Максим"
+    },
+    "artyom": {
+      "password": "Art5H4qF",
+      "role": "MASTER",
+      "name": "Артём"
+    }
+  },
+  "orders": [
+    {
+      "id": "ord-1722848400000",
+      "masterName": "Владимир Ч.",
+      "description": "Замена масла и фильтров",
+      "amount": 5500,
+      "paymentType": "Картой",
+      "createdAt": "2025-08-08T10:00:00.000Z",
+      "clientName": "Петр Сергеев",
+      "clientPhone": "+79161234567"
+    },
+    {
+      "id": "ord-1722852000000",
+      "masterName": "Андрей",
+      "description": "Диагностика подвески",
+      "amount": 2000,
+      "paymentType": "Наличные",
+      "createdAt": "2025-08-08T11:00:00.000Z",
+      "clientName": "Анна Михайлова",
+      "clientPhone": "+79267654321"
+    },
+    {
+      "id": "ord-1722855600000",
+      "masterName": "Владимир Ч.",
+      "description": "Шиномонтаж, 4 колеса",
+      "amount": 3800,
+      "paymentType": "Картой",
+      "createdAt": "2025-08-08T12:00:00.000Z",
+      "clientName": "Игорь Новиков",
+      "clientPhone": "+79031122334"
+    },
+    {
+      "id": "ord-1722859200000",
+      "masterName": "Данила",
+      "description": "Ремонт тормозной системы",
+      "amount": 12500,
+      "paymentType": "Перевод",
+      "createdAt": "2025-08-08T13:00:00.000Z",
+      "clientName": "Ольга Смирнова",
+      "clientPhone": "+79854455667"
+    }
+  ]
+}
