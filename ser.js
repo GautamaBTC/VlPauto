@@ -12,8 +12,8 @@ const fs = require('fs').promises;
 const path = require('path');
 
 // --- НАСТРОЙКИ ---
-const PORT = 3000;
-const JWT_SECRET = 'your-super-secret-key-for-vipauto-dont-share-it'; // Секретный ключ для подписи токенов
+const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-for-vipauto-dont-share-it';
 const DB_PATH = path.join(__dirname, 'db.json'); // Путь к нашей "базе данных"
 
 const app = express();
@@ -23,7 +23,7 @@ app.use(express.json()); // Позволяем серверу читать JSON 
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*", // Разрешаем подключения с любых адресов
+    origin: true, // Разрешает запросы с того же источника
     methods: ["GET", "POST"]
   }
 });

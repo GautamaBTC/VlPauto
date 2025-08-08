@@ -5,7 +5,7 @@
 
 import { showNotification } from './utils.js';
 
-const SERVER_URL = 'http://localhost:3000'; // Убедитесь, что ваш туннель работает
+const SERVER_URL = '';
 
 document.addEventListener('DOMContentLoaded', () => {
   // --- Блок 1: Тема ---

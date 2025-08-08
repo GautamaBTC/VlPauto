@@ -7,7 +7,7 @@
 import { showNotification, formatCurrency, formatDate, createElement, getEndings } from './js/utils.js';
 
 // URL сервера
-const SERVER_URL = 'https://afraid-states-ring.loca.lt';
+const SERVER_URL = '';
 
 // --- Глобальное состояние приложения ---
 const state = {
