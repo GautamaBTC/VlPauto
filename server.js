@@ -18,26 +18,8 @@ const DB_PATH = path.join(__dirname, 'db.json');
 
 const app = express();
 app.use(cors());
+app.use(express.static(__dirname)); // Обслуживание статических файлов
 app.use(express.json());
-
-// --- ОБСЛУЖИВАНИЕ СТАТИЧЕСКИХ ФАЙЛОВ ---
-// Явно указываем, что файлы CSS и JS находятся в корне
-app.use(express.static(path.join(__dirname)));
-// Отдельно для папки js
-app.use('/js', express.static(path.join(__dirname, 'js')));
-
-
-// --- ЯВНЫЕ МАРШРУТЫ ДЛЯ HTML СТРАНИЦ ---
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'login.html'));
-});
-app.get('/login.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'login.html'));
-});
-app.get('/index.html', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
-
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -69,7 +51,7 @@ const loadDB = async () => {
     console.log('Файл базы данных не найден. Создание новой...');
     db = {
       users: {
-        'director': { password: 'Dir7wK9c', role: 'DIRECTOR', name: 'Владимир Михайлович Орлов' },
+        'director': { password: 'Dir7wK9c', role: 'DIRECTOR', name: 'Владимир Орлов' },
         'vladimir.ch': { password: 'Vch4R5tG', role: 'MASTER', name: 'Владимир Ч.' },
         'vladimir.a': { password: 'Vla9L2mP', role: 'MASTER', name: 'Владимир А.' },
         'andrey': { password: 'And3Z8xY', role: 'MASTER', name: 'Андрей' },
@@ -99,8 +81,7 @@ const backupDatabase = async () => {
     const timestamp = new Date().toISOString().slice(0, 10);
     const backupPath = path.join(BACKUP_DIR, `db-backup-${timestamp}.json`);
     await fs.access(backupPath).catch(async () => {
-        const data = await fs.readFile(DB_PATH, 'utf-8');
-        await fs.writeFile(backupPath, data);
+        await fs.copyFile(DB_PATH, backupPath);
         console.log(`Создана резервная копия: ${backupPath}`);
     });
   } catch (error) {
@@ -144,17 +125,21 @@ const prepareDataForUser = (user) => {
     const todayOrders = (weekOrders || []).filter(o => o.createdAt.startsWith(today));
     const masters = Object.values(db.users).filter(u => u.role === 'MASTER').map(u => u.name);
     const leaderboard = generateLeaderboard(weekOrders, masters);
-
-    const isPriv = user.role === 'DIRECTOR' || user.login === 'vladimir.ch';
-    const relevantOrdersForStats = isPriv ? weekOrders : (weekOrders || []).filter(o => o.masterName === user.name);
+    
+    const relevantOrdersForStats = user.role === 'DIRECTOR' 
+        ? weekOrders 
+        : (weekOrders || []).filter(o => o.masterName === user.name);
+    
     const weekStats = calculateStats(relevantOrdersForStats);
-
+    
     const salaryData = leaderboard.map(m => ({
         name: m.name,
         total: m.revenue * 0.5,
     }));
-
-    const relevantWeekOrders = isPriv ? weekOrders : (weekOrders || []).filter(o => o.masterName === user.name);
+    
+    const relevantWeekOrders = user.role === 'DIRECTOR'
+        ? weekOrders
+        : (weekOrders || []).filter(o => o.masterName === user.name);
 
     return { todayOrders, weekOrders: relevantWeekOrders, weekStats, leaderboard, salaryData, masters };
 };
@@ -173,8 +158,8 @@ app.post('/login', (req, res) => {
   if (!userRecord || userRecord.password !== password) {
     return res.status(401).json({ message: 'Неверный логин или пароль' });
   }
-  const token = jwt.sign({ login: login, role: userRecord.role, name: userRecord.name }, JWT_SECRET, { expiresIn: '24h' });
-  res.json({ message: 'Успешный вход', token, user: { login: login, name: userRecord.name, role: userRecord.role } });
+  const token = jwt.sign({ login, role: userRecord.role, name: userRecord.name }, JWT_SECRET, { expiresIn: '24h' });
+  res.json({ message: 'Успешный вход', token, user: { name: userRecord.name, role: userRecord.role } });
 });
 
 io.use((socket, next) => {
@@ -191,11 +176,9 @@ io.on('connection', (socket) => {
   console.log(`Пользователь '${socket.user.name}' (${socket.user.role}) подключился.`);
   socket.emit('initialData', prepareDataForUser(socket.user));
 
-  const isPrivileged = (user) => user.role === 'DIRECTOR' || user.login === 'vladimir.ch';
-
   socket.on('addOrder', async (orderData) => {
     if (!orderData || !orderData.description || !orderData.amount) return socket.emit('serverError', 'Некорректные данные заказ-наряда.');
-    if (!isPrivileged(socket.user)) orderData.masterName = socket.user.name;
+    if (socket.user.role === 'MASTER') orderData.masterName = socket.user.name;
     const newOrder = { ...orderData, id: `ord-${Date.now()}`, createdAt: new Date().toISOString() };
     db.orders.push(newOrder);
     await saveDB();
@@ -206,18 +189,9 @@ io.on('connection', (socket) => {
     if (!orderData || !orderData.id) return socket.emit('serverError', 'Необходим ID заказ-наряда для обновления.');
     const orderIndex = db.orders.findIndex(o => o.id === orderData.id);
     if (orderIndex === -1) return socket.emit('serverError', 'Заказ-наряд не найден.');
-
-    const order = db.orders[orderIndex];
-    const user = socket.user;
-    const isOwner = order.masterName === user.name;
-    const canEditMasterLimited = isOwner && (new Date() - new Date(order.createdAt)) < 1000 * 3600; // 1 час
-    const canEditDirectorLimited = isPrivileged(user) && (new Date() - new Date(order.createdAt)) < 1000 * 3600 * 24 * 7; // 7 дней
-
-    if (!canEditMasterLimited && !canEditDirectorLimited) {
-      return socket.emit('serverError', 'Недостаточно прав или время для редактирования истекло.');
-    }
-
-    db.orders[orderIndex] = { ...order, ...orderData };
+    const canUpdate = socket.user.role === 'DIRECTOR' || db.orders[orderIndex].masterName === socket.user.name;
+    if (!canUpdate) return socket.emit('serverError', 'Недостаточно прав для редактирования этого заказ-наряда.');
+    db.orders[orderIndex] = { ...db.orders[orderIndex], ...orderData };
     await saveDB();
     broadcastUpdates();
   });
@@ -226,12 +200,13 @@ io.on('connection', (socket) => {
     if (!orderId) return socket.emit('serverError', 'Необходим ID заказ-наряда для удаления.');
     const orderIndex = db.orders.findIndex(o => o.id === orderId);
     if (orderIndex === -1) return socket.emit('serverError', 'Заказ-наряд не найден.');
-    if (!isPrivileged(socket.user)) return socket.emit('serverError', 'Недостаточно прав для удаления.');
+    const canDelete = socket.user.role === 'DIRECTOR' || db.orders[orderIndex].masterName === socket.user.name;
+    if (!canDelete) return socket.emit('serverError', 'Недостаточно прав для удаления этого заказ-наряда.');
     db.orders = db.orders.filter(o => o.id !== orderId);
     await saveDB();
     broadcastUpdates();
   });
-
+  
   socket.on('getArchiveData', ({ startDate, endDate }) => {
     if (!startDate || !endDate) return socket.emit('serverError', 'Необходимо указать начальную и конечную даты.');
     const start = new Date(startDate);
@@ -241,12 +216,12 @@ io.on('connection', (socket) => {
         const orderDate = new Date(o.createdAt);
         return orderDate >= start && orderDate <= end;
     });
-    if (!isPrivileged(socket.user)) filtered = filtered.filter(o => o.masterName === socket.user.name);
+    if (socket.user.role === 'MASTER') filtered = filtered.filter(o => o.masterName === socket.user.name);
     socket.emit('archiveData', filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
   });
 
   socket.on('closeWeek', async () => {
-    if (!isPrivileged(socket.user)) return socket.emit('serverError', 'Недостаточно прав.');
+    if (socket.user.role !== 'DIRECTOR') return socket.emit('serverError', 'Недостаточно прав.');
     if (db.orders.length === 0) return socket.emit('serverError', 'Нет заказ-нарядов для закрытия недели.');
     const weekId = getWeekId();
     db.history.push({ weekId, orders: [...db.orders] });
@@ -256,7 +231,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('clearData', async () => {
-    if (!isPrivileged(socket.user)) return socket.emit('serverError', 'Недостаточно прав.');
+    if (socket.user.role !== 'DIRECTOR') return socket.emit('serverError', 'Недостаточно прав.');
     db.orders = [];
     db.history = [];
     await saveDB();
