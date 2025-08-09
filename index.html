@@ -16,7 +16,7 @@
 </head>
 <body>
 
-  <!-- ==================== ХЕДЕР (КОПИЯ СТРАНИЦЫ ВХОДА) ==================== -->
+  <!-- ==================== ХЕДЕР ==================== -->
   <header class="page-header">
     <div class="page-header__left">
        <h1 class="app-title">
@@ -35,13 +35,14 @@
             <i class="fas fa-sign-out-alt"></i>
         </button>
       </div>
+      <!-- НОВЫЙ ЕДИНЫЙ ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ -->
       <label class="theme-switch" title="Сменить тему">
         <input type="checkbox" id="theme-toggle" />
-        <span class="slider">
-          <span class="slider-thumb">
-            <i class="fas fa-cog"></i>
-          </span>
-        </span>
+        <div class="wheel-slider">
+          <div class="wheel-icon-wrapper">
+            <i class="fas fa-dharmachakra"></i>
+          </div>
+        </div>
       </label>
     </div>
   </header>
@@ -50,8 +51,36 @@
   <main class="main-content">
     <!-- Вкладка: Главная -->
     <div id="home" class="tab-content active">
+      <!-- НОВЫЙ ДАШБОРД 2x2 -->
       <div class="dashboard" id="dashboard-grid">
-        <!-- Блоки дашборда будут генерироваться JS -->
+        <div class="dashboard-item" id="dash-revenue">
+            <div class="dashboard-item-icon"><i class="fas fa-ruble-sign"></i></div>
+            <div class="dashboard-item-content">
+                <div class="dashboard-item-title">Выручка (неделя)</div>
+                <div class="dashboard-item-value">…</div>
+            </div>
+        </div>
+        <div class="dashboard-item" id="dash-orders">
+            <div class="dashboard-item-icon"><i class="fas fa-file-invoice"></i></div>
+            <div class="dashboard-item-content">
+                <div class="dashboard-item-title">Заказ-наряды (неделя)</div>
+                <div class="dashboard-item-value">…</div>
+            </div>
+        </div>
+        <div class="dashboard-item" id="dash-avg-check">
+            <div class="dashboard-item-icon"><i class="fas fa-receipt"></i></div>
+            <div class="dashboard-item-content">
+                <div class="dashboard-item-title">Средний чек</div>
+                <div class="dashboard-item-value">…</div>
+            </div>
+        </div>
+        <div class="dashboard-item" id="dash-today-personal">
+            <div class="dashboard-item-icon"><i class="fas fa-user-clock"></i></div>
+            <div class="dashboard-item-content">
+                <div class="dashboard-item-title">Выработка (сегодня)</div>
+                <div class="dashboard-item-value">…</div>
+            </div>
+        </div>
       </div>
 
       <div class="section" id="quick-actions-section">
@@ -61,17 +90,9 @@
         <div class="quick-actions-grid">
           <button class="btn btn-accent" id="quickAddOrderBtn"><i class="fas fa-plus"></i> Добавить заказ-наряд</button>
           <button class="btn btn-secondary" id="quickViewSalaryBtn"><i class="fas fa-wallet"></i> Просмотреть зарплату</button>
-          <button class="btn btn-secondary director-only" id="quickExportBtn"><i class="fas fa-file-export"></i> Экспорт данных</button>
-          <button class="btn btn-danger director-only" id="quickCloseWeekBtn"><i class="fas fa-calendar-check"></i> Закрыть неделю</button>
-        </div>
-      </div>
-
-      <div class="section" id="week-stats-section">
-        <div class="section-header">
-          <h3 class="section-title"><i class="fas fa-chart-pie"></i> Статистика недели</h3>
-        </div>
-        <div id="week-stats-container">
-          <!-- Сюда будет рендериться статистика -->
+          <!-- Кнопки для директора/ст.мастера будут показаны/скрыты через JS -->
+          <button class="btn btn-secondary privileged-only" id="quickExportBtn"><i class="fas fa-file-export"></i> Экспорт данных</button>
+          <button class="btn btn-danger privileged-only" id="quickCloseWeekBtn"><i class="fas fa-calendar-check"></i> Закрыть неделю</button>
         </div>
       </div>
       
@@ -112,7 +133,7 @@
       <div class="section">
         <div class="section-header">
             <h3 class="section-title"><i class="fas fa-file-invoice-dollar"></i> Финансы за неделю</h3>
-            <button class="btn btn-secondary btn-sm director-only" id="exportFinanceBtn"><i class="fas fa-file-csv"></i> Экспорт</button>
+            <button class="btn btn-secondary btn-sm privileged-only" id="exportFinanceBtn"><i class="fas fa-file-csv"></i> Экспорт</button>
         </div>
         <div id="finance-content-wrapper">
             <!-- Содержимое будет разным для Директора и Мастера, генерируется JS -->
@@ -125,29 +146,31 @@
       <div class="section">
         <div class="section-header">
           <h3 class="section-title"><i class="fas fa-archive"></i> Архив</h3>
-          <button class="btn btn-secondary btn-sm director-only" id="exportArchiveBtn"><i class="fas fa-file-csv"></i> Экспорт</button>
         </div>
         <div class="archive-controls">
-          <p class="archive-description">Выберите период для просмотра и экспорта данных.</p>
+          <p class="archive-description">Выберите период для просмотра данных.</p>
           <div class="date-range-picker">
             <input type="date" id="archiveStartDate" class="form-control">
             <span>—</span>
             <input type="date" id="archiveEndDate" class="form-control">
           </div>
-          <button class="btn btn-accent" id="viewArchiveBtn"><i class="fas fa-search"></i> Показать</button>
+          <div class="archive-buttons">
+            <button class="btn btn-accent" id="viewArchiveBtn"><i class="fas fa-search"></i> Показать</button>
+            <button class="btn btn-secondary privileged-only" id="exportArchiveBtn"><i class="fas fa-file-csv"></i> Экспорт в CSV</button>
+          </div>
         </div>
         <div id="archiveListContainer" class="orders-list-container">
           <!-- Содержимое будет генерироваться JS -->
         </div>
       </div>
 
-      <div class="section director-only" id="admin-zone">
+      <div class="section privileged-only" id="admin-zone">
         <div class="section-header">
           <h3 class="section-title"><i class="fas fa-exclamation-triangle"></i> Опасная зона</h3>
         </div>
-        <div style="padding: 20px; text-align: center;">
-            <p style="margin-bottom: 1rem; color: var(--text-muted);">Это действие необратимо и приведет к полной потере всех заказ-нарядов и истории.</p>
-            <button class="btn btn-danger" id="clearAllDataBtn">Очистить все данные</button>
+        <div class="admin-zone-content">
+            <p>Это действие необратимо и приведет к полной потере всех заказ-нарядов и истории. База данных будет сброшена к тестовому состоянию.</p>
+            <button class="btn btn-danger" id="clearAllDataBtn">Очистить и сбросить данные</button>
         </div>
       </div>
     </div>

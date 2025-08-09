@@ -1,6 +1,7 @@
 /*────────────────────────────────────────────
   server.js
   Серверная часть для бортового журнала VIPавто.
+  ВЕРСИЯ 2.0 - Полная переработка логики
 ─────────────────────────────────────────────*/
 
 const http = require('http');
@@ -18,8 +19,23 @@ const DB_PATH = path.join(__dirname, 'db.json');
 
 const app = express();
 app.use(cors());
-app.use(express.static(__dirname)); // Обслуживание статических файлов
 app.use(express.json());
+
+// --- ЯВНЫЕ МАРШРУТЫ ДЛЯ HTML СТРАНИЦ ---
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'login.html'));
+});
+app.get('/login.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'login.html'));
+});
+app.get('/index.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+// --- ОБСЛУЖИВАНИЕ СТАТИЧЕСКИХ ФАЙЛОВ (CSS, JS, etc.) ---
+app.use(express.static(path.join(__dirname)));
+app.use('/js', express.static(path.join(__dirname, 'js')));
+
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -30,6 +46,36 @@ const io = new Server(server, {
 });
 
 let db = { users: {}, orders: [], history: [] };
+
+// --- НОВАЯ ФУНКЦИЯ: Генерация тестовых данных ---
+const seedDatabaseWithTestData = async () => {
+    console.log('База данных пуста. Заполняем тестовыми данными...');
+    const masterNames = Object.values(db.users).filter(u => u.role === 'MASTER' || u.role === 'SENIOR_MASTER').map(u => u.name);
+    const carBrands = ['Lada', 'Toyota', 'Ford', 'BMW', 'Mercedes', 'Audi', 'Kia', 'Hyundai', 'Renault', 'Nissan'];
+    const services = ['Замена масла', 'Шиномонтаж', 'Диагностика двигателя', 'Ремонт тормозов', 'Замена фильтров', 'Ремонт подвески', 'Сход-развал'];
+
+    let testOrders = [];
+    for (let i = 0; i < 50; i++) { // Создадим 50 заказ-нарядов
+        const masterName = masterNames[Math.floor(Math.random() * masterNames.length)];
+        const car = carBrands[Math.floor(Math.random() * carBrands.length)];
+        const service = services[Math.floor(Math.random() * services.length)];
+        const date = new Date();
+        date.setDate(date.getDate() - Math.floor(Math.random() * 7)); // за последнюю неделю
+
+        testOrders.push({
+            id: `ord-${Date.now()}-${i}`,
+            masterName: masterName,
+            carModel: `${car} ${Math.floor(Math.random() * 10) + 1}`,
+            description: service,
+            amount: Math.floor(Math.random() * (25000 - 1000 + 1) + 1000),
+            createdAt: date.toISOString(),
+        });
+    }
+    db.orders = testOrders;
+    await saveDB();
+    console.log(`Создано ${testOrders.length} тестовых заказ-нарядов.`);
+};
+
 
 // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
 const getWeekId = (date = new Date()) => {
@@ -47,12 +93,16 @@ const loadDB = async () => {
     db = JSON.parse(data);
     if (!db.history) db.history = [];
     console.log('База данных успешно загружена.');
+    // Если база загружена, но она пустая, заполняем ее
+    if (!db.orders || db.orders.length === 0) {
+        await seedDatabaseWithTestData();
+    }
   } catch (error) {
     console.log('Файл базы данных не найден. Создание новой...');
     db = {
       users: {
         'director': { password: 'Dir7wK9c', role: 'DIRECTOR', name: 'Владимир Орлов' },
-        'vladimir.ch': { password: 'Vch4R5tG', role: 'MASTER', name: 'Владимир Ч.' },
+        'vladimir.ch': { password: 'Vch4R5tG', role: 'SENIOR_MASTER', name: 'Владимир Ч.' }, // <-- Назначаем роль Старшего Мастера
         'vladimir.a': { password: 'Vla9L2mP', role: 'MASTER', name: 'Владимир А.' },
         'andrey': { password: 'And3Z8xY', role: 'MASTER', name: 'Андрей' },
         'danila': { password: 'Dan6J1vE', role: 'MASTER', name: 'Данила' },
@@ -63,6 +113,7 @@ const loadDB = async () => {
       history: []
     };
     await saveDB();
+    await seedDatabaseWithTestData(); // Заполняем новую базу тестовыми данными
   }
 };
 
@@ -81,7 +132,8 @@ const backupDatabase = async () => {
     const timestamp = new Date().toISOString().slice(0, 10);
     const backupPath = path.join(BACKUP_DIR, `db-backup-${timestamp}.json`);
     await fs.access(backupPath).catch(async () => {
-        await fs.copyFile(DB_PATH, backupPath);
+        const data = await fs.readFile(DB_PATH, 'utf-8');
+        await fs.writeFile(backupPath, data);
         console.log(`Создана резервная копия: ${backupPath}`);
     });
   } catch (error) {
@@ -90,6 +142,10 @@ const backupDatabase = async () => {
 };
 
 // --- БИЗНЕС-ЛОГИКА ---
+
+// Новая функция проверки привилегий
+const isPrivileged = (user) => user.role === 'DIRECTOR' || user.role === 'SENIOR_MASTER';
+
 const getWeekOrders = () => {
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -119,29 +175,46 @@ const generateLeaderboard = (weekOrders, masters) => {
   return Object.values(statsByMaster).sort((a, b) => b.revenue - a.revenue);
 };
 
+// Переработанная функция подготовки данных для пользователя
 const prepareDataForUser = (user) => {
-    const weekOrders = getWeekOrders();
-    const today = new Date().toISOString().slice(0, 10);
-    const todayOrders = (weekOrders || []).filter(o => o.createdAt.startsWith(today));
-    const masters = Object.values(db.users).filter(u => u.role === 'MASTER').map(u => u.name);
-    const leaderboard = generateLeaderboard(weekOrders, masters);
-    
-    const relevantOrdersForStats = user.role === 'DIRECTOR' 
-        ? weekOrders 
-        : (weekOrders || []).filter(o => o.masterName === user.name);
-    
-    const weekStats = calculateStats(relevantOrdersForStats);
-    
+    const allWeekOrders = getWeekOrders();
+    const masters = Object.values(db.users)
+        .filter(u => u.role === 'MASTER' || u.role === 'SENIOR_MASTER')
+        .map(u => u.name);
+
+    // Лидерборд и данные для зарплаты всегда считаются по всем
+    const leaderboard = generateLeaderboard(allWeekOrders, masters);
     const salaryData = leaderboard.map(m => ({
         name: m.name,
         total: m.revenue * 0.5,
     }));
-    
-    const relevantWeekOrders = user.role === 'DIRECTOR'
-        ? weekOrders
-        : (weekOrders || []).filter(o => o.masterName === user.name);
 
-    return { todayOrders, weekOrders: relevantWeekOrders, weekStats, leaderboard, salaryData, masters };
+    let userSpecificData;
+
+    if (isPrivileged(user)) {
+        // Директор и Старший мастер видят всё
+        userSpecificData = {
+            weekOrders: allWeekOrders,
+            weekStats: calculateStats(allWeekOrders),
+            todayOrders: allWeekOrders.filter(o => o.createdAt.startsWith(new Date().toISOString().slice(0, 10))),
+        };
+    } else {
+        // Обычный мастер видит только свое
+        const masterOrders = allWeekOrders.filter(o => o.masterName === user.name);
+        userSpecificData = {
+            weekOrders: masterOrders,
+            weekStats: calculateStats(masterOrders),
+            todayOrders: masterOrders.filter(o => o.createdAt.startsWith(new Date().toISOString().slice(0, 10))),
+        };
+    }
+
+    return {
+        ...userSpecificData,
+        leaderboard,
+        salaryData,
+        masters, // Список мастеров нужен для выпадающего списка
+        user, // Передаем информацию о пользователе на клиент
+    };
 };
 
 const broadcastUpdates = () => {
@@ -158,8 +231,8 @@ app.post('/login', (req, res) => {
   if (!userRecord || userRecord.password !== password) {
     return res.status(401).json({ message: 'Неверный логин или пароль' });
   }
-  const token = jwt.sign({ login, role: userRecord.role, name: userRecord.name }, JWT_SECRET, { expiresIn: '24h' });
-  res.json({ message: 'Успешный вход', token, user: { name: userRecord.name, role: userRecord.role } });
+  const token = jwt.sign({ login: login, role: userRecord.role, name: userRecord.name }, JWT_SECRET, { expiresIn: '24h' });
+  res.json({ message: 'Успешный вход', token, user: { login: login, name: userRecord.name, role: userRecord.role } });
 });
 
 io.use((socket, next) => {
@@ -178,9 +251,16 @@ io.on('connection', (socket) => {
 
   socket.on('addOrder', async (orderData) => {
     if (!orderData || !orderData.description || !orderData.amount) return socket.emit('serverError', 'Некорректные данные заказ-наряда.');
-    if (socket.user.role === 'MASTER') orderData.masterName = socket.user.name;
+    // Если добавляет обычный мастер, его имя подставляется автоматически
+    if (!isPrivileged(socket.user)) {
+        orderData.masterName = socket.user.name;
+    }
+    // Если добавляет директор/ст.мастер, но не выбрал мастера - ошибка
+    if (isPrivileged(socket.user) && !orderData.masterName) {
+        return socket.emit('serverError', 'Необходимо выбрать исполнителя.');
+    }
     const newOrder = { ...orderData, id: `ord-${Date.now()}`, createdAt: new Date().toISOString() };
-    db.orders.push(newOrder);
+    db.orders.unshift(newOrder); // Добавляем в начало
     await saveDB();
     broadcastUpdates();
   });
@@ -189,9 +269,13 @@ io.on('connection', (socket) => {
     if (!orderData || !orderData.id) return socket.emit('serverError', 'Необходим ID заказ-наряда для обновления.');
     const orderIndex = db.orders.findIndex(o => o.id === orderData.id);
     if (orderIndex === -1) return socket.emit('serverError', 'Заказ-наряд не найден.');
-    const canUpdate = socket.user.role === 'DIRECTOR' || db.orders[orderIndex].masterName === socket.user.name;
-    if (!canUpdate) return socket.emit('serverError', 'Недостаточно прав для редактирования этого заказ-наряда.');
-    db.orders[orderIndex] = { ...db.orders[orderIndex], ...orderData };
+
+    const order = db.orders[orderIndex];
+    if (!isPrivileged(socket.user) && order.masterName !== socket.user.name) {
+        return socket.emit('serverError', 'Вы не можете редактировать чужой заказ-наряд.');
+    }
+
+    db.orders[orderIndex] = { ...order, ...orderData };
     await saveDB();
     broadcastUpdates();
   });
@@ -200,13 +284,17 @@ io.on('connection', (socket) => {
     if (!orderId) return socket.emit('serverError', 'Необходим ID заказ-наряда для удаления.');
     const orderIndex = db.orders.findIndex(o => o.id === orderId);
     if (orderIndex === -1) return socket.emit('serverError', 'Заказ-наряд не найден.');
-    const canDelete = socket.user.role === 'DIRECTOR' || db.orders[orderIndex].masterName === socket.user.name;
-    if (!canDelete) return socket.emit('serverError', 'Недостаточно прав для удаления этого заказ-наряда.');
+
+    const order = db.orders[orderIndex];
+    if (!isPrivileged(socket.user) && order.masterName !== socket.user.name) {
+        return socket.emit('serverError', 'Вы не можете удалять чужой заказ-наряд.');
+    }
+
     db.orders = db.orders.filter(o => o.id !== orderId);
     await saveDB();
     broadcastUpdates();
   });
-  
+
   socket.on('getArchiveData', ({ startDate, endDate }) => {
     if (!startDate || !endDate) return socket.emit('serverError', 'Необходимо указать начальную и конечную даты.');
     const start = new Date(startDate);
@@ -216,12 +304,14 @@ io.on('connection', (socket) => {
         const orderDate = new Date(o.createdAt);
         return orderDate >= start && orderDate <= end;
     });
-    if (socket.user.role === 'MASTER') filtered = filtered.filter(o => o.masterName === socket.user.name);
+    if (!isPrivileged(socket.user)) {
+        filtered = filtered.filter(o => o.masterName === socket.user.name);
+    }
     socket.emit('archiveData', filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
   });
 
   socket.on('closeWeek', async () => {
-    if (socket.user.role !== 'DIRECTOR') return socket.emit('serverError', 'Недостаточно прав.');
+    if (!isPrivileged(socket.user)) return socket.emit('serverError', 'Недостаточно прав.');
     if (db.orders.length === 0) return socket.emit('serverError', 'Нет заказ-нарядов для закрытия недели.');
     const weekId = getWeekId();
     db.history.push({ weekId, orders: [...db.orders] });
@@ -231,10 +321,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('clearData', async () => {
-    if (socket.user.role !== 'DIRECTOR') return socket.emit('serverError', 'Недостаточно прав.');
+    if (!isPrivileged(socket.user)) return socket.emit('serverError', 'Недостаточно прав.');
     db.orders = [];
     db.history = [];
     await saveDB();
+    await seedDatabaseWithTestData(); // Перезаполняем базу тестовыми данными после полной очистки
     broadcastUpdates();
   });
 
@@ -246,5 +337,5 @@ server.listen(PORT, async () => {
   await loadDB();
   await backupDatabase();
   setInterval(backupDatabase, 1000 * 60 * 60 * 24);
-  console.log(`Сервер VIPавто запущен на порту ${PORT}...`);
+  console.log(`Сервер VIPавто v2.0 запущен на порту ${PORT}...`);
 });

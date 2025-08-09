@@ -23,12 +23,15 @@ export function showNotification(message, type = 'success') {
 
   container.appendChild(notification);
 
+  // Появление
   requestAnimationFrame(() => {
     notification.classList.add('show');
   });
 
+  // Автоматическое скрытие
   setTimeout(() => {
     notification.classList.remove('show');
+    // Удаление из DOM после завершения анимации
     notification.addEventListener('transitionend', () => notification.remove());
   }, 4000);
 }
@@ -64,51 +67,23 @@ export function formatDate(date) {
  * Создает простой HTML-элемент.
  * @param {string} tag - HTML-тег.
  * @param {object} [options] - Опции для элемента.
+ * @param {string} [options.className] - CSS-классы.
+ * @param {string} [options.textContent] - Текстовое содержимое.
+ * @param {object} [options.dataset] - Data-атрибуты.
  * @returns {HTMLElement} - Созданный элемент.
  */
 export function createElement(tag, options = {}) {
   const element = document.createElement(tag);
-  if (options.className) element.className = options.className;
-  if (options.id) element.id = options.id;
-  if (options.textContent) element.textContent = options.textContent;
+  if (options.className) {
+    element.className = options.className;
+  }
+  if (options.textContent) {
+    element.textContent = options.textContent;
+  }
   if (options.dataset) {
     for (const key in options.dataset) {
       element.dataset[key] = options.dataset[key];
     }
   }
   return element;
-}
-
-/**
- * Возвращает правильное окончание для числительных.
- * @param {number} number - Число.
- * @returns {string} - Правильное окончание.
- */
-export function getEndings(number, one, two, five) {
-    let n = Math.abs(number);
-    n %= 100;
-    if (n >= 5 && n <= 20) return five;
-    n %= 10;
-    if (n === 1) return one;
-    if (n >= 2 && n <= 4) return two;
-    return five;
-}
-
-/**
- * Инициирует скачивание файла CSV.
- * @param {string} csvContent - Содержимое CSV файла.
- * @param {string} fileName - Имя файла для скачивания.
- */
-export function downloadCSV(csvContent, fileName) {
-  const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  if (link.download !== undefined) {
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', fileName);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
 }
