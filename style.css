@@ -157,7 +157,7 @@ body {
 .section-title .fas { color: var(--accent); }
 
 /* 10. ДАШБОРД */
-.dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; background-color: var(--border); overflow: hidden; border-radius: 16px; }
+.dashboard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background-color: var(--border); overflow: hidden; border-radius: 16px; }
 .dashboard-item { background-color: var(--panel-bg); padding: 24px; text-align: center; }
 .dashboard-icon { font-size: 2rem; color: var(--accent); margin-bottom: 12px; }
 .dashboard-value { font-size: 1.8rem; font-weight: 700; line-height: 1.2; }
@@ -204,6 +204,8 @@ body {
 .btn-sm { padding: 6px 12px; font-size: 0.9rem; }
 .btn-secondary { background-color: var(--input-bg); border: 1px solid var(--border); color: var(--text-muted); }
 .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.btn-danger { background-color: var(--error); color: white; }
+.btn-danger:hover { background-color: color-mix(in srgb, var(--error) 80%, black); }
 
 .empty-state { padding: 40px; text-align: center; color: var(--text-muted); }
 .empty-state .fas { font-size: 3rem; margin-bottom: 16px; }
@@ -326,4 +328,58 @@ body {
   border-top: 1px solid var(--border);
   padding-top: 20px;
   margin-top: 24px;
+}
+
+/* 17. БЫСТРЫЕ ДЕЙСТВИЯ */
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 20px;
+}
+.quick-actions-grid .btn {
+  height: 50px;
+  font-size: 0.9rem;
+}
+.quick-actions-grid .btn:first-child {
+  grid-column: 1 / -1; /* Растягиваем на всю ширину */
+}
+.director-only {
+  display: none; /* По умолчанию скрыто */
+}
+body.is-director .director-only {
+  display: flex; /* Показываем для директора */
+}
+
+/* 18. СТАТИСТИКА НЕДЕЛИ */
+.bonus-slider-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+.bonus-slider {
+  width: 80px;
+}
+.bonus-percent {
+  font-weight: 600;
+  min-width: 35px;
+  text-align: left;
+}
+.week-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  padding: 20px;
+  text-align: center;
+}
+.summary-item .summary-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.summary-item .summary-value {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text);
 }

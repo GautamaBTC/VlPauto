@@ -53,6 +53,27 @@
       <div class="dashboard" id="dashboard-grid">
         <!-- Блоки дашборда будут генерироваться JS -->
       </div>
+
+      <div class="section" id="quick-actions-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-bolt"></i> Быстрые действия</h3>
+        </div>
+        <div class="quick-actions-grid">
+          <button class="btn btn-accent" id="quickAddOrderBtn"><i class="fas fa-plus"></i> Добавить заказ-наряд</button>
+          <button class="btn btn-secondary" id="quickViewSalaryBtn"><i class="fas fa-wallet"></i> Просмотреть зарплату</button>
+          <button class="btn btn-secondary director-only" id="quickExportBtn"><i class="fas fa-file-export"></i> Экспорт данных</button>
+          <button class="btn btn-danger director-only" id="quickCloseWeekBtn"><i class="fas fa-calendar-check"></i> Закрыть неделю</button>
+        </div>
+      </div>
+
+      <div class="section" id="week-stats-section">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-chart-pie"></i> Статистика недели</h3>
+        </div>
+        <div id="week-stats-container">
+          <!-- Сюда будет рендериться статистика -->
+        </div>
+      </div>
       
       <div class="section" id="leaderboard-section">
         <div class="section-header">
@@ -65,7 +86,7 @@
       
       <div class="section">
         <div class="section-header">
-          <h3 class="section-title"><i class="fas fa-tasks"></i> Заказы сегодня</h3>
+          <h3 class="section-title"><i class="fas fa-tasks"></i> Заказ-наряды сегодня</h3>
         </div>
         <div id="todayOrdersList" class="orders-list-container">
           <!-- Содержимое будет генерироваться JS -->
@@ -78,7 +99,7 @@
       <div class="section">
         <div class="section-header">
           <h3 class="section-title"><i class="fas fa-history"></i> История за 7 дней</h3>
-          <button class="btn btn-accent btn-sm" id="addOrderBtn"><i class="fas fa-plus"></i> Добавить заказ</button>
+          <button class="btn btn-accent btn-sm" id="addOrderBtn"><i class="fas fa-plus"></i> Добавить заказ-наряд</button>
         </div>
         <div id="ordersList" class="orders-list-container">
           <!-- Содержимое будет генерироваться JS -->
@@ -88,7 +109,15 @@
     
     <!-- Вкладка: Финансы -->
     <div id="finance" class="tab-content">
-      <!-- Содержимое будет разным для Директора и Мастера, генерируется JS -->
+      <div class="section">
+        <div class="section-header">
+            <h3 class="section-title"><i class="fas fa-file-invoice-dollar"></i> Финансы за неделю</h3>
+            <button class="btn btn-secondary btn-sm director-only" id="exportFinanceBtn"><i class="fas fa-file-csv"></i> Экспорт</button>
+        </div>
+        <div id="finance-content-wrapper">
+            <!-- Содержимое будет разным для Директора и Мастера, генерируется JS -->
+        </div>
+      </div>
     </div>
     
     <!-- Вкладка: Архив -->
@@ -96,6 +125,7 @@
       <div class="section">
         <div class="section-header">
           <h3 class="section-title"><i class="fas fa-archive"></i> Архив</h3>
+          <button class="btn btn-secondary btn-sm director-only" id="exportArchiveBtn"><i class="fas fa-file-csv"></i> Экспорт</button>
         </div>
         <div class="archive-controls">
           <p class="archive-description">Выберите период для просмотра и экспорта данных.</p>
@@ -108,6 +138,16 @@
         </div>
         <div id="archiveListContainer" class="orders-list-container">
           <!-- Содержимое будет генерироваться JS -->
+        </div>
+      </div>
+
+      <div class="section director-only" id="admin-zone">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-exclamation-triangle"></i> Опасная зона</h3>
+        </div>
+        <div style="padding: 20px; text-align: center;">
+            <p style="margin-bottom: 1rem; color: var(--text-muted);">Это действие необратимо и приведет к полной потере всех заказ-нарядов и истории.</p>
+            <button class="btn btn-danger" id="clearAllDataBtn">Очистить все данные</button>
         </div>
       </div>
     </div>

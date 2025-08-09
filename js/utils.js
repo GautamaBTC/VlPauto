@@ -87,27 +87,3 @@ export function createElement(tag, options = {}) {
   }
   return element;
 }
-
-/**
- * Возвращает правильное окончание для числительных.
- * @param {number} number - Число.
- * @param {string} one - Окончание для 1 (например, "о").
- * @param {string} two - Окончание для 2-4 (например, "а").
- * @param {string} five - Окончание для 5+ (например, "ов").
- * @returns {string} - Правильное окончание.
- */
-export function getEndings(number, one, two, five) {
-    let n = Math.abs(number);
-    n %= 100;
-    if (n >= 5 && n <= 20) {
-        return five;
-    }
-    n %= 10;
-    if (n === 1) {
-        return one;
-    }
-    if (n >= 2 && n <= 4) {
-        return two;
-    }
-    return five;
-}
