@@ -17,6 +17,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-for-vipauto-
 const DB_PATH = path.join(__dirname, 'db.json'); // Путь к нашей "базе данных"
 
 const app = express();
+
+// --- Настройка обслуживания статических файлов ---
+// Это позволяет Express раздавать файлы index.html, login.html, script.js, style.css и т.д.
+app.use(express.static(__dirname));
+
 app.use(cors()); // Разрешаем запросы с других доменов (например, с вашего GitHub Pages)
 app.use(express.json()); // Позволяем серверу читать JSON из тела запроса
 
@@ -44,7 +49,7 @@ const loadDB = async () => {
     // Если файл не найден, создаем его с пользователями по умолчанию
     console.log('Файл базы данных не найден. Создание новой...');
     db.users = {
-      'director': { password: 'Dir7wK9c', role: 'DIRECTOR', name: 'Александр Иванов' },
+      'director': { password: 'Dir7wK9c', role: 'DIRECTOR', name: 'Владимир Орлов' }, // Исправлено имя из db.json
       'vladimir.ch': { password: 'Vch4R5tG', role: 'MASTER', name: 'Владимир Ч.' },
       'vladimir.a': { password: 'Vla9L2mP', role: 'MASTER', name: 'Владимир А.' },
       'andrey': { password: 'And3Z8xY', role: 'MASTER', name: 'Андрей' },
