@@ -204,6 +204,8 @@ body {
 .btn-sm { padding: 6px 12px; font-size: 0.9rem; }
 .btn-secondary { background-color: var(--input-bg); border: 1px solid var(--border); color: var(--text-muted); }
 .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+.btn-danger { background-color: var(--error); color: white; }
+.btn-danger:hover { background-color: color-mix(in srgb, var(--error) 80%, black); }
 
 .empty-state { padding: 40px; text-align: center; color: var(--text-muted); }
 .empty-state .fas { font-size: 3rem; margin-bottom: 16px; }

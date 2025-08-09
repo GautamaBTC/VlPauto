@@ -92,16 +92,6 @@
           <!-- Содержимое будет генерироваться JS -->
         </div>
       </div>
-
-      <div class="section director-only" id="admin-zone">
-        <div class="section-header">
-          <h3 class="section-title"><i class="fas fa-exclamation-triangle"></i> Опасная зона</h3>
-        </div>
-        <div style="padding: 20px; text-align: center;">
-            <p style="margin-bottom: 1rem; color: var(--text-muted);">Это действие необратимо и приведет к полной потере всех заказ-нарядов и истории.</p>
-            <button class="btn btn-danger" id="clearAllDataBtn">Очистить все данные</button>
-        </div>
-      </div>
     </div>
     
     <!-- Вкладка: История -->
@@ -109,7 +99,7 @@
       <div class="section">
         <div class="section-header">
           <h3 class="section-title"><i class="fas fa-history"></i> История за 7 дней</h3>
-          <button class="btn btn-accent btn-sm" id="addOrderBtn"><i class="fas fa-plus"></i> Добавить заказ</button>
+          <button class="btn btn-accent btn-sm" id="addOrderBtn"><i class="fas fa-plus"></i> Добавить заказ-наряд</button>
         </div>
         <div id="ordersList" class="orders-list-container">
           <!-- Содержимое будет генерироваться JS -->
@@ -148,6 +138,16 @@
         </div>
         <div id="archiveListContainer" class="orders-list-container">
           <!-- Содержимое будет генерироваться JS -->
+        </div>
+      </div>
+
+      <div class="section director-only" id="admin-zone">
+        <div class="section-header">
+          <h3 class="section-title"><i class="fas fa-exclamation-triangle"></i> Опасная зона</h3>
+        </div>
+        <div style="padding: 20px; text-align: center;">
+            <p style="margin-bottom: 1rem; color: var(--text-muted);">Это действие необратимо и приведет к полной потере всех заказ-нарядов и истории.</p>
+            <button class="btn btn-danger" id="clearAllDataBtn">Очистить все данные</button>
         </div>
       </div>
     </div>

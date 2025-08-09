@@ -216,7 +216,6 @@ function openSalaryModal() {
     });
   }
 
-  // TODO: Добавить обработчик для #exportSalaryBtn
   modal.querySelector('#exportSalaryBtn').addEventListener('click', exportSalaryCSV);
 }
 
@@ -232,7 +231,7 @@ function openCloseWeekModal() {
         <button class="modal-close-btn">&times;</button>
       </div>
       <div class="modal-body">
-        <p>Вы уверены, что хотите закрыть текущую неделю? Все заказ-наряды будут перенесены в архив, и начать новую неделю будет нельзя до понедельника.</p>
+        <p>Вы уверены, что хотите закрыть текущую неделю? Все заказ-наряды будут перенесены в архив.</p>
         <p>Для подтверждения введите: <strong>${CONFIRM_PHRASE}</strong></p>
         <div class="form-group">
           <input type="text" id="closeWeekConfirmInput" class="form-control" autocomplete="off">
@@ -370,7 +369,7 @@ function initUI() {
     }
 
     if (action === 'delete' && order) {
-      if (confirm(`Вы уверены, что хотите удалить заказ "${order.description}"?`)) {
+      if (confirm(`Вы уверены, что хотите удалить заказ-наряд "${order.description}"?`)) {
         state.socket.emit('deleteOrder', id);
       }
     }
@@ -383,7 +382,6 @@ function initUI() {
   // Кнопки быстрых действий
   document.getElementById('quickAddOrderBtn').addEventListener('click', () => openOrderModal());
   document.getElementById('quickViewSalaryBtn').addEventListener('click', () => openSalaryModal());
-  // TODO: Добавить обработчики для экспорта и закрытия недели
   document.getElementById('quickCloseWeekBtn')?.addEventListener('click', openCloseWeekModal);
   document.getElementById('quickExportBtn')?.addEventListener('click', exportSalaryCSV);
   document.getElementById('clearAllDataBtn')?.addEventListener('click', openClearDataModal);
@@ -428,7 +426,7 @@ function initSocketConnection() {
   state.socket.on('archiveData', (archiveOrders) => {
     state.data.archive = archiveOrders;
     renderArchivePage(); // Перерисовываем только страницу архива
-    showNotification(`Найден${getEndings(archiveOrders.length, 'о', '', 'о')} ${archiveOrders.length} заказ${getEndings(archiveOrders.length, '', '', 'ов')}`, 'success');
+    showNotification(`Найден${getEndings(archiveOrders.length, 'о', '', 'о')} ${archiveOrders.length} заказ-наряд${getEndings(archiveOrders.length, '', 'а', 'ов')}`, 'success');
   });
 
   state.socket.on('serverError', (message) => showNotification(message, 'error'));
@@ -486,13 +484,32 @@ function renderFinancePage() {
   container.innerHTML = ''; // Очищаем
   
   if (state.currentUser.role === 'DIRECTOR') {
-    const section = createElement('div', { className: 'section' });
-    section.innerHTML = `
-      <div class="section-header">
-        <h3 class="section-title"><i class="fas fa-file-invoice-dollar"></i> Расчет зарплат за неделю</h3>
-      </div>
+    renderDirectorFinanceTable(container);
+  } else {
+    // Рендеринг урезанной версии для мастера
+    const overview = createElement('div', {className: 'master-finance-overview'});
+    const salary = state.data.salaryData.find(s => s.name === state.currentUser.name);
+    overview.innerHTML = `
+        <div class="master-finance-label">Ваша зарплата к выплате за неделю</div>
+        <div class="master-finance-amount">${formatCurrency(salary ? salary.total : 0)}</div>
     `;
 
+    const section = createElement('div', {className: 'section'});
+    section.innerHTML = `
+        <div class="section-header">
+            <h3 class="section-title"><i class="fas fa-list-alt"></i> Детализация ваших работ</h3>
+        </div>
+    `;
+    const listContainer = createElement('div', {className: 'orders-list-container'});
+    renderOrdersList(listContainer, state.data.weekOrders, { showDate: true });
+
+    section.appendChild(listContainer);
+    container.appendChild(overview);
+    container.appendChild(section);
+  }
+}
+
+function renderDirectorFinanceTable(container) {
     const tableContainer = createElement('div', { className: 'leaderboard-container' }); // Используем тот же стиль
 
     const table = createElement('table', { className: 'leaderboard-table' });
@@ -516,31 +533,7 @@ function renderFinancePage() {
     `;
 
     tableContainer.appendChild(table);
-    section.appendChild(tableContainer);
-    container.appendChild(section);
-
-  } else {
-    // Рендеринг урезанной версии для мастера
-    const overview = createElement('div', {className: 'master-finance-overview'});
-    const salary = state.data.salaryData.find(s => s.name === state.currentUser.name);
-    overview.innerHTML = `
-        <div class="master-finance-label">Ваша зарплата к выплате за неделю</div>
-        <div class="master-finance-amount">${formatCurrency(salary ? salary.total : 0)}</div>
-    `;
-    
-    const section = createElement('div', {className: 'section'});
-    section.innerHTML = `
-        <div class="section-header">
-            <h3 class="section-title"><i class="fas fa-list-alt"></i> Детализация ваших работ</h3>
-        </div>
-    `;
-    const listContainer = createElement('div', {className: 'orders-list-container'});
-    renderOrdersList(listContainer, state.data.weekOrders, { showDate: true });
-    
-    section.appendChild(listContainer);
-    container.appendChild(overview);
-    container.appendChild(section);
-  }
+    container.appendChild(tableContainer);
 }
 
 function renderArchivePage() {
@@ -569,7 +562,7 @@ function renderDashboard() {
     <div class="dashboard-item">
       <i class="fas fa-box-open dashboard-icon"></i>
       <div class="dashboard-value">${state.weekStats.ordersCount || 0}</div>
-      <div class="dashboard-label">${state.currentUser.role === 'DIRECTOR' ? 'Всего заказов' : 'Мои заказы'}</div>
+      <div class="dashboard-label">${state.currentUser.role === 'DIRECTOR' ? 'Всего заказ-нарядов' : 'Мои заказ-наряды'}</div>
     </div>
     <div class="dashboard-item">
       <i class="fas fa-chart-line dashboard-icon"></i>
@@ -692,7 +685,7 @@ function renderOrdersList(container, orders, options = {}) {
  * 6. МОДАЛЬНЫЕ ОКНА
  */
 function closeModal() {
-  const modal = document.getElementById('order-modal');
+  const modal = document.getElementById('order-modal') || document.getElementById('salary-modal') || document.getElementById('close-week-modal') || document.getElementById('clear-data-modal');
   if (modal) {
     modal.classList.remove('show');
     modal.addEventListener('transitionend', () => modal.remove());

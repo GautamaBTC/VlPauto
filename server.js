@@ -32,6 +32,7 @@ const io = new Server(server, {
 let db = {
   users: {},
   orders: [],
+  history: []
 };
 
 // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
@@ -126,7 +127,7 @@ const calculateStats = (orders) => {
 
 /**
  * Генерирует доску лидеров.
- * @param {Array} weekOrders - Заказы за неделю.
+ * @param {Array} weekOrders - Заказ-наряды за неделю.
  * @param {Array} masters - Список всех мастеров.
  * @returns {Array} - Отсортированный список мастеров со статистикой.
  */
@@ -263,7 +264,7 @@ io.on('connection', (socket) => {
   socket.on('addOrder', async (orderData) => {
     // Простая валидация
     if (!orderData || !orderData.description || !orderData.amount) {
-      return socket.emit('serverError', 'Некорректные данные заказа.');
+      return socket.emit('serverError', 'Некорректные данные заказ-наряда.');
     }
 
     // Директор может назначить любого мастера, мастер - только себя
@@ -284,7 +285,7 @@ io.on('connection', (socket) => {
 
   socket.on('updateOrder', async (orderData) => {
     if (!orderData || !orderData.id) {
-      return socket.emit('serverError', 'Необходим ID заказа для обновления.');
+      return socket.emit('serverError', 'Необходим ID заказ-наряда для обновления.');
     }
 
     const orderIndex = db.orders.findIndex(o => o.id === orderData.id);
@@ -295,7 +296,7 @@ io.on('connection', (socket) => {
     // Проверка прав: может редактировать директор или владелец заказа
     const canUpdate = socket.user.role === 'DIRECTOR' || db.orders[orderIndex].masterName === socket.user.name;
     if (!canUpdate) {
-      return socket.emit('serverError', 'Недостаточно прав для редактирования этого заказа.');
+      return socket.emit('serverError', 'Недостаточно прав для редактирования этого заказ-наряда.');
     }
 
     db.orders[orderIndex] = { ...db.orders[orderIndex], ...orderData };
@@ -305,7 +306,7 @@ io.on('connection', (socket) => {
 
   socket.on('deleteOrder', async (orderId) => {
     if (!orderId) {
-      return socket.emit('serverError', 'Необходим ID заказа для удаления.');
+      return socket.emit('serverError', 'Необходим ID заказ-наряда для удаления.');
     }
 
     const orderIndex = db.orders.findIndex(o => o.id === orderId);
@@ -316,7 +317,7 @@ io.on('connection', (socket) => {
     // Проверка прав: может удалить директор или владелец заказа
     const canDelete = socket.user.role === 'DIRECTOR' || db.orders[orderIndex].masterName === socket.user.name;
     if (!canDelete) {
-      return socket.emit('serverError', 'Недостаточно прав для удаления этого заказа.');
+      return socket.emit('serverError', 'Недостаточно прав для удаления этого заказ-наряда.');
     }
 
     db.orders = db.orders.filter(o => o.id !== orderId);
@@ -354,7 +355,7 @@ io.on('connection', (socket) => {
       return socket.emit('serverError', 'Недостаточно прав для выполнения этой операции.');
     }
     if (db.orders.length === 0) {
-      return socket.emit('serverError', 'Нет заказов для закрытия недели.');
+      return socket.emit('serverError', 'Нет заказ-нарядов для закрытия недели.');
     }
 
     const weekId = getWeekId();
