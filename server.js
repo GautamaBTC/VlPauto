@@ -18,8 +18,26 @@ const DB_PATH = path.join(__dirname, 'db.json');
 
 const app = express();
 app.use(cors());
-app.use(express.static(__dirname)); // Обслуживание статических файлов (HTML, CSS, JS)
 app.use(express.json());
+
+// --- ОБСЛУЖИВАНИЕ СТАТИЧЕСКИХ ФАЙЛОВ ---
+// Явно указываем, что файлы CSS и JS находятся в корне
+app.use(express.static(path.join(__dirname)));
+// Отдельно для папки js
+app.use('/js', express.static(path.join(__dirname, 'js')));
+
+
+// --- ЯВНЫЕ МАРШРУТЫ ДЛЯ HTML СТРАНИЦ ---
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'login.html'));
+});
+app.get('/login.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'login.html'));
+});
+app.get('/index.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -149,10 +167,6 @@ const broadcastUpdates = () => {
 };
 
 // --- API & SOCKETS ---
-app.get('/', (req, res) => {
-  res.redirect('/login.html');
-});
-
 app.post('/login', (req, res) => {
   const { login, password } = req.body;
   const userRecord = db.users[login];
