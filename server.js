@@ -12,18 +12,19 @@ const fs = require('fs').promises;
 const path = require('path');
 
 // --- НАСТРОЙКИ ---
-const PORT = 3000;
-const JWT_SECRET = 'your-super-secret-key-for-vipauto-dont-share-it';
+const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-for-vipauto-dont-share-it';
 const DB_PATH = path.join(__dirname, 'db.json');
 
 const app = express();
 app.use(cors());
+app.use(express.static(__dirname)); // Обслуживание статических файлов (HTML, CSS, JS)
 app.use(express.json());
 
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: true,
     methods: ["GET", "POST"]
   }
 });
@@ -73,6 +74,22 @@ const saveDB = async () => {
   }
 };
 
+const backupDatabase = async () => {
+  const BACKUP_DIR = path.join(__dirname, 'backups');
+  try {
+    await fs.mkdir(BACKUP_DIR, { recursive: true });
+    const timestamp = new Date().toISOString().slice(0, 10);
+    const backupPath = path.join(BACKUP_DIR, `db-backup-${timestamp}.json`);
+    await fs.access(backupPath).catch(async () => {
+        const data = await fs.readFile(DB_PATH, 'utf-8');
+        await fs.writeFile(backupPath, data);
+        console.log(`Создана резервная копия: ${backupPath}`);
+    });
+  } catch (error) {
+    console.error('Ошибка создания резервной копии:', error);
+  }
+};
+
 // --- БИЗНЕС-ЛОГИКА ---
 const getWeekOrders = () => {
   const sevenDaysAgo = new Date();
@@ -110,10 +127,8 @@ const prepareDataForUser = (user) => {
     const masters = Object.values(db.users).filter(u => u.role === 'MASTER').map(u => u.name);
     const leaderboard = generateLeaderboard(weekOrders, masters);
 
-    const relevantOrdersForStats = user.role === 'DIRECTOR' || user.login === 'vladimir.ch'
-        ? weekOrders
-        : (weekOrders || []).filter(o => o.masterName === user.name);
-
+    const isPriv = user.role === 'DIRECTOR' || user.login === 'vladimir.ch';
+    const relevantOrdersForStats = isPriv ? weekOrders : (weekOrders || []).filter(o => o.masterName === user.name);
     const weekStats = calculateStats(relevantOrdersForStats);
 
     const salaryData = leaderboard.map(m => ({
@@ -121,9 +136,7 @@ const prepareDataForUser = (user) => {
         total: m.revenue * 0.5,
     }));
 
-    const relevantWeekOrders = user.role === 'DIRECTOR' || user.login === 'vladimir.ch'
-        ? weekOrders
-        : (weekOrders || []).filter(o => o.masterName === user.name);
+    const relevantWeekOrders = isPriv ? weekOrders : (weekOrders || []).filter(o => o.masterName === user.name);
 
     return { todayOrders, weekOrders: relevantWeekOrders, weekStats, leaderboard, salaryData, masters };
 };
@@ -136,6 +149,10 @@ const broadcastUpdates = () => {
 };
 
 // --- API & SOCKETS ---
+app.get('/', (req, res) => {
+  res.redirect('/login.html');
+});
+
 app.post('/login', (req, res) => {
   const { login, password } = req.body;
   const userRecord = db.users[login];
@@ -179,11 +196,10 @@ io.on('connection', (socket) => {
     const order = db.orders[orderIndex];
     const user = socket.user;
     const isOwner = order.masterName === user.name;
-    const canEditMaster = isPrivileged(user);
-    const canEditMasterLimited = isOwner && (new Date() - new Date(order.createdAt)) < 3600 * 1000; // 1 час
-    const canEditDirectorLimited = isPrivileged(user) && (new Date() - new Date(order.createdAt)) < 3600 * 1000 * 24 * 7; // 7 дней
+    const canEditMasterLimited = isOwner && (new Date() - new Date(order.createdAt)) < 1000 * 3600; // 1 час
+    const canEditDirectorLimited = isPrivileged(user) && (new Date() - new Date(order.createdAt)) < 1000 * 3600 * 24 * 7; // 7 дней
 
-    if (!canEditMaster && !canEditMasterLimited && !canEditDirectorLimited) {
+    if (!canEditMasterLimited && !canEditDirectorLimited) {
       return socket.emit('serverError', 'Недостаточно прав или время для редактирования истекло.');
     }
 
@@ -200,6 +216,19 @@ io.on('connection', (socket) => {
     db.orders = db.orders.filter(o => o.id !== orderId);
     await saveDB();
     broadcastUpdates();
+  });
+
+  socket.on('getArchiveData', ({ startDate, endDate }) => {
+    if (!startDate || !endDate) return socket.emit('serverError', 'Необходимо указать начальную и конечную даты.');
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+    let filtered = (db.history || []).flatMap(w => w.orders).filter(o => {
+        const orderDate = new Date(o.createdAt);
+        return orderDate >= start && orderDate <= end;
+    });
+    if (!isPrivileged(socket.user)) filtered = filtered.filter(o => o.masterName === socket.user.name);
+    socket.emit('archiveData', filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
   });
 
   socket.on('closeWeek', async () => {
@@ -226,5 +255,7 @@ io.on('connection', (socket) => {
 // --- ЗАПУСК СЕРВЕРА ---
 server.listen(PORT, async () => {
   await loadDB();
+  await backupDatabase();
+  setInterval(backupDatabase, 1000 * 60 * 60 * 24);
   console.log(`Сервер VIPавто запущен на порту ${PORT}...`);
 });
