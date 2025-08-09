@@ -68,18 +68,16 @@ export function formatDate(date) {
  * @param {string} tag - HTML-тег.
  * @param {object} [options] - Опции для элемента.
  * @param {string} [options.className] - CSS-классы.
+ * @param {string} [options.id] - ID элемента.
  * @param {string} [options.textContent] - Текстовое содержимое.
  * @param {object} [options.dataset] - Data-атрибуты.
  * @returns {HTMLElement} - Созданный элемент.
  */
 export function createElement(tag, options = {}) {
   const element = document.createElement(tag);
-  if (options.className) {
-    element.className = options.className;
-  }
-  if (options.textContent) {
-    element.textContent = options.textContent;
-  }
+  if (options.className) element.className = options.className;
+  if (options.id) element.id = options.id;
+  if (options.textContent) element.textContent = options.textContent;
   if (options.dataset) {
     for (const key in options.dataset) {
       element.dataset[key] = options.dataset[key];
