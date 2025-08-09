@@ -36,17 +36,6 @@
       "name": "Артём"
     }
   },
-  "orders": [
-    {
-      "id": "ord-1722848400000",
-      "masterName": "Владимир Ч.",
-      "description": "Замена масла и фильтров",
-      "amount": 5500,
-      "paymentType": "Картой",
-      "createdAt": "2025-08-08T10:00:00.000Z",
-      "clientName": "Петр Сергеев",
-      "clientPhone": "+79161234567"
-    }
-  ],
+  "orders": [],
   "history": []
 }
