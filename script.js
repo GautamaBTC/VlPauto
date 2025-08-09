@@ -4,13 +4,14 @@
   Реализует ролевую модель и взаимодействие с сервером.
 ─────────────────────────────────────────────*/
 
-import { showNotification, formatCurrency, formatDate, createElement, getEndings } from './js/utils.js';
+import { showNotification, formatCurrency, formatDate, createElement, getEndings, downloadCSV } from './js/utils.js';
 
 // URL сервера
 const SERVER_URL = '';
 
 // --- Глобальное состояние приложения ---
 const state = {
+  bonuses: {},
   currentUser: null,
   token: null,
   socket: null,
@@ -54,6 +55,56 @@ function initAuth() {
   document.getElementById('user-name-display').textContent = state.currentUser.name;
 }
 
+// --- ЭКСПОРТ В CSV ---
+function exportSalaryCSV() {
+    if (state.currentUser.role !== 'DIRECTOR') {
+        showNotification('Доступно только для директора.', 'error');
+        return;
+    }
+    const headers = ['Мастер', 'Выручка', 'База (50%)', 'Премия %', 'Сумма премии', 'Итог к выплате'];
+    const rows = state.data.salaryData.map(item => {
+        const masterName = item.name;
+        const totalRevenue = item.total * 2;
+        const baseSalary = item.total;
+        const bonusPercent = state.bonuses[masterName] || 0;
+        const bonusAmount = baseSalary * (bonusPercent / 100);
+        const finalSalary = baseSalary + bonusAmount;
+        return [masterName, totalRevenue, baseSalary, bonusPercent, bonusAmount, finalSalary].join(';');
+    });
+
+    const csvContent = [headers.join(';'), ...rows].join('\n');
+    downloadCSV(csvContent, `salary-report-${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function exportArchiveCSV() {
+    if (state.currentUser.role !== 'DIRECTOR') {
+        showNotification('Доступно только для директора.', 'error');
+        return;
+    }
+    if (!state.data.archive || state.data.archive.length === 0) {
+        showNotification('Нет данных для экспорта. Сначала выполните поиск в архиве.', 'error');
+        return;
+    }
+
+    const headers = ['ID Заказ-наряда', 'Мастер', 'Дата', 'Сумма', 'Тип оплаты', 'Описание', 'Клиент', 'Телефон клиента'];
+    const rows = state.data.archive.map(order => {
+        const row = [
+            order.id,
+            order.masterName,
+            formatDate(order.createdAt),
+            order.amount,
+            order.paymentType,
+            `"${order.description.replace(/"/g, '""')}"`,
+            order.clientName || '',
+            order.clientPhone || ''
+        ];
+        return row.join(';');
+    });
+
+    const csvContent = [headers.join(';'), ...rows].join('\n');
+    downloadCSV(csvContent, `archive-report-${new Date().toISOString().slice(0,10)}.csv`);
+}
+
 
 /**
  * 2. УПРАВЛЕНИЕ ТЕМОЙ
@@ -71,6 +122,207 @@ function initTheme() {
     htmlEl.setAttribute('data-theme', newTheme);
     localStorage.setItem('vipauto_theme', newTheme);
   });
+}
+
+function openSalaryModal() {
+  closeModal(); // Закрываем другие модальные окна
+
+  const isDirector = state.currentUser.role === 'DIRECTOR';
+  const modal = createElement('div', { id: 'salary-modal', className: 'modal-backdrop' });
+
+  let tableRowsHtml = '';
+  const salaryData = state.data.salaryData || [];
+
+  salaryData.forEach(item => {
+    const masterName = item.name;
+    const totalRevenue = item.total * 2;
+    const baseSalary = item.total;
+    const bonusPercent = state.bonuses[masterName] || 0;
+    const bonusAmount = baseSalary * (bonusPercent / 100);
+    const finalSalary = baseSalary + bonusAmount;
+
+    if (!isDirector && masterName !== state.currentUser.name) {
+      return; // Мастер видит только себя
+    }
+
+    tableRowsHtml += `
+      <tr data-master-name="${masterName}">
+        <td>${masterName}</td>
+        <td>${formatCurrency(totalRevenue)}</td>
+        <td>${formatCurrency(baseSalary)}</td>
+        <td class="bonus-cell">
+          ${isDirector ? `
+            <div class="bonus-slider-wrapper">
+              <input type="range" min="0" max="50" value="${bonusPercent}" data-master="${masterName}" class="bonus-slider">
+              <span class="bonus-percent">${bonusPercent}%</span>
+            </div>
+          ` : `${bonusPercent}%`}
+        </td>
+        <td class="bonus-amount">${formatCurrency(bonusAmount)}</td>
+        <td class="final-salary"><strong>${formatCurrency(finalSalary)}</strong></td>
+      </tr>
+    `;
+  });
+
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 700px;">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fas fa-wallet"></i> Расчет зарплаты за неделю</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="salary-table-container">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th>Мастер</th>
+                <th>Выручка</th>
+                <th>База (50%)</th>
+                <th>Премия</th>
+                <th>Сумма премии</th>
+                <th>Итог</th>
+              </tr>
+            </thead>
+            <tbody>${tableRowsHtml}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        ${isDirector ? `<button type="button" class="btn btn-accent" id="applyBonusesBtn">Применить премии</button>` : ''}
+        <button type="button" class="btn btn-secondary" id="exportSalaryBtn">Экспорт в CSV</button>
+        <button type="button" class="btn btn-secondary" id="cancelSalaryModalBtn">Закрыть</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('modal-root').appendChild(modal);
+  requestAnimationFrame(() => modal.classList.add('show'));
+
+  // --- Обработчики ---
+  modal.querySelector('.modal-close-btn').addEventListener('click', closeModal);
+  modal.querySelector('#cancelSalaryModalBtn').addEventListener('click', closeModal);
+
+  if (isDirector) {
+    modal.querySelectorAll('.bonus-slider').forEach(slider => {
+      slider.addEventListener('input', (e) => {
+        const masterName = e.target.dataset.master;
+        const bonusPercent = parseInt(e.target.value, 10);
+        state.bonuses[masterName] = bonusPercent;
+        updateSalaryRow(masterName);
+      });
+    });
+    modal.querySelector('#applyBonusesBtn').addEventListener('click', () => {
+        showNotification('Проценты премий сохранены локально.', 'success');
+    });
+  }
+
+  // TODO: Добавить обработчик для #exportSalaryBtn
+  modal.querySelector('#exportSalaryBtn').addEventListener('click', exportSalaryCSV);
+}
+
+function openCloseWeekModal() {
+  closeModal();
+  const modal = createElement('div', { id: 'close-week-modal', className: 'modal-backdrop' });
+  const CONFIRM_PHRASE = 'ПОДТВЕРЖДАЮ';
+
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 450px;">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fas fa-calendar-check"></i> Закрыть неделю</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Вы уверены, что хотите закрыть текущую неделю? Все заказ-наряды будут перенесены в архив, и начать новую неделю будет нельзя до понедельника.</p>
+        <p>Для подтверждения введите: <strong>${CONFIRM_PHRASE}</strong></p>
+        <div class="form-group">
+          <input type="text" id="closeWeekConfirmInput" class="form-control" autocomplete="off">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelCloseWeekBtn">Отмена</button>
+        <button type="button" class="btn btn-danger" id="confirmCloseWeekBtn" disabled>Закрыть неделю</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('modal-root').appendChild(modal);
+  requestAnimationFrame(() => modal.classList.add('show'));
+
+  const confirmInput = modal.querySelector('#closeWeekConfirmInput');
+  const confirmBtn = modal.querySelector('#confirmCloseWeekBtn');
+
+  confirmInput.addEventListener('input', () => {
+    confirmBtn.disabled = confirmInput.value !== CONFIRM_PHRASE;
+  });
+
+  modal.querySelector('.modal-close-btn').addEventListener('click', closeModal);
+  modal.querySelector('#cancelCloseWeekBtn').addEventListener('click', closeModal);
+  confirmBtn.addEventListener('click', () => {
+    state.socket.emit('closeWeek');
+    closeModal();
+    showNotification('Неделя успешно закрыта и заархивирована.', 'success');
+  });
+}
+
+function openClearDataModal() {
+  closeModal();
+  const modal = createElement('div', { id: 'clear-data-modal', className: 'modal-backdrop' });
+  const CONFIRM_PHRASE = 'ОЧИСТИТЬ';
+
+  modal.innerHTML = `
+    <div class="modal-content" style="max-width: 450px;">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fas fa-exclamation-triangle"></i> Очистить все данные</h3>
+        <button class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Это действие <strong>необратимо</strong>. Все заказ-наряды и вся история будут удалены навсегда. Пользователи останутся.</p>
+        <p>Для подтверждения введите: <strong>${CONFIRM_PHRASE}</strong></p>
+        <div class="form-group">
+          <input type="text" id="clearDataConfirmInput" class="form-control" autocomplete="off">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="cancelClearDataBtn">Отмена</button>
+        <button type="button" class="btn btn-danger" id="confirmClearDataBtn" disabled>Я понимаю, очистить все</button>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('modal-root').appendChild(modal);
+  requestAnimationFrame(() => modal.classList.add('show'));
+
+  const confirmInput = modal.querySelector('#clearDataConfirmInput');
+  const confirmBtn = modal.querySelector('#confirmClearDataBtn');
+
+  confirmInput.addEventListener('input', () => {
+    confirmBtn.disabled = confirmInput.value !== CONFIRM_PHRASE;
+  });
+
+  modal.querySelector('.modal-close-btn').addEventListener('click', closeModal);
+  modal.querySelector('#cancelClearDataBtn').addEventListener('click', closeModal);
+  confirmBtn.addEventListener('click', () => {
+    state.socket.emit('clearData');
+    closeModal();
+    showNotification('Все данные были успешно удалены.', 'success');
+  });
+}
+
+function updateSalaryRow(masterName) {
+    const row = document.querySelector(`tr[data-master-name="${masterName}"]`);
+    if (!row) return;
+
+    const salaryInfo = state.data.salaryData.find(s => s.name === masterName);
+    if (!salaryInfo) return;
+
+    const baseSalary = salaryInfo.total;
+    const bonusPercent = state.bonuses[masterName] || 0;
+    const bonusAmount = baseSalary * (bonusPercent / 100);
+    const finalSalary = baseSalary + bonusAmount;
+
+    row.querySelector('.bonus-percent').textContent = `${bonusPercent}%`;
+    row.querySelector('.bonus-amount').textContent = formatCurrency(bonusAmount);
+    row.querySelector('.final-salary').innerHTML = `<strong>${formatCurrency(finalSalary)}</strong>`;
 }
 
 
@@ -127,6 +379,18 @@ function initUI() {
   // --- Кнопки ---
   document.getElementById('logout-btn').addEventListener('click', logout);
   document.getElementById('addOrderBtn').addEventListener('click', () => openOrderModal());
+
+  // Кнопки быстрых действий
+  document.getElementById('quickAddOrderBtn').addEventListener('click', () => openOrderModal());
+  document.getElementById('quickViewSalaryBtn').addEventListener('click', () => openSalaryModal());
+  // TODO: Добавить обработчики для экспорта и закрытия недели
+  document.getElementById('quickCloseWeekBtn')?.addEventListener('click', openCloseWeekModal);
+  document.getElementById('quickExportBtn')?.addEventListener('click', exportSalaryCSV);
+  document.getElementById('clearAllDataBtn')?.addEventListener('click', openClearDataModal);
+  document.getElementById('exportFinanceBtn')?.addEventListener('click', exportSalaryCSV);
+  document.getElementById('exportArchiveBtn')?.addEventListener('click', exportArchiveCSV);
+
+
   document.getElementById('viewArchiveBtn').addEventListener('click', () => {
     const startDate = document.getElementById('archiveStartDate').value;
     const endDate = document.getElementById('archiveEndDate').value;
@@ -193,11 +457,13 @@ function renderContent() {
 
 function adjustUIVisibility() {
   const financeTab = document.querySelector('.nav-tab[data-tab="finance"]');
-  if (state.currentUser.role === 'MASTER') {
-    // Для мастера, вкладка финансов может быть урезанной, но видимой
-    financeTab.style.display = 'flex';
-  } else {
-    financeTab.style.display = 'flex';
+  const isDirector = state.currentUser.role === 'DIRECTOR';
+
+  // Управляем видимостью элементов в зависимости от роли
+  document.body.classList.toggle('is-director', isDirector);
+
+  if (!isDirector) {
+    // Скрываем/показываем то, что не управляется через CSS
   }
 }
 
@@ -205,6 +471,7 @@ function adjustUIVisibility() {
 
 function renderHomePage() {
   renderDashboard();
+  renderWeekStatistics(document.getElementById('week-stats-container'));
   renderLeaderboard(document.getElementById('leaderboard-container'));
   renderOrdersList(document.getElementById('todayOrdersList'), state.data.todayOrders, { showMaster: true });
 }
@@ -214,7 +481,8 @@ function renderOrdersPage() {
 }
 
 function renderFinancePage() {
-  const container = document.getElementById('finance');
+  const container = document.getElementById('finance-content-wrapper');
+  if (!container) return;
   container.innerHTML = ''; // Очищаем
   
   if (state.currentUser.role === 'DIRECTOR') {
@@ -316,6 +584,42 @@ function renderDashboard() {
   `;
 }
 
+function renderWeekStatistics(container) {
+  if (!container) return;
+
+  const weekOrders = state.data.weekOrders || [];
+  const { revenue, ordersCount, avgCheck } = state.weekStats;
+
+  const paymentTypes = weekOrders.reduce((acc, order) => {
+    acc[order.paymentType] = (acc[order.paymentType] || 0) + 1;
+    return acc;
+  }, {});
+  const cashCount = paymentTypes['Наличные'] || 0;
+  const cardCount = paymentTypes['Картой'] || 0;
+  const transferCount = paymentTypes['Перевод'] || 0;
+
+  container.innerHTML = `
+    <div class="week-summary-grid">
+      <div class="summary-item">
+        <div class="summary-label">Общая выручка</div>
+        <div class="summary-value">${formatCurrency(revenue)}</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Всего заказ-нарядов</div>
+        <div class="summary-value">${ordersCount}</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Средний чек</div>
+        <div class="summary-value">${formatCurrency(avgCheck)}</div>
+      </div>
+      <div class="summary-item">
+        <div class="summary-label">Наличные / Карта / Перевод</div>
+        <div class="summary-value">${cashCount} / ${cardCount} / ${transferCount}</div>
+      </div>
+    </div>
+  `;
+}
+
 function renderLeaderboard(container) {
   if (!container) return;
   if (!state.leaderboard || state.leaderboard.length === 0) {
@@ -325,7 +629,7 @@ function renderLeaderboard(container) {
   
   const table = createElement('table', {className: 'leaderboard-table'});
   table.innerHTML = `
-    <thead><tr><th>Место</th><th>Мастер</th><th>Выручка</th><th>Заказы</th></tr></thead>
+    <thead><tr><th>Место</th><th>Мастер</th><th>Выручка</th><th>Заказ-наряды</th></tr></thead>
     <tbody>
       ${state.leaderboard.map((master, index) => `
         <tr class="${master.name === state.currentUser.name ? 'is-current-user' : ''}">
@@ -342,7 +646,7 @@ function renderLeaderboard(container) {
 function renderOrdersList(container, orders, options = {}) {
   if (!container) return;
   if (!orders || orders.length === 0) {
-    container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>Заказов пока нет.</p></div>';
+    container.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>Заказ-нарядов пока нет.</p></div>';
     return;
   }
   
@@ -399,7 +703,7 @@ function openOrderModal(orderToEdit = null) {
   closeModal(); // Закрываем любое открытое модальное окно на всякий случай
 
   const isEdit = orderToEdit !== null;
-  const modalTitle = isEdit ? 'Редактировать заказ' : 'Добавить новый заказ';
+  const modalTitle = isEdit ? 'Редактировать заказ-наряд' : 'Добавить новый заказ-наряд';
   const modalRoot = document.getElementById('modal-root');
 
   const modal = createElement('div', { id: 'order-modal', className: 'modal-backdrop' });
@@ -456,7 +760,7 @@ function openOrderModal(orderToEdit = null) {
           </div>` : `<input type="hidden" name="masterName" value="${state.currentUser.name}">`}
 
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" id="cancel-btn">Отмена</button>
+            <button type="button" class="btn btn-secondary" id="cancelOrderBtn">Отмена</button>
             <button type="submit" class="btn btn-accent">${isEdit ? 'Сохранить' : 'Добавить'}</button>
           </div>
         </form>
@@ -471,7 +775,7 @@ function openOrderModal(orderToEdit = null) {
 
   // --- Обработчики событий модального окна ---
   modal.querySelector('.modal-close-btn').addEventListener('click', closeModal);
-  modal.querySelector('#cancel-btn').addEventListener('click', closeModal);
+  modal.querySelector('#cancelOrderBtn').addEventListener('click', closeModal);
   modal.addEventListener('click', (e) => {
     if (e.target === modal) closeModal(); // Закрыть по клику на фон
   });

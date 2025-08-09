@@ -17,11 +17,6 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-for-vipauto-
 const DB_PATH = path.join(__dirname, 'db.json'); // Путь к нашей "базе данных"
 
 const app = express();
-
-// --- Настройка обслуживания статических файлов ---
-// Это позволяет Express раздавать файлы index.html, login.html, script.js, style.css и т.д.
-app.use(express.static(__dirname));
-
 app.use(cors()); // Разрешаем запросы с других доменов (например, с вашего GitHub Pages)
 app.use(express.json()); // Позволяем серверу читать JSON из тела запроса
 
@@ -40,22 +35,36 @@ let db = {
 };
 
 // --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+const getWeekId = (date = new Date()) => {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+    return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+};
+
 const loadDB = async () => {
   try {
     const data = await fs.readFile(DB_PATH, 'utf-8');
     db = JSON.parse(data);
+    if (!db.history) db.history = []; // Обратная совместимость
     console.log('База данных успешно загружена.');
   } catch (error) {
     // Если файл не найден, создаем его с пользователями по умолчанию
     console.log('Файл базы данных не найден. Создание новой...');
-    db.users = {
-      'director': { password: 'Dir7wK9c', role: 'DIRECTOR', name: 'Владимир Орлов' }, // Исправлено имя из db.json
-      'vladimir.ch': { password: 'Vch4R5tG', role: 'MASTER', name: 'Владимир Ч.' },
-      'vladimir.a': { password: 'Vla9L2mP', role: 'MASTER', name: 'Владимир А.' },
-      'andrey': { password: 'And3Z8xY', role: 'MASTER', name: 'Андрей' },
-      'danila': { password: 'Dan6J1vE', role: 'MASTER', name: 'Данила' },
-      'maxim': { password: 'Max2B7nS', role: 'MASTER', name: 'Максим' },
-      'artyom': { password: 'Art5H4qF', role: 'MASTER', name: 'Артём' }
+    db = {
+      users: {
+        'director': { password: 'Dir7wK9c', role: 'DIRECTOR', name: 'Владимир Орлов' },
+        'vladimir.ch': { password: 'Vch4R5tG', role: 'MASTER', name: 'Владимир Ч.' },
+        'vladimir.a': { password: 'Vla9L2mP', role: 'MASTER', name: 'Владимир А.' },
+        'andrey': { password: 'And3Z8xY', role: 'MASTER', name: 'Андрей' },
+        'danila': { password: 'Dan6J1vE', role: 'MASTER', name: 'Данила' },
+        'maxim': { password: 'Max2B7nS', role: 'MASTER', name: 'Максим' },
+        'artyom': { password: 'Art5H4qF', role: 'MASTER', name: 'Артём' }
+      },
+      orders: [],
+      history: []
     };
     await saveDB();
   }
@@ -92,7 +101,7 @@ const backupDatabase = async () => {
 // --- БИЗНЕС-ЛОГИКА ---
 
 /**
- * Возвращает заказы за последние 7 дней.
+ * Возвращает заказ-наряды за последние 7 дней.
  */
 const getWeekOrders = () => {
   const sevenDaysAgo = new Date();
@@ -210,7 +219,7 @@ app.post('/login', (req, res) => {
     JWT_SECRET,
     { expiresIn: '24h' } // Токен действует 24 часа
   );
-  
+
   res.json({
     message: 'Успешный вход',
     token,
@@ -280,7 +289,7 @@ io.on('connection', (socket) => {
 
     const orderIndex = db.orders.findIndex(o => o.id === orderData.id);
     if (orderIndex === -1) {
-      return socket.emit('serverError', 'Заказ не найден.');
+      return socket.emit('serverError', 'Заказ-наряд не найден.');
     }
 
     // Проверка прав: может редактировать директор или владелец заказа
@@ -301,7 +310,7 @@ io.on('connection', (socket) => {
 
     const orderIndex = db.orders.findIndex(o => o.id === orderId);
     if (orderIndex === -1) {
-        return socket.emit('serverError', 'Заказ не найден.');
+        return socket.emit('serverError', 'Заказ-наряд не найден.');
     }
 
     // Проверка прав: может удалить директор или владелец заказа
@@ -338,6 +347,39 @@ io.on('connection', (socket) => {
     filteredOrders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     socket.emit('archiveData', filteredOrders);
+  });
+
+  socket.on('closeWeek', async () => {
+    if (socket.user.role !== 'DIRECTOR') {
+      return socket.emit('serverError', 'Недостаточно прав для выполнения этой операции.');
+    }
+    if (db.orders.length === 0) {
+      return socket.emit('serverError', 'Нет заказов для закрытия недели.');
+    }
+
+    const weekId = getWeekId();
+    db.history.push({
+      weekId: weekId,
+      orders: [...db.orders]
+    });
+    db.orders = [];
+
+    await saveDB();
+    broadcastUpdates();
+    console.log(`Неделя ${weekId} закрыта пользователем ${socket.user.name}`);
+  });
+
+  socket.on('clearData', async () => {
+    if (socket.user.role !== 'DIRECTOR') {
+      return socket.emit('serverError', 'Недостаточно прав для выполнения этой операции.');
+    }
+
+    db.orders = [];
+    db.history = []; // Также очищаем историю, как указано в ТЗ
+
+    await saveDB();
+    broadcastUpdates();
+    console.log(`Все данные очищены пользователем ${socket.user.name}`);
   });
 });
 
