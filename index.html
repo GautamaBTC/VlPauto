@@ -18,10 +18,9 @@
       <div id="user-name-display"></div>
       <label class="theme-switch" title="Сменить тему">
         <input type="checkbox" id="theme-toggle" />
-        <div class="slider round">
-            <div class="thumb">
-                <i class="fas fa-moon moon-icon"></i>
-                <i class="fas fa-sun sun-icon"></i>
+        <div class="wheel-slider">
+            <div class="wheel-icon-wrapper">
+                <i class="fas fa-gear"></i>
             </div>
         </div>
       </label>
@@ -42,7 +41,7 @@
         <div class="section-header"><h3 class="section-title">Быстрые действия</h3></div>
         <div class="quick-actions-grid">
           <button class="btn btn-accent quick-action-main" data-action="add-order"><i class="fas fa-plus"></i> Добавить заказ</button>
-          <button class="btn btn-secondary" data-action="view-salary"><i class="fas fa-wallet"></i> Зарплата</button>
+          <button class="btn btn-secondary privileged-only" data-action="view-salary"><i class="fas fa-wallet"></i> Зарплата</button>
           <button class="btn btn-secondary privileged-only" data-action="export-csv"><i class="fas fa-file-csv"></i> Экспорт</button>
           <button class="btn btn-danger privileged-only quick-action-main" data-action="close-week"><i class="fas fa-calendar-check"></i> Закрыть неделю</button>
         </div>

@@ -1,6 +1,6 @@
 /*────────────────────────────────────────────
   script.js
-  Синтез - Версия 10.0
+  Финальные доработки - Версия 11.0
 ─────────────────────────────────────────────*/
 
 // --- БЛОК 1: УТИЛИТЫ ---
@@ -20,6 +20,7 @@ const showNotification = (message, type = 'success') => {
   }, 3000);
 };
 const downloadCSV = (data, filename) => {
+    if (!data || data.length === 0) return showNotification('Нет данных для экспорта.', 'error');
     const headers = Object.keys(data[0]);
     const csvContent = [headers.join(','), ...data.map(row => headers.map(h => JSON.stringify(row[h])).join(','))].join('\n');
     const blob = new Blob([`\uFEFF${csvContent}`], { type: 'text/csv;charset=utf-8;' });
@@ -122,7 +123,7 @@ function handleAction(target) {
     'add-order': () => openOrderModal(),
     'view-salary': openSalaryModal,
     'export-csv': exportCurrentWeekCSV,
-    'close-week': () => openConfirmationModal({ title: 'Закрыть неделю?', text: 'Все текущие заказы будут перенесены в архив.', onConfirm: () => state.socket.emit('closeWeek') }),
+    'close-week': openCloseWeekModal,
     'clear-history': () => openConfirmationModal({ title: 'Очистить историю?', text: 'Все архивные записи будут удалены.', onConfirm: () => state.socket.emit('clearHistory') }),
     'clear-data': () => openConfirmationModal({ title: 'Сбросить всё?', text: 'Все текущие заказы и история будут удалены. База вернется к тестовому состоянию.', onConfirm: () => state.socket.emit('clearData') }),
     'edit-order': () => {
@@ -180,20 +181,10 @@ function renderLeaderboard() {
   const container = document.getElementById('leaderboard-container');
   if (!container || !state.data.leaderboard?.length) return container.innerHTML = '<div class="empty-state"><p>Нет данных</p></div>';
   const totalRevenue = state.data.leaderboard.reduce((sum, m) => sum + m.revenue, 0);
-
-  let html = `<table class="leaderboard-table"><thead><tr><th>Место</th><th>Мастер</th>`;
-  html += isPrivileged() ? `<th>Выручка</th><th>Заказы</th>` : `<th>Доля</th>`;
-  html += `</tr></thead><tbody>`;
-
+  let html = `<table class="leaderboard-table"><thead><tr><th>Место</th><th>Мастер</th>${isPrivileged() ? '<th>Выручка</th><th>Заказы</th>' : '<th>Доля</th>'}</tr></thead><tbody>`;
   html += state.data.leaderboard.map((m, i) => {
     const placeIcon = i < 3 ? `<i class="fas fa-trophy ${['gold', 'silver', 'bronze'][i]}"></i>` : i + 1;
-    let valueCell = '';
-    if (isPrivileged()) {
-      valueCell = `<td>${formatCurrency(m.revenue)}</td><td>${m.ordersCount}</td>`;
-    } else {
-      const percentage = totalRevenue > 0 ? ((m.revenue / totalRevenue) * 100).toFixed(1) + '%' : '0%';
-      valueCell = `<td>${percentage}</td>`;
-    }
+    const valueCell = isPrivileged() ? `<td>${formatCurrency(m.revenue)}</td><td>${m.ordersCount}</td>` : `<td>${totalRevenue > 0 ? ((m.revenue / totalRevenue) * 100).toFixed(1) + '%' : '0%'}</td>`;
     return `<tr class="${m.name === state.user.name ? 'is-current-user' : ''}"><td class="leaderboard-place">${placeIcon}</td><td>${m.name}</td>${valueCell}</tr>`;
   }).join('');
   html += `</tbody></table>`;
@@ -240,26 +231,25 @@ function openSalaryModal() {
     closeModal();
     const modal = document.createElement('div');
     modal.className = 'modal-backdrop show';
-    const priv = isPrivileged();
     const salaryData = state.data.leaderboard.map(m => ({ ...m, salary: m.revenue * 0.5, bonus: 0 }));
-    modal.innerHTML = `<div class="modal-content" id="salary-modal-content"><div class="modal-header"><h3 class="modal-title">Расчет Зарплаты</h3><button class="modal-close-btn" data-action="close-modal">&times;</button></div><div class="modal-body"><table class="salary-table leaderboard-table"><thead><tr><th>Мастер</th><th>ЗП (50%)</th>${priv ? '<th>Премия</th>' : ''}<th>Итог</th></tr></thead><tbody>
-      ${salaryData.map(m => `<tr><td>${m.name}</td><td>${formatCurrency(m.salary)}</td>${priv ? `<td><input type="number" class="form-control" data-master-name="${m.name}" value="0"></td>` : ''}<td class="final-salary">${formatCurrency(m.salary)}</td></tr>`).join('')}
+
+    modal.innerHTML = `<div class="modal-content" id="salary-modal-content"><div class="modal-header"><h3 class="modal-title">Расчет Зарплаты</h3><button class="modal-close-btn" data-action="close-modal">&times;</button></div><div class="modal-body"><table class="salary-table leaderboard-table"><thead><tr><th>Мастер</th><th>ЗП (50%)</th><th>Премия</th><th>Итог</th></tr></thead><tbody>
+      ${salaryData.map(m => `<tr><td>${m.name}</td><td>${formatCurrency(m.salary)}</td><td><input type="number" class="form-control" data-master-name="${m.name}" value="0"></td><td class="final-salary">${formatCurrency(m.salary)}</td></tr>`).join('')}
     </tbody></table></div></div>`;
     document.body.appendChild(modal);
     modal.addEventListener('click', (e) => { if (e.target.closest('[data-action="close-modal"]') || e.target === modal) closeModal(); });
-    if (priv) {
-        modal.querySelectorAll('input[type="number"]').forEach(input => {
-            input.addEventListener('input', (e) => {
-                const masterName = e.target.dataset.masterName;
-                const bonus = parseFloat(e.target.value) || 0;
-                const masterData = salaryData.find(m => m.name === masterName);
-                if (!masterData) return;
-                const finalSalary = masterData.salary + bonus;
-                const row = e.target.closest('tr');
-                if (row) row.querySelector('.final-salary').textContent = formatCurrency(finalSalary);
-            });
+
+    modal.querySelectorAll('input[type="number"]').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const masterName = e.target.dataset.masterName;
+            const bonus = parseFloat(e.target.value) || 0;
+            const masterData = salaryData.find(m => m.name === masterName);
+            if (!masterData) return;
+            const finalSalary = masterData.salary + bonus;
+            const row = e.target.closest('tr');
+            if (row) row.querySelector('.final-salary').textContent = formatCurrency(finalSalary);
         });
-    }
+    });
 }
 
 function openConfirmationModal({ title, text, onConfirm }) {
@@ -272,9 +262,16 @@ function openConfirmationModal({ title, text, onConfirm }) {
     modal.querySelector('#confirmBtn').addEventListener('click', () => { onConfirm(); closeModal(); });
 }
 
+function openCloseWeekModal() {
+    const salaryData = state.data.leaderboard.map(m => ({ ...m, salary: m.revenue * 0.5, bonus: 0 }));
+    let reportHtml = `<p>Итоговый отчет за неделю:</p><table class="leaderboard-table"><thead><tr><th>Мастер</th><th>Выручка</th><th>ЗП (50%)</th></tr></thead><tbody>
+    ${salaryData.map(m => `<tr><td>${m.name}</td><td>${formatCurrency(m.revenue)}</td><td>${formatCurrency(m.salary)}</td></tr>`).join('')}
+    </tbody></table><br><p>После закрытия недели эти заказы будут перенесены в архив. Вы уверены?</p>`;
+    openConfirmationModal({ title: 'Закрыть неделю?', text: reportHtml, onConfirm: () => state.socket.emit('closeWeek') });
+}
+
 function exportCurrentWeekCSV() {
     const dataToExport = state.data.weekOrders.map(o => ({ 'Дата': formatDate(o.createdAt), 'Мастер': o.masterName, 'Авто': o.carModel, 'Описание': o.description, 'Сумма': o.amount, 'Оплата': o.paymentType }));
-    if (dataToExport.length === 0) return showNotification('Нет данных для экспорта.', 'error');
     downloadCSV(dataToExport, `week-report-${new Date().toISOString().slice(0,10)}`);
 }
 
