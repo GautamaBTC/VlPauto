@@ -1,27 +1,27 @@
 /*────────────────────────────────────────────
   style.css
-  Финальная Сборка - Версия 7.0
-  Дизайн на основе прототипа пользователя.
+  Финальная полировка - Версия 9.0
+  Новая палитра "Холодный Графит" и исправления верстки.
 ─────────────────────────────────────────────*/
 
 /* 1. Шрифты и переменные */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Палитра "Теплый Контраст" (Вариант Б) */
-  --light-bg: #FFFFFF;
-  --light-panel-bg: #F9FAFB;
-  --light-border: #F3F4F6;
-  --light-text: #111827;
+  /* Палитра "Холодный Графит" */
+  --light-bg: #F7F8FA;
+  --light-panel-bg: #FFFFFF;
+  --light-border: #E4E7ED;
+  --light-text: #1F2937;
   --light-text-muted: #6B7280;
-  --light-accent: #F97316; /* Яркий оранжевый */
+  --light-accent: #2D63D8; /* Спокойный синий */
 
-  --dark-bg: #18181B;
-  --dark-panel-bg: #27272A;
-  --dark-border: #3f3f46;
-  --dark-text: #F4F4F5;
-  --dark-text-muted: #A1A1AA;
-  --dark-accent: #FCD34D; /* Теплый золотой */
+  --dark-bg: #111827;
+  --dark-panel-bg: #1F2937;
+  --dark-border: #374151;
+  --dark-text: #E5E7EB;
+  --dark-text-muted: #9CA3AF;
+  --dark-accent: #38BDF8; /* Небесно-голубой */
 
   --font-main: 'Inter', sans-serif;
   --header-height: 60px;
@@ -71,6 +71,7 @@ button { font-family: inherit; cursor: pointer; }
   display: grid;
   place-items: center;
   height: 100vh;
+  overflow: hidden; /* Убираем прокрутку */
 }
 .login-box {
   width: 100%;
@@ -92,7 +93,7 @@ button { font-family: inherit; cursor: pointer; }
 .form-group input { width: 100%; height: 48px; padding-left: 45px; padding-right: 45px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; transition: var(--transition); color: var(--text); }
 .form-group input:focus { border-color: var(--accent); }
 .toggle-password { position: absolute; top: 50%; transform: translateY(-50%); right: 15px; cursor: pointer; color: var(--text-muted); }
-.btn-login { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; padding: 12px; font-size: 1rem; font-weight: 600; color: var(--dark-text); background: var(--accent); border-radius: 8px; border: none; }
+.btn-login { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; padding: 12px; font-size: 1rem; font-weight: 600; color: #fff; background: var(--accent); border-radius: 8px; border: none; }
 .general-error-message { color: #F56C6C; text-align: center; margin-top: 1rem; min-height: 1.2em; }
 .page-footer { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); font-size: 0.8rem; color: var(--text-muted); }
 
@@ -120,7 +121,7 @@ button { font-family: inherit; cursor: pointer; }
 .section-header { padding: 12px 16px; border-bottom: 1px solid var(--border); font-weight: 600; }
 
 .btn { padding: 8px 16px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; transition: var(--transition); }
-.btn-accent { background: var(--accent); color: var(--dark-text); }
+.btn-accent { background: var(--accent); color: #fff; }
 .btn-secondary { background: var(--bg); border: 1px solid var(--border); color: var(--text); }
 .btn-danger { background: #F56C6C; color: #fff; }
 
@@ -142,13 +143,13 @@ button { font-family: inherit; cursor: pointer; }
 
 .orders-list-container { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 .order-item { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; }
-.order-header { margin-bottom: 4px; }
 .order-description { font-weight: 600; }
-.order-meta { display: flex; gap: 12px; font-size: 0.8rem; color: var(--text-muted); }
+.order-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
 .order-meta span { display: flex; align-items: center; gap: 4px; }
-.order-amount-value { font-size: 1.1rem; font-weight: 700; text-align: right; }
-.order-actions { display: flex; gap: 8px; }
-.order-actions .btn-sm { padding: 6px 10px; font-size: 0.8rem; }
+.order-amount { text-align: right; }
+.order-amount-value { font-size: 1.1rem; font-weight: 700; }
+.order-actions { display: flex; gap: 8px; margin-top: 4px; }
+.order-actions .btn { padding: 6px 10px; font-size: 0.8rem; }
 
 /* 7. Переключатель темы (анимированная шестеренка) */
 .theme-switch { position: relative; display: inline-block; width: 50px; height: 26px; }
@@ -164,9 +165,11 @@ input:checked + .wheel-slider .wheel-icon-wrapper .fas { transform: rotate(180de
 .modal-backdrop.show { opacity: 1; }
 .modal-content { background: var(--panel-bg); border-radius: var(--radius); padding: 24px; width: 90%; max-width: 500px; transform: scale(0.95); transition: transform 0.2s; }
 .modal-backdrop.show .modal-content { transform: scale(1); }
-.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
 .modal-title { font-size: 1.2rem; }
 .modal-close-btn { font-size: 1.5rem; color: var(--text-muted); background: none; border: none; }
+.modal-body .form-group { margin-bottom: 1rem; }
+.modal-body .form-group:last-child { margin-bottom: 0; }
 .modal-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 1.5rem; }
 
 /* 9. Уведомления и прочее */
@@ -177,6 +180,13 @@ body.is-privileged .privileged-only { display: grid; }
 .notification.show { transform: translateX(0); }
 .notification.success { background-color: #67C23A; }
 .notification.error { background-color: #F56C6C; }
-.notification.info { background-color: #409EFF; }
 .empty-state { padding: 40px; text-align: center; color: var(--text-muted); }
 .empty-state p { margin-top: 8px; }
+.admin-zone-content { padding: 16px; display: grid; gap: 12px; }
+.admin-zone-content p { grid-column: 1 / -1; }
+.salary-table { width: 100%; }
+.salary-table input[type="number"] { width: 80px; text-align: right; }
+.salary-table .final-salary { font-weight: 700; color: var(--accent); }
+@media (max-width: 768px) {
+  .page-header__center { display: none; }
+}
