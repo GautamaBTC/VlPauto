@@ -102,7 +102,7 @@ button { font-family: inherit; cursor: pointer; }
 .page-footer { position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%); font-size: 0.8rem; color: var(--text-muted); }
 
 /* 5. Основная структура приложения */
-.page-header { display: flex; justify-content: space-between; align-items: center; position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); padding: 0 16px; background: color-mix(in srgb, var(--panel-bg) 85%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); z-index: 1000; }
+.page-header { display: flex; justify-content: space-between; align-items: center; position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); padding: 0 16px; background: color-mix(in srgb, var(--panel-bg) 85%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); z-index: 1000; gap: 16px; }
 .page-header__left, .page-header__right { display: flex; align-items: center; gap: 12px; }
 .header-controls { display: flex; align-items: center; gap: 12px; flex: 1; }
 .header-controls .theme-switch { margin-left: auto; }
@@ -131,6 +131,8 @@ button { font-family: inherit; cursor: pointer; }
 .btn-secondary { background: var(--bg); border: 1px solid var(--border); color: var(--text); }
 .btn-danger { background: #ef4444; color: #fff; }
 .btn-success { background: #16a34a; color: #fff; }
+.btn-full-width { width: 100%; height: 48px; }
+.btn-with-icon { display: flex; align-items: center; justify-content: center; gap: 8px; }
 
 /* 6. Компоненты */
 .dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
@@ -195,7 +197,7 @@ input:checked + .wheel-slider .wheel-icon-wrapper .fas { transform: rotate(180de
 
 /* 9. Уведомления и прочее */
 .privileged-only { display: none !important; }
-body.is-privileged .privileged-only { display: grid; }
+body.is-privileged .privileged-only { display: flex; }
 #notification-root { position: fixed; top: 20px; right: 20px; z-index: 9999; }
 .notification { padding: 12px 16px; border-radius: 8px; color: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.2); transform: translateX(calc(100% + 20px)); transition: transform 0.4s; }
 .notification.show { transform: translateX(0); }
@@ -229,11 +231,13 @@ body.is-privileged .privileged-only { display: grid; }
 
 .archive-filters { display: flex; gap: 12px; align-items: center; padding: 16px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
 .archive-filters .form-group { display: flex; align-items: center; gap: 8px; margin-bottom: 0; }
-.archive-filters .form-control { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px; color: var(--text); }
+.archive-filters .form-control { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px; color: var(--text); max-width: 150px; }
 .archive-filters #export-archive-csv { margin-left: auto; }
 
 .order-filters { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); }
 .order-filters .form-group { display: flex; align-items: center; gap: 8px; margin-bottom: 0; }
+
+.finance-actions { margin-top: 24px; }
 
 @media (max-width: 768px) {
   .archive-filters { flex-direction: column; align-items: stretch; }

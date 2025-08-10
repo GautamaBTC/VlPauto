@@ -120,6 +120,12 @@ function initEventListeners() {
     state.selectedMaster = e.target.value;
     renderOrdersPage();
   });
+  // Use event delegation for the finalize button since it's added dynamically
+  document.body.addEventListener('click', e => {
+      if (e.target.id === 'finalize-week-btn') {
+          finalizeWeek();
+      }
+  });
 }
 
 // --- БЛОК 4: ОБРАБОТЧИКИ ДЕЙСТВИЙ ---
@@ -130,7 +136,10 @@ function handleAction(target) {
     'add-order': () => openOrderModal(),
     'view-salary': openSalaryModal,
     'export-csv': exportCurrentWeekCSV,
-    'close-week': openCloseWeekModal,
+    'close-week': () => {
+        const financeTab = document.querySelector('[data-tab="finance"]');
+        if (financeTab) financeTab.click();
+    },
     'clear-history': () => openConfirmationModal({ title: 'Очистить историю?', text: 'Все архивные записи будут удалены.', onConfirm: () => state.socket.emit('clearHistory') }),
     'clear-data': () => openConfirmationModal({ title: 'Сбросить всё?', text: 'Все текущие заказы и история будут удалены. База вернется к тестовому состоянию.', onConfirm: () => state.socket.emit('clearData') }),
     'edit-order': () => {
@@ -320,6 +329,16 @@ function renderFinancePage() {
     `;
   });
   html += '</div>';
+
+  // Add the finalize button
+  html += `
+    <div class="finance-actions">
+        <button id="finalize-week-btn" class="btn btn-success quick-action-main">
+            <i class="fas fa-check-circle"></i> Закрыть неделю и начислить ЗП
+        </button>
+    </div>
+  `;
+
   container.innerHTML = html;
 
   // Add event listeners
@@ -382,12 +401,26 @@ function renderContributionChart() {
 function renderDashboard() {
   const { weekStats, todayOrders, user } = state.data;
   if (!weekStats || !user) return;
-  const personalTodayRevenue = (todayOrders || []).filter(o => o.masterName === user.name).reduce((sum, o) => sum + o.amount, 0);
+
+  const userIsPrivileged = isPrivileged();
+
   document.querySelector('#dash-revenue .dashboard-item-value').textContent = formatCurrency(weekStats.revenue);
-  document.querySelector('#dash-revenue .dashboard-item-title').textContent = isPrivileged() ? 'Выручка (неделя)' : 'Моя выручка';
+  document.querySelector('#dash-revenue .dashboard-item-title').textContent = userIsPrivileged ? 'Выручка (неделя)' : 'Моя выручка';
   document.querySelector('#dash-orders .dashboard-item-value').textContent = weekStats.ordersCount || 0;
   document.querySelector('#dash-avg-check .dashboard-item-value').textContent = formatCurrency(weekStats.avgCheck);
-  document.querySelector('#dash-today-personal .dashboard-item-value').textContent = formatCurrency(personalTodayRevenue);
+
+  const todayValueEl = document.querySelector('#dash-today-personal .dashboard-item-value');
+  const todayTitleEl = document.querySelector('#dash-today-personal .dashboard-item-title');
+
+  if(userIsPrivileged) {
+    const totalTodayRevenue = (todayOrders || []).reduce((sum, o) => sum + o.amount, 0);
+    todayValueEl.textContent = formatCurrency(totalTodayRevenue);
+    todayTitleEl.textContent = 'Сегодня (всего)';
+  } else {
+    const personalTodayRevenue = (todayOrders || []).filter(o => o.masterName === user.name).reduce((sum, o) => sum + o.amount, 0);
+    todayValueEl.textContent = formatCurrency(personalTodayRevenue);
+    todayTitleEl.textContent = 'Сегодня (лично)';
+  }
 }
 
 function canEditOrder(order) {
@@ -521,6 +554,38 @@ function openSalaryModal() {
             const row = e.target.closest('tr');
             if (row) row.querySelector('.final-salary').textContent = formatCurrency(finalSalary);
         });
+    });
+}
+
+function finalizeWeek() {
+    const salaryItems = document.querySelectorAll('.salary-item');
+    if (!salaryItems.length) {
+        return showNotification('Нет данных для расчета.', 'error');
+    }
+
+    const salaryReport = Array.from(salaryItems).map(item => {
+        const name = item.querySelector('.master-name').textContent;
+        const finalSalaryText = item.querySelector('.final-salary').textContent;
+        const finalSalary = parseFloat(finalSalaryText.replace(/[^0-9,.-]+/g,"").replace(',','.'));
+        const baseSalary = parseFloat(item.querySelector('.final-salary').dataset.baseSalary);
+        const bonus = finalSalary - baseSalary;
+        return { name, baseSalary, bonus, finalSalary };
+    });
+
+    const totalPayout = salaryReport.reduce((sum, item) => sum + item.finalSalary, 0);
+
+    const confirmationText = `
+        <p>Вы собираетесь закрыть неделю. Это действие перенесет все текущие заказ-наряды в архив.</p>
+        <p>Итого к выплате: <strong>${formatCurrency(totalPayout)}</strong></p>
+        <p>Вы уверены?</p>
+    `;
+
+    openConfirmationModal({
+        title: 'Подтвердить закрытие недели?',
+        text: confirmationText,
+        onConfirm: () => {
+            state.socket.emit('closeWeek', { salaryReport });
+        }
     });
 }
 
