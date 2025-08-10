@@ -117,7 +117,6 @@ function initEventListeners() {
       });
   }
   document.getElementById('apply-archive-filter')?.addEventListener('click', renderArchivePage);
-  document.getElementById('export-archive-csv')?.addEventListener('click', exportArchiveCSV);
   document.getElementById('master-filter')?.addEventListener('change', (e) => {
     state.selectedMaster = e.target.value;
     renderOrdersPage();
@@ -137,7 +136,11 @@ function handleAction(target) {
     'logout': logout,
     'add-order': () => openOrderModal(),
     'view-salary': openSalaryModal,
-    'export-csv': exportCurrentWeekCSV,
+    'open-export-modal': openExportModal,
+    'export-period': () => {
+        const period = target.dataset.period;
+        if(period) exportData(period);
+    },
     'close-week': () => {
         const financeTab = document.querySelector('[data-tab="finance"]');
         if (financeTab) financeTab.click();
@@ -149,6 +152,10 @@ function handleAction(target) {
       if (order) openOrderModal(order);
     },
     'delete-order': () => openConfirmationModal({ title: 'Подтвердить удаление', onConfirm: () => state.socket.emit('deleteOrder', id) }),
+    'award-bonus': () => {
+      const masterName = target.dataset.masterName;
+      if (masterName) openBonusModal(masterName);
+    },
     'view-archived-week': () => {
       const weekId = target.dataset.weekId;
       const weekData = state.data.history.find(w => w.weekId === weekId);
@@ -185,6 +192,7 @@ function renderContent() {
 }
 
 const isPrivileged = () => state.user.role === 'DIRECTOR' || state.user.role === 'SENIOR_MASTER';
+
 const renderHomePage = () => { renderDashboard(); renderLeaderboard(); renderContributionChart(); };
 const renderOrdersPage = () => {
     const container = document.getElementById('ordersList');
@@ -264,27 +272,65 @@ const renderArchivePage = () => {
     }
 };
 
-function exportArchiveCSV() {
-    const startDate = document.getElementById('filter-start-date').value;
-    const endDate = document.getElementById('filter-end-date').value;
-    let allArchivedOrders = state.data.history.flatMap(h => h.orders);
-
-    const start = startDate ? new Date(startDate + 'T00:00:00.000Z') : null;
-    const end = endDate ? new Date(endDate + 'T23:59:59.999Z') : null;
-
-    const filteredOrders = allArchivedOrders.filter(order => {
-        if (!order.createdAt) return false;
-        const orderDate = new Date(order.createdAt);
-        if (start && orderDate < start) return false;
-        if (end && orderDate > end) return false;
-        return true;
+function openExportModal() {
+    closeModal();
+    const modal = document.createElement('div');
+    modal.className = 'modal-backdrop show';
+    modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Экспорт данных</h3>
+        <button class="modal-close-btn" data-action="close-modal">&times;</button>
+      </div>
+      <div class="modal-body" style="display: grid; gap: 12px;">
+        <button class="btn btn-secondary btn-full-width" data-action="export-period" data-period="week">Экспорт за текущую неделю</button>
+        <button class="btn btn-secondary btn-full-width" data-action="export-period" data-period="month">Экспорт за текущий месяц</button>
+        <button class="btn btn-secondary btn-full-width" data-action="export-period" data-period="year">Экспорт за текущий год</button>
+        <button class="btn btn-secondary btn-full-width" data-action="export-period" data-period="custom">Экспорт за выбранный период</button>
+      </div>
+    </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => {
+        if (e.target.closest('[data-action="close-modal"]') || e.target === modal) {
+            closeModal();
+        }
     });
+}
 
-    if (!filteredOrders.length) {
-        return showNotification('Нет данных для экспорта.', 'error');
+function exportData(period) {
+    closeModal();
+    let ordersToExport = [];
+    const now = new Date();
+    const allOrders = [...state.data.weekOrders, ...state.data.history.flatMap(h => h.orders)];
+
+    if (period === 'week') {
+        ordersToExport = state.data.weekOrders;
+    } else if (period === 'month') {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        ordersToExport = allOrders.filter(o => new Date(o.createdAt) >= startOfMonth);
+    } else if (period === 'year') {
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        ordersToExport = allOrders.filter(o => new Date(o.createdAt) >= startOfYear);
+    } else if (period === 'custom') {
+        const startDate = document.getElementById('filter-start-date').value;
+        const endDate = document.getElementById('filter-end-date').value;
+        if (!startDate || !endDate) {
+            return showNotification('Пожалуйста, выберите начальную и конечную дату.', 'error');
+        }
+        const start = new Date(startDate + 'T00:00:00.000Z');
+        const end = new Date(endDate + 'T23:59:59.999Z');
+        ordersToExport = allOrders.filter(o => {
+            const orderDate = new Date(o.createdAt);
+            return orderDate >= start && orderDate <= end;
+        });
     }
 
-    const dataToExport = filteredOrders.map(o => ({
+    if (!ordersToExport.length) {
+        return showNotification('Нет данных для экспорта за указанный период.', 'error');
+    }
+
+    const data = ordersToExport.map(o => ({
         'Дата': formatDate(o.createdAt),
         'Мастер': o.masterName,
         'Авто': o.carModel,
@@ -294,9 +340,9 @@ function exportArchiveCSV() {
         'Сумма': o.amount,
         'Оплата': o.paymentType
     }));
-
-    downloadCSV(dataToExport, `archive-report-${new Date().toISOString().slice(0,10)}`);
+    downloadCSV(data, `report-${period}-${new Date().toISOString().slice(0,10)}`);
 }
+
 
 function renderFinancePage() {
   const container = document.getElementById('finance-content-container');
@@ -305,42 +351,75 @@ function renderFinancePage() {
     return;
   }
 
-  if (!container || !state.data.leaderboard?.length) {
-    container.innerHTML = '<div class="empty-state"><p>Нет данных для расчета.</p></div>';
-    return;
-  }
+  // For now, we will only work with weekly data.
+  // Time period filtering will be added later.
+  const weeklyLeaderboard = state.data.leaderboard || [];
+  const totalRevenue = weeklyLeaderboard.reduce((sum, m) => sum + m.revenue, 0);
+  const totalOrders = weeklyLeaderboard.reduce((sum, m) => sum + m.ordersCount, 0);
+  const directorProfit = totalRevenue * 0.5; // Assuming 50% profit margin for the director
 
-  const salaryData = state.data.leaderboard.map(m => ({
-    name: m.name,
-    revenue: m.revenue,
-    baseSalary: m.revenue * 0.5,
-  }));
-
-  let html = '<div class="salary-calculation-list">';
-  salaryData.forEach(master => {
-    html += `
-      <div class="salary-item" data-master-name="${master.name}">
-        <div class="salary-item-header">
-          <span class="master-name">${master.name}</span>
-          <span class="final-salary" data-base-salary="${master.baseSalary}">${formatCurrency(master.baseSalary)}</span>
+  // --- HTML Structure ---
+  let html = `
+    <div class="finance-header">
+      <div class="dashboard" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+        <div class="dashboard-item">
+          <div class="dashboard-item-title">Общая выручка</div>
+          <div class="dashboard-item-value">${formatCurrency(totalRevenue)}</div>
         </div>
-        <div class="salary-details">
-          <div class="salary-info">
-            <span>База (50%): ${formatCurrency(master.baseSalary)}</span>
-            <span class="bonus-amount-display">+ ${formatCurrency(0)}</span>
-          </div>
-          <div class="bonus-control">
-            <label for="bonus-${master.name}">Бонус: <span class="bonus-percentage">0%</span></label>
-            <input type="range" id="bonus-${master.name}" class="bonus-slider" min="0" max="20" step="2" value="0">
-          </div>
+        <div class="dashboard-item">
+          <div class="dashboard-item-title">Прибыль сервиса</div>
+          <div class="dashboard-item-value">${formatCurrency(directorProfit)}</div>
+        </div>
+        <div class="dashboard-item">
+          <div class="dashboard-item-title">Всего заказ-нарядов</div>
+          <div class="dashboard-item-value">${totalOrders}</div>
         </div>
       </div>
-    `;
-  });
-  html += '</div>';
+    </div>
 
-  // Add the finalize button
+    <div class="section">
+        <div class="section-header"><h3 class="section-title">Вклад мастеров (Столбчатая диаграмма)</h3></div>
+        <div id="finance-bar-chart-container" class="section-content" style="padding: 16px;"></div>
+    </div>
+
+    <div class="section">
+        <div class="section-header"><h3 class="section-title">Вклад мастеров (Круговая диаграмма)</h3></div>
+        <div id="finance-pie-chart-container" class="section-content" style="padding: 16px; display: flex; justify-content: center; align-items: center; min-height: 350px;"></div>
+    </div>
+
+    <div class="section">
+        <div class="section-header"><h3 class="section-title">Расчет зарплаты и премии</h3></div>
+        <div class="salary-calculation-list">
+  `;
+
+  if (weeklyLeaderboard.length > 0) {
+    weeklyLeaderboard.forEach(master => {
+      const baseSalary = master.revenue * 0.5;
+      html += `
+        <div class="salary-item" data-master-name="${master.name}">
+          <div class="salary-item-header">
+            <span class="master-name">${master.name}</span>
+            <span class="final-salary" data-base-salary="${baseSalary}">${formatCurrency(baseSalary)}</span>
+          </div>
+          <div class="salary-details">
+            <span>Выручка: <strong>${formatCurrency(master.revenue)}</strong></span>
+            <span>База (50%): <strong>${formatCurrency(baseSalary)}</strong></span>
+          </div>
+          <div class="salary-actions">
+            <button class="btn btn-secondary btn-sm" data-action="award-bonus" data-master-name="${master.name}">
+              <i class="fas fa-plus"></i> Премировать
+            </button>
+          </div>
+        </div>
+      `;
+    });
+  } else {
+    html += '<div class="empty-state"><p>Нет данных для расчета.</p></div>';
+  }
+
   html += `
+        </div>
+    </div>
     <div class="finance-actions">
         <button id="finalize-week-btn" class="btn btn-success quick-action-main">
             <i class="fas fa-check-circle"></i> Закрыть неделю и начислить ЗП
@@ -350,24 +429,68 @@ function renderFinancePage() {
 
   container.innerHTML = html;
 
-  // Add event listeners
-  container.querySelectorAll('.bonus-slider').forEach(slider => {
-    slider.addEventListener('input', (e) => {
-      const item = e.target.closest('.salary-item');
-      const percentageEl = item.querySelector('.bonus-percentage');
-      const finalSalaryEl = item.querySelector('.final-salary');
-      const bonusAmountEl = item.querySelector('.bonus-amount-display');
-      const baseSalary = parseFloat(finalSalaryEl.dataset.baseSalary);
-      const bonusPercentage = parseInt(e.target.value, 10);
+  // Render charts
+  renderFinanceCharts(weeklyLeaderboard);
 
-      const bonusAmount = baseSalary * (bonusPercentage / 100);
-      const finalSalary = baseSalary + bonusAmount;
+  // Event listeners for bonus button will be added in a separate step
+}
 
-      percentageEl.textContent = `${bonusPercentage}%`;
-      bonusAmountEl.textContent = `+ ${formatCurrency(bonusAmount)}`;
-      finalSalaryEl.textContent = formatCurrency(finalSalary);
-    });
-  });
+function renderFinanceCharts(leaderboardData) {
+    // Bar Chart
+    const barContainer = document.getElementById('finance-bar-chart-container');
+    if (barContainer) {
+        const maxRevenue = Math.max(...leaderboardData.map(m => m.revenue), 0);
+        let barHtml = '<div class="chart">';
+        leaderboardData.forEach(master => {
+            const barWidth = maxRevenue > 0 ? (master.revenue / maxRevenue) * 100 : 0;
+            barHtml += `
+            <div class="chart-item">
+                <div class="chart-label">${master.name}</div>
+                <div class="chart-bar-container"><div class="chart-bar" style="width: ${barWidth}%;"></div></div>
+                <div class="chart-value">${formatCurrency(master.revenue)}</div>
+            </div>`;
+        });
+        barHtml += '</div>';
+        barContainer.innerHTML = leaderboardData.length > 0 ? barHtml : '<div class="empty-state"><p>Нет данных для графика.</p></div>';
+    }
+
+    // Pie Chart
+    const pieContainer = document.getElementById('finance-pie-chart-container');
+    if (pieContainer) {
+        if (!leaderboardData || leaderboardData.length === 0) {
+            pieContainer.innerHTML = '<div class="empty-state"><p>Нет данных для графика.</p></div>';
+            return;
+        }
+
+        const totalRevenue = leaderboardData.reduce((sum, item) => sum + item.revenue, 0);
+        const colors = ['#38BDF8', '#FBBF24', '#34D399', '#F87171', '#818CF8', '#A78BFA'];
+
+        let cumulativePercent = 0;
+        const segments = leaderboardData.map((item, index) => {
+            const percent = totalRevenue > 0 ? (item.revenue / totalRevenue) * 100 : 0;
+            const startAngle = cumulativePercent / 100 * 360;
+            cumulativePercent += percent;
+            return `<circle class="pie-chart-slice" r="25" cx="50" cy="50" fill="transparent"
+                        stroke="${colors[index % colors.length]}"
+                        stroke-width="50"
+                        stroke-dasharray="${percent} ${100 - percent}"
+                        stroke-dashoffset="${25 - startAngle / 3.6}"
+                        transform="rotate(-90 50 50)"></circle>`;
+        }).join('');
+
+        const legend = leaderboardData.map((item, index) => `
+            <div class="pie-chart-legend-item">
+                <span class="legend-color-box" style="background-color: ${colors[index % colors.length]}"></span>
+                <span class="legend-label">${item.name} (${((item.revenue / totalRevenue) * 100).toFixed(1)}%)</span>
+            </div>
+        `).join('');
+
+        pieContainer.innerHTML = `
+            <div class="pie-chart-wrapper">
+                <svg viewBox="0 0 100 100" class="pie-chart">${segments}</svg>
+                <div class="pie-chart-legend">${legend}</div>
+            </div>`;
+    }
 }
 
 function renderContributionChart() {
@@ -433,7 +556,7 @@ function renderDashboard() {
 }
 
 function canEditOrder(order) {
-  const user = state.currentUser;
+  const user = state.user;
   if (!user || !order || !order.createdAt) return false;
 
   const orderAge = Date.now() - new Date(order.createdAt).getTime();
@@ -493,7 +616,7 @@ function renderOrdersList(container, orders) {
   orders.forEach(order => {
     const item = document.createElement('div');
     item.className = 'order-item';
-    const smsBody = encodeURIComponent('Добрый день! Ваш автомобиль готов. VIPавто.');
+    const smsBody = encodeURIComponent(`Здравствуйте, ${order.clientName || 'клиент'}. Ваш автомобиль ${order.carModel || ''} готов к выдаче. С уважением, VipАвто.`);
     item.innerHTML = `
       <div>
         <p class="order-description">${order.carModel}: ${order.description}</p>
@@ -573,11 +696,10 @@ function finalizeWeek() {
     }
 
     const salaryReport = Array.from(salaryItems).map(item => {
-        const name = item.querySelector('.master-name').textContent;
-        const finalSalaryText = item.querySelector('.final-salary').textContent;
-        const finalSalary = parseFloat(finalSalaryText.replace(/[^0-9,.-]+/g,"").replace(',','.'));
+        const name = item.dataset.masterName;
         const baseSalary = parseFloat(item.querySelector('.final-salary').dataset.baseSalary);
-        const bonus = finalSalary - baseSalary;
+        const bonus = parseFloat(item.dataset.bonus || '0');
+        const finalSalary = baseSalary + bonus;
         return { name, baseSalary, bonus, finalSalary };
     });
 
@@ -687,9 +809,82 @@ function openCloseWeekModal() {
     openConfirmationModal({ title: 'Закрыть неделю?', text: reportHtml, onConfirm: () => state.socket.emit('closeWeek') });
 }
 
-function exportCurrentWeekCSV() {
-    const dataToExport = state.data.weekOrders.map(o => ({ 'Дата': formatDate(o.createdAt), 'Мастер': o.masterName, 'Авто': o.carModel, 'Описание': o.description, 'Сумма': o.amount, 'Оплата': o.paymentType }));
-    downloadCSV(dataToExport, `week-report-${new Date().toISOString().slice(0,10)}`);
+function openBonusModal(masterName) {
+  closeModal(); // Close any existing modals
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop show';
+
+  const salaryItem = document.querySelector(`.salary-item[data-master-name="${masterName}"]`);
+  const finalSalaryEl = salaryItem.querySelector('.final-salary');
+  const baseSalary = parseFloat(finalSalaryEl.dataset.baseSalary);
+  const currentBonus = parseFloat(salaryItem.dataset.bonus || '0');
+  const currentBonusPercentage = baseSalary > 0 ? (currentBonus / baseSalary * 100) : 0;
+
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">Премия для: ${masterName}</h3>
+        <button class="modal-close-btn" data-action="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Базовая зарплата: <strong>${formatCurrency(baseSalary)}</strong></p>
+        <div class="form-group">
+          <label for="bonus-slider">Бонус (<span id="bonus-percentage-display">${currentBonusPercentage.toFixed(0)}%</span>)</label>
+          <input type="range" class="bonus-slider" id="bonus-slider" min="0" max="20" step="2" value="${currentBonusPercentage.toFixed(0)}">
+        </div>
+        <p>Сумма премии: <strong id="bonus-amount-display">${formatCurrency(currentBonus)}</strong></p>
+        <hr>
+        <p style="font-weight: 600; font-size: 1.1rem;">Итоговая зарплата: <strong id="total-salary-display">${formatCurrency(baseSalary + currentBonus)}</strong></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-action="close-modal">Отмена</button>
+        <button type="button" class="btn btn-accent" id="confirm-bonus">Начислить</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const bonusSlider = modal.querySelector('#bonus-slider');
+  const percentageDisplay = modal.querySelector('#bonus-percentage-display');
+  const bonusAmountDisplay = modal.querySelector('#bonus-amount-display');
+  const totalSalaryDisplay = modal.querySelector('#total-salary-display');
+
+  const updateTotal = () => {
+    const bonusPercentage = parseInt(bonusSlider.value, 10);
+    const bonusAmount = baseSalary * (bonusPercentage / 100);
+    const totalSalary = baseSalary + bonusAmount;
+
+    percentageDisplay.textContent = `${bonusPercentage}%`;
+    bonusAmountDisplay.textContent = formatCurrency(bonusAmount);
+    totalSalaryDisplay.textContent = formatCurrency(totalSalary);
+  };
+
+  bonusSlider.addEventListener('input', updateTotal);
+
+  modal.querySelector('#confirm-bonus').addEventListener('click', () => {
+    const bonusPercentage = parseInt(bonusSlider.value, 10);
+    const bonusAmount = baseSalary * (bonusPercentage / 100);
+
+    salaryItem.dataset.bonus = bonusAmount;
+    finalSalaryEl.textContent = formatCurrency(baseSalary + bonusAmount);
+
+    const masterNameEl = salaryItem.querySelector('.master-name');
+    const existingIcon = masterNameEl.querySelector('.fa-star');
+    if (bonusAmount > 0 && !existingIcon) {
+        masterNameEl.innerHTML += ' <i class="fas fa-star" style="color: var(--gold);"></i>';
+    } else if (bonusAmount === 0 && existingIcon) {
+        existingIcon.remove();
+    }
+
+    closeModal();
+  });
+
+  modal.addEventListener('click', (e) => {
+    if (e.target.closest('[data-action="close-modal"]') || e.target === modal) {
+      closeModal();
+    }
+  });
 }
 
 // --- БЛОК 7: ВЫХОД ---
