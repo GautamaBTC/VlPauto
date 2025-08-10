@@ -166,7 +166,7 @@ io.on('connection', (socket) => {
       broadcastUpdates();
     }
   });
-  socket.on('clearData', async () => { if (isPrivileged(socket.user)) { db.orders = []; db.history = []; seedDatabaseWithTestData(); await saveDB(); broadcastUpdates(); } });
+  socket.on('clearData', async () => { if (isPrivileged(socket.user)) { db.orders = []; db.history = []; await saveDB(); broadcastUpdates(); } });
   socket.on('clearHistory', async () => { if (isPrivileged(socket.user)) { db.history = []; await saveDB(); broadcastUpdates(); } });
   socket.on('disconnect', () => console.log(`[Socket] Отключился: '${socket.user.name}'`));
 });

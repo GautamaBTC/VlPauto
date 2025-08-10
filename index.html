@@ -82,22 +82,28 @@
             <input type="date" id="filter-end-date" class="form-control">
           </div>
           <button id="apply-archive-filter" class="btn btn-secondary">Применить</button>
-          <button id="export-archive-csv" class="btn btn-secondary"><i class="fas fa-file-csv"></i> Экспорт</button>
+          <button data-action="open-export-modal" class="btn btn-accent"><i class="fas fa-file-export"></i> Расширенный экспорт</button>
         </div>
         <div id="archiveListContainer" class="orders-list-container"></div>
       </div>
       <div class="section privileged-only">
         <div class="section-header"><h3 class="section-title">Опасная зона</h3></div>
         <div class="admin-zone-content">
+            <div class="warning-banner">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span><strong>Внимание:</strong> Действия в этой секции необратимы.</span>
+            </div>
             <button class="btn btn-danger" data-action="clear-history">Очистить историю</button>
-            <button class="btn btn-danger" data-action="clear-data">Очистить тестовые данные</button>
+            <button class="btn btn-hazard" data-action="clear-data" title="Сбросить все данные">
+                <i class="fas fa-triangle-exclamation"></i>
+            </button>
         </div>
       </div>
     </div>
 
     <div id="finance" class="tab-content privileged-only">
       <div class="section">
-        <div class="section-header"><h3 class="section-title">Финансы и Расчет Зарплаты</h3></div>
+        <div class="section-header"><h3 class="section-title">Финансы и Статистика</h3></div>
         <div id="finance-content-container" class="section-content" style="padding: 16px;"></div>
       </div>
     </div>
