@@ -13,37 +13,38 @@
 <body>
 
   <header class="page-header">
-    <div class="page-header__left">
-      <h1 class="app-title"><i class="fas fa-car"></i> VIPавто</h1>
-    </div>
-    <div class="page-header__center">
-      <span id="current-date"></span>
-      <span id="current-time"></span>
-    </div>
-    <div class="page-header__right">
+    <h1 class="app-title"><i class="fas fa-car"></i> VIP<span class="title-auto">АВТО</span></h1>
+    <div class="header-controls">
       <div id="user-name-display"></div>
       <label class="theme-switch" title="Сменить тему">
         <input type="checkbox" id="theme-toggle" />
-        <div class="wheel-slider"><div class="wheel-icon-wrapper"><i class="fas fa-gear"></i></div></div>
+        <div class="slider round">
+            <div class="thumb">
+                <i class="fas fa-moon moon-icon"></i>
+                <i class="fas fa-sun sun-icon"></i>
+            </div>
+        </div>
       </label>
       <button class="btn-icon" data-action="logout" title="Выйти"><i class="fas fa-sign-out-alt"></i></button>
     </div>
   </header>
   
   <main class="main-content">
+    <!-- ВКЛАДКА: ГЛАВНАЯ -->
     <div id="home" class="tab-content active">
       <div class="dashboard" id="dashboard-grid">
-        <div class="dashboard-item" id="dash-revenue"><div class="dashboard-item-icon"><i class="fas fa-ruble-sign"></i></div><div class="dashboard-item-content"><div class="dashboard-item-title">Выручка (неделя)</div><div class="dashboard-item-value">…</div></div></div>
-        <div class="dashboard-item" id="dash-orders"><div class="dashboard-item-icon"><i class="fas fa-file-invoice"></i></div><div class="dashboard-item-content"><div class="dashboard-item-title">Заказ-наряды</div><div class="dashboard-item-value">…</div></div></div>
-        <div class="dashboard-item" id="dash-avg-check"><div class="dashboard-item-icon"><i class="fas fa-receipt"></i></div><div class="dashboard-item-content"><div class="dashboard-item-title">Средний чек</div><div class="dashboard-item-value">…</div></div></div>
-        <div class="dashboard-item" id="dash-today-personal"><div class="dashboard-item-icon"><i class="fas fa-user-clock"></i></div><div class="dashboard-item-content"><div class="dashboard-item-title">Выработка (сегодня)</div><div class="dashboard-item-value">…</div></div></div>
+        <div class="dashboard-item" id="dash-revenue"> <div class="dashboard-item-icon"><i class="fas fa-ruble-sign"></i></div> <div class="dashboard-item-content"><div class="dashboard-item-title">Выручка</div><div class="dashboard-item-value">…</div></div></div>
+        <div class="dashboard-item" id="dash-orders"> <div class="dashboard-item-icon"><i class="fas fa-file-invoice"></i></div> <div class="dashboard-item-content"><div class="dashboard-item-title">Заказы</div><div class="dashboard-item-value">…</div></div></div>
+        <div class="dashboard-item" id="dash-avg-check"> <div class="dashboard-item-icon"><i class="fas fa-receipt"></i></div> <div class="dashboard-item-content"><div class="dashboard-item-title">Средний чек</div><div class="dashboard-item-value">…</div></div></div>
+        <div class="dashboard-item" id="dash-today-personal"> <div class="dashboard-item-icon"><i class="fas fa-user-clock"></i></div> <div class="dashboard-item-content"><div class="dashboard-item-title">Сегодня</div><div class="dashboard-item-value">…</div></div></div>
       </div>
       <div class="section">
         <div class="section-header"><h3 class="section-title">Быстрые действия</h3></div>
         <div class="quick-actions-grid">
-          <button class="btn btn-accent quick-action-main" data-action="add-order"><i class="fas fa-plus"></i> Добавить заказ-наряд</button>
+          <button class="btn btn-accent quick-action-main" data-action="add-order"><i class="fas fa-plus"></i> Добавить заказ</button>
           <button class="btn btn-secondary" data-action="view-salary"><i class="fas fa-wallet"></i> Зарплата</button>
           <button class="btn btn-secondary privileged-only" data-action="export-csv"><i class="fas fa-file-csv"></i> Экспорт</button>
+          <button class="btn btn-danger privileged-only quick-action-main" data-action="close-week"><i class="fas fa-calendar-check"></i> Закрыть неделю</button>
         </div>
       </div>
       <div class="section">
@@ -54,7 +55,7 @@
     
     <div id="orders" class="tab-content">
       <div class="section">
-        <div class="section-header"><h3 class="section-title">Заказ-наряды за неделю</h3></div>
+        <div class="section-header"><h3 class="section-title">Заказы за неделю</h3></div>
         <div id="ordersList" class="orders-list-container"></div>
       </div>
     </div>
@@ -67,8 +68,8 @@
       <div class="section privileged-only">
         <div class="section-header"><h3 class="section-title">Опасная зона</h3></div>
         <div class="admin-zone-content">
-            <button class="btn btn-danger" data-action="clear-history">Очистить только историю</button>
-            <button class="btn btn-danger" data-action="clear-data">Сбросить всё к тестовым данным</button>
+            <button class="btn btn-danger" data-action="clear-history">Очистить историю</button>
+            <button class="btn btn-danger" data-action="clear-data">Сбросить всё</button>
         </div>
       </div>
     </div>
