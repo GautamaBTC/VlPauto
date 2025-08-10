@@ -61,16 +61,23 @@ const seedDatabaseWithTestData = () => {
     const masterNames = Object.values(db.users).filter(u => u.role.includes('MASTER')).map(u => u.name);
     const carBrands = ['Lada Vesta', 'Toyota Camry', 'Ford Focus', 'BMW X5', 'Mercedes C-Class', 'Audi A6', 'Kia Rio', 'Hyundai Solaris'];
     const services = ['Замена масла ДВС', 'Комплексный шиномонтаж', 'Диагностика ходовой', 'Ремонт тормозной системы', 'Замена ГРМ'];
+    const clientNames = ['Иван Петров', 'Сергей Смирнов', 'Анна Кузнецова', 'Ольга Васильева', 'Дмитрий Попов'];
+
     let testOrders = [];
     for (let i = 0; i < 50; i++) {
         const date = new Date();
         date.setDate(date.getDate() - Math.floor(Math.random() * 7));
         date.setHours(Math.floor(Math.random() * 10) + 9, Math.floor(Math.random() * 60));
         testOrders.push({
-            id: `ord-${Date.now()}-${i}`, masterName: masterNames[Math.floor(Math.random() * masterNames.length)],
-            carModel: carBrands[Math.floor(Math.random() * carBrands.length)], description: services[Math.floor(Math.random() * services.length)],
-            amount: Math.floor(Math.random() * 2500 + 500), paymentType: ['Картой', 'Наличные', 'Перевод'][Math.floor(Math.random() * 3)],
+            id: `ord-${Date.now()}-${i}`,
+            masterName: masterNames[Math.floor(Math.random() * masterNames.length)],
+            carModel: carBrands[Math.floor(Math.random() * carBrands.length)],
+            description: services[Math.floor(Math.random() * services.length)],
+            amount: Math.floor(Math.random() * 2500 + 500),
+            paymentType: ['Картой', 'Наличные', 'Перевод'][Math.floor(Math.random() * 3)],
             createdAt: date.toISOString(),
+            clientName: clientNames[Math.floor(Math.random() * clientNames.length)],
+            clientPhone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}`
         });
     }
     db.orders = testOrders;
@@ -146,7 +153,19 @@ io.on('connection', (socket) => {
     broadcastUpdates();
   });
   socket.on('deleteOrder', async (id) => { if (isPrivileged(socket.user)) { db.orders = db.orders.filter(o => o.id !== id); await saveDB(); broadcastUpdates(); } });
-  socket.on('closeWeek', async () => { if (isPrivileged(socket.user) && db.orders.length) { db.history.unshift({ weekId: `week-${Date.now()}`, orders: [...db.orders] }); db.orders = []; await saveDB(); broadcastUpdates(); } });
+  socket.on('closeWeek', async (payload) => {
+    if (isPrivileged(socket.user) && db.orders.length) {
+      const { salaryReport } = payload;
+      db.history.unshift({
+        weekId: `week-${Date.now()}`,
+        orders: [...db.orders],
+        salaryReport: salaryReport || []
+      });
+      db.orders = [];
+      await saveDB();
+      broadcastUpdates();
+    }
+  });
   socket.on('clearData', async () => { if (isPrivileged(socket.user)) { db.orders = []; db.history = []; seedDatabaseWithTestData(); await saveDB(); broadcastUpdates(); } });
   socket.on('clearHistory', async () => { if (isPrivileged(socket.user)) { db.history = []; await saveDB(); broadcastUpdates(); } });
   socket.on('disconnect', () => console.log(`[Socket] Отключился: '${socket.user.name}'`));
