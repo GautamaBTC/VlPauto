@@ -4,14 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Бортовой журнал — VIPавто</title>
-  
-  <!-- Подключение шрифтов и иконок -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
-
-  <!-- Подключение ЕДИНОГО файла стилей -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,158 +15,75 @@
   <!-- ==================== ХЕДЕР ==================== -->
   <header class="page-header">
     <div class="page-header__left">
-       <h1 class="app-title">
-        <i class="fas fa-car logo-icon"></i>
-        <span>VIP<span class="auto-text">авто</span></span>
-      </h1>
+      <h1 class="app-title"><i class="fas fa-car"></i> VIPавто</h1>
     </div>
     <div class="page-header__center">
-      <span id="current-date">…</span>
-      <span id="current-time">–:–:–</span>
+      <span id="current-date"></span>
+      <span id="current-time"></span>
     </div>
     <div class="page-header__right">
-      <div class="user-profile-menu">
-        <span id="user-name-display"></span>
-        <button id="logout-btn" class="btn-logout" title="Выйти">
-            <i class="fas fa-sign-out-alt"></i>
-        </button>
-      </div>
-      <!-- НОВЫЙ ЕДИНЫЙ ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ -->
+      <div id="user-name-display"></div>
       <label class="theme-switch" title="Сменить тему">
         <input type="checkbox" id="theme-toggle" />
-        <div class="wheel-slider">
-          <div class="wheel-icon-wrapper">
-            <i class="fas fa-gear"></i>
-          </div>
-        </div>
+        <div class="wheel-slider"><div class="wheel-icon-wrapper"><i class="fas fa-gear"></i></div></div>
       </label>
+      <button class="btn-icon" data-action="logout" title="Выйти"><i class="fas fa-sign-out-alt"></i></button>
     </div>
   </header>
   
   <!-- ==================== ОСНОВНОЙ КОНТЕНТ ==================== -->
   <main class="main-content">
-    <!-- Вкладка: Главная -->
+    <!-- ВКЛАДКА: ГЛАВНАЯ -->
     <div id="home" class="tab-content active">
-      <!-- НОВЫЙ ДАШБОРД 2x2 -->
+      <!-- Дашборд 2x2 -->
       <div class="dashboard" id="dashboard-grid">
-        <div class="dashboard-item" id="dash-revenue">
-            <div class="dashboard-item-icon"><i class="fas fa-ruble-sign"></i></div>
-            <div class="dashboard-item-content">
-                <div class="dashboard-item-title">Выручка (неделя)</div>
-                <div class="dashboard-item-value">…</div>
-            </div>
-        </div>
-        <div class="dashboard-item" id="dash-orders">
-            <div class="dashboard-item-icon"><i class="fas fa-file-invoice"></i></div>
-            <div class="dashboard-item-content">
-                <div class="dashboard-item-title">Заказ-наряды (неделя)</div>
-                <div class="dashboard-item-value">…</div>
-            </div>
-        </div>
-        <div class="dashboard-item" id="dash-avg-check">
-            <div class="dashboard-item-icon"><i class="fas fa-receipt"></i></div>
-            <div class="dashboard-item-content">
-                <div class="dashboard-item-title">Средний чек</div>
-                <div class="dashboard-item-value">…</div>
-            </div>
-        </div>
-        <div class="dashboard-item" id="dash-today-personal">
-            <div class="dashboard-item-icon"><i class="fas fa-user-clock"></i></div>
-            <div class="dashboard-item-content">
-                <div class="dashboard-item-title">Выработка (сегодня)</div>
-                <div class="dashboard-item-value">…</div>
-            </div>
-        </div>
+        <div class="dashboard-item" id="dash-revenue"><div class="dashboard-item-icon"><i class="fas fa-ruble-sign"></i></div><div class="dashboard-item-content"><div class="dashboard-item-title">Выручка (неделя)</div><div class="dashboard-item-value">…</div></div></div>
+        <div class="dashboard-item" id="dash-orders"><div class="dashboard-item-icon"><i class="fas fa-file-invoice"></i></div><div class="dashboard-item-content"><div class="dashboard-item-title">Заказ-наряды</div><div class="dashboard-item-value">…</div></div></div>
+        <div class="dashboard-item" id="dash-avg-check"><div class="dashboard-item-icon"><i class="fas fa-receipt"></i></div><div class="dashboard-item-content"><div class="dashboard-item-title">Средний чек</div><div class="dashboard-item-value">…</div></div></div>
+        <div class="dashboard-item" id="dash-today-personal"><div class="dashboard-item-icon"><i class="fas fa-user-clock"></i></div><div class="dashboard-item-content"><div class="dashboard-item-title">Выработка (сегодня)</div><div class="dashboard-item-value">…</div></div></div>
       </div>
-
-      <div class="section" id="quick-actions-section">
-        <div class="section-header">
-          <h3 class="section-title"><i class="fas fa-bolt"></i> Быстрые действия</h3>
-        </div>
-        <div class="quick-actions-grid">
-          <button class="btn btn-accent" id="quickAddOrderBtn"><i class="fas fa-plus"></i> Добавить заказ-наряд</button>
-          <button class="btn btn-secondary" id="quickViewSalaryBtn"><i class="fas fa-wallet"></i> Просмотреть зарплату</button>
-          <!-- Кнопки для директора/ст.мастера будут показаны/скрыты через JS -->
-          <button class="btn btn-secondary privileged-only" id="quickExportBtn"><i class="fas fa-file-export"></i> Экспорт данных</button>
-          <button class="btn btn-danger privileged-only" id="quickCloseWeekBtn"><i class="fas fa-calendar-check"></i> Закрыть неделю</button>
-        </div>
-      </div>
-      
-      <div class="section" id="leaderboard-section">
-        <div class="section-header">
-          <h3 class="section-title"><i class="fas fa-trophy"></i> Доска Лидеров</h3>
-        </div>
-        <div id="leaderboard-container">
-          <!-- Содержимое будет генерироваться JS -->
-        </div>
-      </div>
-      
+      <!-- Быстрые действия -->
       <div class="section">
-        <div class="section-header">
-          <h3 class="section-title"><i class="fas fa-tasks"></i> Заказ-наряды сегодня</h3>
+        <div class="section-header"><h3 class="section-title">Быстрые действия</h3></div>
+        <div class="quick-actions-grid">
+          <button class="btn btn-accent quick-action-main" data-action="add-order"><i class="fas fa-plus"></i> Добавить заказ-наряд</button>
+          <button class="btn btn-secondary" data-action="view-salary"><i class="fas fa-wallet"></i> Зарплата</button>
+          <button class="btn btn-secondary privileged-only" data-action="export-csv"><i class="fas fa-file-csv"></i> Экспорт</button>
+          <button class="btn btn-danger privileged-only quick-action-main" data-action="close-week"><i class="fas fa-calendar-check"></i> Закрыть неделю</button>
         </div>
-        <div id="todayOrdersList" class="orders-list-container">
-          <!-- Содержимое будет генерироваться JS -->
-        </div>
+      </div>
+      <!-- Доска лидеров -->
+      <div class="section">
+        <div class="section-header"><h3 class="section-title">Доска лидеров</h3></div>
+        <div id="leaderboard-container"></div>
       </div>
     </div>
     
-    <!-- Вкладка: История -->
+    <!-- ВКЛАДКА: ЗАКАЗ-НАРЯДЫ -->
     <div id="orders" class="tab-content">
       <div class="section">
-        <div class="section-header">
-          <h3 class="section-title"><i class="fas fa-history"></i> История за 7 дней</h3>
-          <button class="btn btn-accent btn-sm" id="addOrderBtn"><i class="fas fa-plus"></i> Добавить заказ-наряд</button>
-        </div>
-        <div id="ordersList" class="orders-list-container">
-          <!-- Содержимое будет генерироваться JS -->
-        </div>
+        <div class="section-header"><h3 class="section-title">Заказ-наряды за неделю</h3></div>
+        <div id="ordersList" class="orders-list-container"></div>
       </div>
     </div>
     
-    <!-- Вкладка: Финансы -->
-    <div id="finance" class="tab-content">
-      <div class="section">
-        <div class="section-header">
-            <h3 class="section-title"><i class="fas fa-file-invoice-dollar"></i> Финансы за неделю</h3>
-            <button class="btn btn-secondary btn-sm privileged-only" id="exportFinanceBtn"><i class="fas fa-file-csv"></i> Экспорт</button>
-        </div>
-        <div id="finance-content-wrapper">
-            <!-- Содержимое будет разным для Директора и Мастера, генерируется JS -->
-        </div>
-      </div>
-    </div>
-    
-    <!-- Вкладка: Архив -->
+    <!-- ВКЛАДКА: АРХИВ -->
     <div id="archive" class="tab-content">
       <div class="section">
-        <div class="section-header">
-          <h3 class="section-title"><i class="fas fa-archive"></i> Архив</h3>
-        </div>
+        <div class="section-header"><h3 class="section-title">Архив</h3></div>
         <div class="archive-controls">
-          <p class="archive-description">Выберите период для просмотра данных.</p>
-          <div class="date-range-picker">
-            <input type="date" id="archiveStartDate" class="form-control">
-            <span>—</span>
-            <input type="date" id="archiveEndDate" class="form-control">
-          </div>
-          <div class="archive-buttons">
-            <button class="btn btn-accent" id="viewArchiveBtn"><i class="fas fa-search"></i> Показать</button>
-            <button class="btn btn-secondary privileged-only" id="exportArchiveBtn"><i class="fas fa-file-csv"></i> Экспорт в CSV</button>
-          </div>
+          <input type="date" id="archiveStartDate" class="form-control">
+          <span>—</span>
+          <input type="date" id="archiveEndDate" class="form-control">
+          <button class="btn btn-accent" data-action="view-archive"><i class="fas fa-search"></i> Показать</button>
         </div>
-        <div id="archiveListContainer" class="orders-list-container">
-          <!-- Содержимое будет генерироваться JS -->
-        </div>
+        <div id="archiveListContainer" class="orders-list-container"></div>
       </div>
-
-      <div class="section privileged-only" id="admin-zone">
-        <div class="section-header">
-          <h3 class="section-title"><i class="fas fa-exclamation-triangle"></i> Опасная зона</h3>
-        </div>
+      <div class="section privileged-only">
+        <div class="section-header"><h3 class="section-title">Опасная зона</h3></div>
         <div class="admin-zone-content">
-            <p>Это действие необратимо и приведет к полной потере всех заказ-нарядов и истории. База данных будет сброшена к тестовому состоянию.</p>
-            <button class="btn btn-danger" id="clearAllDataBtn">Очистить и сбросить данные</button>
+            <p>Это действие необратимо. База данных будет сброшена к тестовому состоянию.</p>
+            <button class="btn btn-danger" data-action="clear-data">Очистить и сбросить данные</button>
         </div>
       </div>
     </div>
@@ -179,14 +92,13 @@
   <!-- ==================== НАВИГАЦИЯ ==================== -->
   <nav class="nav-container">
     <div class="nav-tabs">
-      <button class="nav-tab active" data-tab="home"><i class="fas fa-home nav-tab-icon"></i><span>Главная</span></button>
-      <button class="nav-tab" data-tab="orders"><i class="fas fa-history nav-tab-icon"></i><span>История</span></button>
-      <button class="nav-tab" data-tab="finance"><i class="fas fa-wallet nav-tab-icon"></i><span>Финансы</span></button>
-      <button class="nav-tab" data-tab="archive"><i class="fas fa-archive nav-tab-icon"></i><span>Архив</span></button>
+      <button class="nav-tab active" data-tab="home"><i class="fas fa-home"></i><span>Главная</span></button>
+      <button class="nav-tab" data-tab="orders"><i class="fas fa-history"></i><span>Наряды</span></button>
+      <button class="nav-tab" data-tab="archive"><i class="fas fa-archive"></i><span>Архив</span></button>
     </div>
   </nav>
   
-  <!-- "Порталы" для динамического контента -->
+  <!-- "Порталы" для модальных окон и уведомлений -->
   <div id="modal-root"></div>
   <div id="notification-root"></div>
 
