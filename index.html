@@ -33,28 +33,38 @@
     <div id="home" class="tab-content active">
       <div class="dashboard" id="dashboard-grid">
         <div class="dashboard-item" id="dash-revenue"> <div class="dashboard-item-icon"><i class="fas fa-ruble-sign"></i></div> <div class="dashboard-item-content"><div class="dashboard-item-title">Выручка</div><div class="dashboard-item-value">…</div></div></div>
-        <div class="dashboard-item" id="dash-orders"> <div class="dashboard-item-icon"><i class="fas fa-file-invoice"></i></div> <div class="dashboard-item-content"><div class="dashboard-item-title">Заказы</div><div class="dashboard-item-value">…</div></div></div>
+        <div class="dashboard-item" id="dash-orders"> <div class="dashboard-item-icon"><i class="fas fa-file-invoice"></i></div> <div class="dashboard-item-content"><div class="dashboard-item-title">Заказ-наряды</div><div class="dashboard-item-value">…</div></div></div>
         <div class="dashboard-item" id="dash-avg-check"> <div class="dashboard-item-icon"><i class="fas fa-receipt"></i></div> <div class="dashboard-item-content"><div class="dashboard-item-title">Средний чек</div><div class="dashboard-item-value">…</div></div></div>
         <div class="dashboard-item" id="dash-today-personal"> <div class="dashboard-item-icon"><i class="fas fa-user-clock"></i></div> <div class="dashboard-item-content"><div class="dashboard-item-title">Сегодня</div><div class="dashboard-item-value">…</div></div></div>
       </div>
       <div class="section">
         <div class="section-header"><h3 class="section-title">Быстрые действия</h3></div>
         <div class="quick-actions-grid">
-          <button class="btn btn-accent quick-action-main" data-action="add-order"><i class="fas fa-plus"></i> Добавить заказ</button>
+          <button class="btn btn-accent quick-action-main" data-action="add-order"><i class="fas fa-plus"></i> Добавить заказ-наряд</button>
           <button class="btn btn-secondary privileged-only" data-action="view-salary"><i class="fas fa-wallet"></i> Зарплата</button>
           <button class="btn btn-secondary privileged-only" data-action="export-csv"><i class="fas fa-file-csv"></i> Экспорт</button>
-          <button class="btn btn-danger privileged-only quick-action-main" data-action="close-week"><i class="fas fa-calendar-check"></i> Закрыть неделю</button>
+          <button class="btn btn-success privileged-only quick-action-main" data-action="close-week"><i class="fas fa-calendar-check"></i> Закрыть неделю</button>
         </div>
       </div>
       <div class="section">
         <div class="section-header"><h3 class="section-title">Доска лидеров</h3></div>
         <div id="leaderboard-container"></div>
       </div>
+       <div class="section privileged-only" id="contribution-chart-section">
+        <div class="section-header"><h3 class="section-title">Вклад мастеров</h3></div>
+        <div id="contribution-chart-container" class="section-content" style="padding: 16px;"></div>
+      </div>
     </div>
     
     <div id="orders" class="tab-content">
       <div class="section">
-        <div class="section-header"><h3 class="section-title">Заказы за неделю</h3></div>
+        <div class="section-header"><h3 class="section-title">Заказ-наряды за неделю</h3></div>
+        <div class="section-content order-filters privileged-only">
+          <div class="form-group">
+            <label for="master-filter">Мастер:</label>
+            <select id="master-filter" class="form-control"></select>
+          </div>
+        </div>
         <div id="ordersList" class="orders-list-container"></div>
       </div>
     </div>
@@ -62,6 +72,18 @@
     <div id="archive" class="tab-content">
       <div class="section">
         <div class="section-header"><h3 class="section-title">Архив</h3></div>
+        <div class="section-content archive-filters">
+          <div class="form-group">
+            <label for="filter-start-date">С:</label>
+            <input type="date" id="filter-start-date" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="filter-end-date">По:</label>
+            <input type="date" id="filter-end-date" class="form-control">
+          </div>
+          <button id="apply-archive-filter" class="btn btn-secondary">Применить</button>
+          <button id="export-archive-csv" class="btn btn-secondary"><i class="fas fa-file-csv"></i> Экспорт</button>
+        </div>
         <div id="archiveListContainer" class="orders-list-container"></div>
       </div>
       <div class="section privileged-only">
@@ -72,6 +94,13 @@
         </div>
       </div>
     </div>
+
+    <div id="finance" class="tab-content privileged-only">
+      <div class="section">
+        <div class="section-header"><h3 class="section-title">Финансы и Расчет Зарплаты</h3></div>
+        <div id="finance-content-container" class="section-content" style="padding: 16px;"></div>
+      </div>
+    </div>
   </main>
   
   <nav class="nav-container">
@@ -79,6 +108,7 @@
       <button class="nav-tab active" data-tab="home"><i class="fas fa-home"></i><span>Главная</span></button>
       <button class="nav-tab" data-tab="orders"><i class="fas fa-history"></i><span>Наряды</span></button>
       <button class="nav-tab" data-tab="archive"><i class="fas fa-archive"></i><span>Архив</span></button>
+      <button class="nav-tab privileged-only" data-tab="finance"><i class="fas fa-coins"></i><span>Финансы</span></button>
     </div>
   </nav>
   

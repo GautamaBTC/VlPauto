@@ -117,7 +117,34 @@ io.on('connection', (socket) => {
   console.log(`[Socket] Подключился: '${socket.user.name}'`);
   socket.emit('initialData', prepareDataForUser(socket.user));
   socket.on('addOrder', async (d) => { if (!isPrivileged(socket.user)) d.masterName = socket.user.name; db.orders.unshift({ ...d, id: `ord-${Date.now()}`, createdAt: new Date().toISOString() }); await saveDB(); broadcastUpdates(); });
-  socket.on('updateOrder', async (d) => { const i = db.orders.findIndex(o => o.id === d.id); if (i!==-1) { db.orders[i] = { ...db.orders[i], ...d }; await saveDB(); broadcastUpdates(); } });
+  socket.on('updateOrder', async (d) => {
+    const orderIndex = db.orders.findIndex(o => o.id === d.id);
+    if (orderIndex === -1) return socket.emit('serverError', 'Заказ-наряд не найден.');
+
+    const order = db.orders[orderIndex];
+    const user = socket.user;
+    const orderAge = Date.now() - new Date(order.createdAt).getTime();
+    const twoHours = 2 * 60 * 60 * 1000;
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+
+    const canEdit = (() => {
+      if (user.role === 'DIRECTOR' || user.role === 'SENIOR_MASTER') {
+        return orderAge < sevenDays;
+      }
+      if (user.role === 'MASTER') {
+        return order.masterName === user.name && orderAge < twoHours;
+      }
+      return false;
+    })();
+
+    if (!canEdit) {
+      return socket.emit('serverError', 'У вас нет прав на редактирование или время истекло.');
+    }
+
+    db.orders[orderIndex] = { ...order, ...d };
+    await saveDB();
+    broadcastUpdates();
+  });
   socket.on('deleteOrder', async (id) => { if (isPrivileged(socket.user)) { db.orders = db.orders.filter(o => o.id !== id); await saveDB(); broadcastUpdates(); } });
   socket.on('closeWeek', async () => { if (isPrivileged(socket.user) && db.orders.length) { db.history.unshift({ weekId: `week-${Date.now()}`, orders: [...db.orders] }); db.orders = []; await saveDB(); broadcastUpdates(); } });
   socket.on('clearData', async () => { if (isPrivileged(socket.user)) { db.orders = []; db.history = []; seedDatabaseWithTestData(); await saveDB(); broadcastUpdates(); } });
