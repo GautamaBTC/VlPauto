@@ -1,24 +1,12 @@
 /*────────────────────────────────────────────
   style.css
-  Версия 4.0 - Исправления и улучшения дизайна
+  Финальная Сборка - Версия 6.0
+  Все стили написаны с нуля для максимальной стабильности.
 ─────────────────────────────────────────────*/
 
-/* 1. БАЗОВЫЙ СБРОС */
-*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body { overflow-x: hidden; line-height: 1.5; -webkit-font-smoothing: antialiased; }
-h1, h2, h3, h4, h5, h6 { font-weight: 600; font-size: 1em; line-height: 1.2; }
-ul, ol { list-style: none; }
-a { text-decoration: none; color: inherit; }
-button { font-family: inherit; background: none; border: none; padding: 0; cursor: pointer; color: inherit; }
-img, picture, video, canvas, svg { display: block; max-width: 100%; }
-input, button, textarea, select { font: inherit; }
-*:focus-visible { outline: 2px solid var(--accent, dodgerblue); outline-offset: 2px; }
-* { -webkit-tap-highlight-color: transparent; }
-
-/* 2. ЦВЕТОВЫЕ ПЕРЕМЕННЫЕ И ОСНОВНЫЕ СТИЛИ */
+/* 1. Глобальные переменные и сброс стилей */
 :root {
-  --bg: #F0F2F5;
+  --bg: #F5F7FA;
   --panel-bg: #FFFFFF;
   --input-bg: #F5F7FA;
   --border: #E4E7ED;
@@ -30,157 +18,163 @@ input, button, textarea, select { font: inherit; }
   --success: #67C23A;
   --error: #F56C6C;
   --gold: #E6A23C;
-  --silver: #909399;
-  --bronze: #CD7F32;
   --header-height: 60px;
   --nav-height: 65px;
 }
 
 html[data-theme="dark"] {
-  --bg: #0A0A0A;
-  --panel-bg: #1A1A1A;
-  --input-bg: #2C2C2C;
-  --border: #3A3A3A;
-  --shadow: rgba(0, 0, 0, 0.2);
+  --bg: #141414;
+  --panel-bg: #1D1D1D;
+  --input-bg: #262626;
+  --border: #424242;
+  --shadow: rgba(0, 0, 0, 0.3);
   --text: #E5EAF3;
-  --text-muted: #888B93;
+  --text-muted: #A3A6AD;
   --accent: #FFD166;
-  --btn-text: #1A1A1A;
-  --success: #2fd058;
-  --error: #ff4d4d;
-  --gold: #FBBF24;
-  --silver: #D1D5DB;
-  --bronze: #F59E0B;
+  --btn-text: #1D1D1D;
 }
 
-html { height: 100%; }
-body { min-height: 100%; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); transition: background 0.3s, color 0.3s; }
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.3s, color 0.3s;
+  padding-top: var(--header-height);
+  padding-bottom: var(--nav-height);
+  -webkit-font-smoothing: antialiased;
+}
+* { -webkit-tap-highlight-color: transparent; }
+*:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* 3. ХЕДЕР ПРИЛОЖЕНИЯ */
-.page-header { padding: 0 16px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; height: var(--header-height); position: fixed; top: 0; left: 0; right: 0; z-index: 1000; background: color-mix(in srgb, var(--panel-bg) 80%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); }
+
+/* 2. Стили для страницы входа (login.html) */
+.login-body {
+  padding: 0;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+}
+.login-box {
+  width: 100%;
+  max-width: 380px;
+  padding: 2.5rem;
+  background-color: var(--panel-bg);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 25px var(--shadow);
+}
+.title-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+.login-title { font-size: 2rem; font-weight: 700; }
+.login-title .title-auto { color: var(--text-muted); }
+.login-subtitle { text-align: center; color: var(--text-muted); margin-bottom: 2rem; }
+.form-group { margin-bottom: 1.25rem; }
+.form-group label { display: block; font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted); }
+.input-wrapper { position: relative; }
+.input-icon { position: absolute; top: 50%; transform: translateY(-50%); left: 15px; color: var(--text-muted); }
+.form-group input { width: 100%; height: 48px; padding-left: 45px; padding-right: 15px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; transition: all 0.2s; }
+.form-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
+.toggle-password { position: absolute; top: 50%; transform: translateY(-50%); right: 15px; cursor: pointer; color: var(--text-muted); }
+.form-options { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+.checkbox-wrap { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; cursor: pointer; }
+.btn-login { display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; padding: 12px; font-size: 1rem; font-weight: 600; color: var(--btn-text); background: var(--accent); border-radius: 8px; border: none; }
+.error-message, .general-error-message { color: var(--error); font-size: 0.85rem; margin-top: 0.5rem; min-height: 1.2em; }
+.general-error-message { text-align: center; }
+.page-footer { position: absolute; bottom: 1rem; left: 50%; transform: translateX(-50%); font-size: 0.8rem; color: var(--text-muted); }
+
+
+/* 3. Общие компоненты приложения (index.html) */
+.page-header { display: flex; justify-content: space-between; align-items: center; position: fixed; top: 0; left: 0; right: 0; height: var(--header-height); padding: 0 16px; background: color-mix(in srgb, var(--panel-bg) 85%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); z-index: 1000; }
 .page-header__left, .page-header__right { display: flex; align-items: center; gap: 12px; }
-.app-title { display: flex; align-items: center; gap: 8px; font-size: 1.25rem; }
-.page-header__center { color: var(--text-muted); font-size: 0.8rem; text-align: center; }
+.app-title { font-size: 1.2rem; font-weight: 700; }
+.page-header__center { font-size: 0.85rem; color: var(--text-muted); }
 #user-name-display { font-weight: 500; }
-.btn-logout { font-size: 1.2rem; color: var(--text-muted); transition: color 0.2s; }
+.btn-icon { background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer; }
 
-/* 4. ПЕРЕКЛЮЧАТЕЛЬ ТЕМЫ (КОЛЕСО) */
-.theme-switch { position: relative; display: inline-block; width: 50px; height: 26px; }
-.theme-switch input { opacity: 0; width: 0; height: 0; }
-.wheel-slider { position: absolute; inset: 0; cursor: pointer; background-color: var(--input-bg); border-radius: 26px; transition: .4s; border: 1px solid var(--border); }
-.wheel-icon-wrapper { position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: var(--panel-bg); border-radius: 50%; transition: .4s cubic-bezier(0.68, -0.55, 0.27, 1.55); display: grid; place-items: center; box-shadow: 0 1px 3px var(--shadow); }
-.wheel-icon-wrapper .fas { color: var(--accent); font-size: 14px; transition: transform 0.5s ease-in-out; }
-input:checked + .wheel-slider .wheel-icon-wrapper { transform: translateX(24px); }
-html[data-theme="light"] .wheel-icon-wrapper { transform: translateX(24px); }
-html[data-theme="light"] .wheel-icon-wrapper .fas { transform: rotate(360deg); }
-
-/* 5. СТРАНИЦА ВХОДА */
-.login-body { display: grid; place-items: center; min-height: 100vh; padding: 16px; }
-.login-box { width: 100%; max-width: 380px; padding: 2.5rem; background-color: var(--panel-bg); border-radius: 24px; box-shadow: 0 10px 30px var(--shadow); border: 1px solid var(--border); animation: fadeIn 0.5s ease; }
-.title-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-.login-title { font-size: 2.2rem; }
-.login-subtitle { text-align: center; font-size: 1rem; color: var(--text-muted); margin-bottom: 2.5rem; }
-.btn-login { display: flex; align-items: center; justify-content: center; gap: 0.8rem; width: 100%; padding: 14px; font-size: 1rem; font-weight: 600; color: var(--btn-text); background: var(--accent); border-radius: 8px; transition: transform .2s, box-shadow .2s; }
-.btn-login:hover { transform: translateY(-2px); box-shadow: 0 4px 15px color-mix(in srgb, var(--accent) 30%, transparent); }
-
-/* 6. ОБЩАЯ СТРУКТУРА ПРИЛОЖЕНИЯ */
-body { padding-top: var(--header-height); padding-bottom: var(--nav-height); }
 .main-content { padding: 16px; max-width: 1200px; margin: 0 auto; }
 .tab-content { display: none; }
-.tab-content.active { display: block; animation: fadeIn 0.5s; }
+.tab-content.active { display: block; animation: fadeIn 0.3s ease-in-out; }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* 7. НАВИГАЦИЯ (нижняя панель) */
-.nav-container { position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height); background: color-mix(in srgb, var(--panel-bg) 85%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -5px 20px var(--shadow); }
+.nav-container { position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height); z-index: 1000; background: color-mix(in srgb, var(--panel-bg) 85%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--border); }
 .nav-tabs { display: flex; justify-content: space-around; height: 100%; }
-.nav-tab { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; flex-grow: 1; color: var(--text-muted); transition: color 0.2s, transform 0.2s; }
+.nav-tab { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; gap: 4px; color: var(--text-muted); border: none; background: none; }
 .nav-tab.active { color: var(--accent); }
-.nav-tab:active { transform: scale(0.95); }
-.nav-tab-icon { font-size: 1.5rem; }
-.nav-tab span { font-size: 0.7rem; font-weight: 500; }
+.nav-tab i { font-size: 1.5rem; }
+.nav-tab span { font-size: 0.7rem; }
 
-/* 8. СЕКЦИИ */
-.section { background: var(--panel-bg); border-radius: 16px; margin-bottom: 20px; overflow: hidden; }
-.section-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); }
-.section-title { font-size: 1rem; display: flex; align-items: center; gap: 10px; }
-.section-title .fas { color: var(--text-muted); }
+.section { background: var(--panel-bg); border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--border); }
+.section-header { padding: 12px 16px; border-bottom: 1px solid var(--border); font-weight: 600; }
 
-/* 9. ДАШБОРД (ИСПРАВЛЕННЫЙ) */
-.dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
-.dashboard-item { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
-.dashboard-item-icon { margin-bottom: 8px; }
-.dashboard-item-icon .fas { font-size: 24px; color: var(--accent); }
-.dashboard-item-content { text-align: left; }
-.dashboard-item-title { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 2px; }
-.dashboard-item-value { font-size: 1.4rem; font-weight: 700; line-height: 1.2; }
-
-/* 10. ОБЩИЕ КОМПОНЕНТЫ */
-.privileged-only { display: none !important; }
-body.is-privileged .privileged-only { display: flex !important; }
-.btn { padding: 8px 16px; border-radius: 8px; font-weight: 600; transition: all 0.2s; }
-.btn-accent { background-color: var(--accent); color: var(--btn-text); }
+.btn { padding: 8px 16px; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; }
+.btn-accent { background: var(--accent); color: var(--btn-text); }
+.btn-secondary { background: var(--input-bg); border: 1px solid var(--border); color: var(--text); }
+.btn-danger { background: var(--error); color: #fff; }
 .btn-sm { padding: 6px 12px; font-size: 0.9rem; }
-.btn-secondary { background-color: var(--input-bg); border: 1px solid var(--border); color: var(--text-muted); }
-.btn-danger { background-color: var(--error); color: white; }
-.empty-state { padding: 40px; text-align: center; color: var(--text-muted); }
-.empty-state .fas { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
 
-/* 11. СПИСОК ЗАКАЗОВ */
-.orders-list-container { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
-.order-item { background-color: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
+
+/* 4. Компоненты главной страницы */
+.dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+.dashboard-item { background: var(--panel-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.dashboard-item-icon { margin-bottom: 8px; }
+.dashboard-item-icon .fas { font-size: 22px; color: var(--accent); }
+.dashboard-item-title { font-size: 0.8rem; color: var(--text-muted); }
+.dashboard-item-value { font-size: 1.5rem; font-weight: 700; }
+
+.quick-actions-grid { padding: 16px; display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
+.quick-action-main { grid-column: 1 / -1; }
+.quick-actions-grid .btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding-top: 12px; padding-bottom: 12px; }
+
+#leaderboard-container { padding: 0; }
+.leaderboard-table { width: 100%; border-collapse: collapse; }
+.leaderboard-table th, .leaderboard-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
+.leaderboard-table th { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+.leaderboard-table tbody tr:last-child td { border-bottom: none; }
+.leaderboard-table .is-current-user { background-color: color-mix(in srgb, var(--accent) 10%, transparent); }
+
+
+/* 5. Списки заказов и архив */
+.orders-list-container { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.order-item { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px; }
 .order-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
-.order-description { font-weight: 600; font-size: 1rem; }
+.order-description { font-weight: 600; }
 .order-master { font-size: 0.8rem; color: var(--accent); background-color: color-mix(in srgb, var(--accent) 15%, transparent); padding: 2px 8px; border-radius: 6px; }
 .order-details { display: flex; align-items: center; justify-content: space-between; }
 .order-meta { display: flex; align-items: center; gap: 12px; font-size: 0.8rem; color: var(--text-muted); }
 .order-meta span { display: flex; align-items: center; gap: 6px; }
 .order-amount-value { font-size: 1.1rem; font-weight: 700; }
 
-/* 12. АДАПТИВНОСТЬ */
+.archive-controls { padding: 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center; border-bottom: 1px solid var(--border); }
+.admin-zone-content { padding: 16px; text-align: center; }
+
+
+/* 6. Модальные окна */
+.modal-backdrop { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6); display: grid; place-items: center; z-index: 2000; opacity: 0; transition: opacity 0.2s; }
+.modal-backdrop.show { opacity: 1; }
+.modal-content { background: var(--panel-bg); border-radius: 16px; padding: 24px; width: 90%; max-width: 500px; transform: scale(0.95); transition: transform 0.2s; }
+.modal-backdrop.show .modal-content { transform: scale(1); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.modal-title { font-size: 1.2rem; }
+.modal-close-btn { font-size: 1.5rem; color: var(--text-muted); }
+.modal-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 1.5rem; }
+
+
+/* 7. Адаптивность */
 @media (max-width: 768px) {
-  .main-content { padding: 8px; }
-  .page-header { padding: 0 12px; }
-  .app-title { font-size: 1rem; }
-  #user-name-display { display: none; }
-
-  /* Отображаем часы и дату, но делаем их меньше */
-  .page-header__center { font-size: 0.7rem; }
-  .page-header__left, .page-header__right { gap: 8px; }
-
-  /* Стили для дашборда 2x2 на мобильных */
-  .dashboard { gap: 8px; }
-  .dashboard-item { padding: 12px; gap: 4px; }
-  .dashboard-item-icon .fas { font-size: 20px; }
-  .dashboard-item-title { font-size: 0.7rem; }
+  .page-header__center, #user-name-display { display: none; }
   .dashboard-item-value { font-size: 1.2rem; }
+  .dashboard-item-title { font-size: 0.7rem; }
 }
 
-/* 13. ФОРМЫ И МОДАЛЬНЫЕ ОКНА */
-.form-group { margin-bottom: 1.5rem; }
-.form-group label { display: block; font-size: 0.9rem; font-weight: 500; margin-bottom: 8px; color: var(--text-muted); }
-.form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px 12px; font-size: 1rem; background-color: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); transition: all 0.2s; }
-.form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); outline: none; }
-.modal-backdrop { position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 2000; opacity: 0; transition: opacity 0.3s ease; pointer-events: none; }
-.modal-backdrop.show { opacity: 1; pointer-events: auto; }
-.modal-content { background: var(--panel-bg); border-radius: 16px; padding: 24px; width: 90%; max-width: 500px; box-shadow: 0 10px 30px var(--shadow); transform: scale(0.95); transition: transform 0.3s ease; opacity: 0; }
-.modal-backdrop.show .modal-content { transform: scale(1); opacity: 1; }
-.modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 20px; }
-.modal-title { font-size: 1.2rem; }
-.modal-close-btn { font-size: 1.8rem; line-height: 1; color: var(--text-muted); }
-.modal-footer { display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border); padding-top: 20px; margin-top: 24px; }
-.archive-controls { padding: 16px; display: flex; flex-direction: column; gap: 16px; align-items: center; border-bottom: 1px solid var(--border); }
-.date-range-picker { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
-.archive-buttons { display: flex; gap: 12px; width: 100%; }
-.archive-buttons .btn { flex: 1; justify-content: center; }
-.admin-zone-content { padding: 16px; text-align: center; }
-.admin-zone-content p { color: var(--text-muted); margin-bottom: 1rem; max-width: 450px; margin-left: auto; margin-right: auto; font-size: 0.9rem; }
-.leaderboard-container { padding: 0; }
-.leaderboard-table { width: 100%; border-collapse: collapse; }
-.leaderboard-table th, .leaderboard-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); }
-.leaderboard-table th { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; }
-.leaderboard-table tbody tr:last-child td { border-bottom: none; }
-.leaderboard-table tbody tr.is-current-user { background-color: color-mix(in srgb, var(--accent) 10%, transparent); font-weight: 600; }
-.leaderboard-place .fa-trophy { font-size: 1.2rem; color: var(--text-muted); }
-.leaderboard-place[data-place="1"] .fa-trophy { color: var(--gold); }
-.leaderboard-place[data-place="2"] .fa-trophy { color: var(--silver); }
-.leaderboard-place[data-place="3"] .fa-trophy { color: var(--bronze); }
+/* 8. Скрытые по умолчанию элементы */
+.privileged-only { display: none !important; }
+body.is-privileged .privileged-only { display: grid; }
+.notification { position: fixed; top: 20px; right: 20px; z-index: 9999; padding: 12px 16px; border-radius: 8px; color: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.2); transform: translateX(calc(100% + 20px)); transition: transform 0.4s; }
+.notification.show { transform: translateX(0); }
+.notification.success { background-color: var(--success); }
+.notification.error { background-color: var(--error); }
+.theme-switch, .wheel-slider, .wheel-icon-wrapper { transition: all 0.3s ease; }
+.wheel-icon-wrapper .fas { transition: transform 0.4s ease; }
+input:checked + .wheel-slider .wheel-icon-wrapper .fas { transform: rotate(360deg); }
+html[data-theme="light"] .wheel-icon-wrapper .fas { transform: rotate(360deg); }
