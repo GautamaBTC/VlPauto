@@ -216,9 +216,17 @@ input:checked + .wheel-slider .wheel-icon-wrapper .fas { transform: rotate(180de
 
 /* 9. Уведомления и прочее */
 .privileged-only { display: none !important; }
-body.is-privileged .privileged-only { display: flex !important; }
-/* Use block for tab content for privileged users too */
-body.is-privileged .tab-content.privileged-only { display: block !important; }
+
+/* Show privileged elements correctly based on their type */
+body.is-privileged .nav-tab.privileged-only,
+body.is-privileged .quick-actions-grid .btn.privileged-only {
+    display: flex !important;
+}
+
+body.is-privileged .tab-content.privileged-only,
+body.is-privileged .section.privileged-only {
+    display: block !important;
+}
 #notification-root { position: fixed; top: 20px; right: 20px; z-index: 9999; }
 .notification { padding: 12px 16px; border-radius: 8px; color: #fff; box-shadow: 0 5px 15px rgba(0,0,0,0.2); transform: translateX(calc(100% + 20px)); transition: transform 0.4s; }
 .notification.show { transform: translateX(0); }
