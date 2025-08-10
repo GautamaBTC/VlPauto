@@ -33,7 +33,7 @@ const downloadCSV = (data, filename) => {
 
 // --- БЛОК 2: ГЛОБАЛЬНОЕ СОСТОЯНИЕ ---
 const state = {
-  currentUser: null, token: null, socket: null, activeTab: 'home', user: {},
+  token: null, socket: null, activeTab: 'home', user: {},
   data: { weekOrders: [], todayOrders: [], leaderboard: [], weekStats: {}, archive: [], history: [] },
   selectedMaster: 'all',
 };
@@ -60,8 +60,10 @@ function initAuth() {
     return false;
   }
   try {
-    state.currentUser = JSON.parse(userDataString);
-    document.getElementById('user-name-display').textContent = state.currentUser.name;
+    state.user = JSON.parse(userDataString);
+    document.getElementById('user-name-display').textContent = state.user.name;
+    // Apply privileged class immediately on load
+    document.body.classList.toggle('is-privileged', isPrivileged());
   } catch(e) {
     logout();
     return false;
@@ -141,7 +143,7 @@ function handleAction(target) {
         if (financeTab) financeTab.click();
     },
     'clear-history': () => openConfirmationModal({ title: 'Очистить историю?', text: 'Все архивные записи будут удалены.', onConfirm: () => state.socket.emit('clearHistory') }),
-    'clear-data': () => openConfirmationModal({ title: 'Сбросить всё?', text: 'Все текущие заказы и история будут удалены. База вернется к тестовому состоянию.', onConfirm: () => state.socket.emit('clearData') }),
+    'clear-data': () => openClearDataCaptchaModal(),
     'edit-order': () => {
       const order = [...(state.data.weekOrders || []), ...(state.data.history.flatMap(h => h.orders) || [])].find(o => o.id === id);
       if (order) openOrderModal(order);
@@ -220,11 +222,15 @@ const renderArchivePage = () => {
     // If any filter is active, show flat list of orders
     if (startDate || endDate) {
         const allArchivedOrders = state.data.history.flatMap(h => h.orders);
+
+        const start = startDate ? new Date(startDate + 'T00:00:00.000Z') : null;
+        const end = endDate ? new Date(endDate + 'T23:59:59.999Z') : null;
+
         const filteredOrders = allArchivedOrders.filter(order => {
             if (!order.createdAt) return false;
-            const orderDate = order.createdAt.slice(0, 10);
-            if (startDate && orderDate < startDate) return false;
-            if (endDate && orderDate > endDate) return false;
+            const orderDate = new Date(order.createdAt);
+            if (start && orderDate < start) return false;
+            if (end && orderDate > end) return false;
             return true;
         });
         renderOrdersList(container, filteredOrders);
@@ -263,11 +269,14 @@ function exportArchiveCSV() {
     const endDate = document.getElementById('filter-end-date').value;
     let allArchivedOrders = state.data.history.flatMap(h => h.orders);
 
+    const start = startDate ? new Date(startDate + 'T00:00:00.000Z') : null;
+    const end = endDate ? new Date(endDate + 'T23:59:59.999Z') : null;
+
     const filteredOrders = allArchivedOrders.filter(order => {
         if (!order.createdAt) return false;
-        const orderDate = order.createdAt.slice(0, 10);
-        if (startDate && orderDate < startDate) return false;
-        if (endDate && orderDate > endDate) return false;
+        const orderDate = new Date(order.createdAt);
+        if (start && orderDate < start) return false;
+        if (end && orderDate > end) return false;
         return true;
     });
 
@@ -618,6 +627,46 @@ function openArchivedWeekModal(weekData) {
 
     const ordersContainer = modal.querySelector('#archived-week-orders-container');
     renderOrdersList(ordersContainer, weekData.orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
+}
+
+function openClearDataCaptchaModal() {
+    closeModal();
+    const captcha = String(Math.floor(1000 + Math.random() * 9000));
+    const modal = document.createElement('div');
+    modal.className = 'modal-backdrop show';
+    modal.innerHTML = `
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">Подтверждение сброса данных</h3>
+          <button class="modal-close-btn" data-action="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p>Это действие необратимо. Все текущие заказ-наряды и вся история будут удалены. База данных вернется к начальному состоянию.</p>
+          <p>Для подтверждения, пожалуйста, введите число <strong>${captcha}</strong> в поле ниже.</p>
+          <div class="form-group">
+            <input type="text" id="captcha-input" class="form-control" autocomplete="off" inputmode="numeric" pattern="[0-9]*">
+          </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-action="close-modal">Отмена</button>
+            <button type="button" class="btn btn-danger" id="confirm-clear-data" disabled>Подтвердить и сбросить</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target.closest('[data-action="close-modal"]') || e.target === modal) closeModal(); });
+
+    const captchaInput = modal.querySelector('#captcha-input');
+    const confirmBtn = modal.querySelector('#confirm-clear-data');
+
+    captchaInput.addEventListener('input', () => {
+        confirmBtn.disabled = captchaInput.value !== captcha;
+    });
+
+    confirmBtn.addEventListener('click', () => {
+        state.socket.emit('clearData');
+        closeModal();
+    });
 }
 
 function openConfirmationModal({ title, text, onConfirm }) {
