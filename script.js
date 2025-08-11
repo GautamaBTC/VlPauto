@@ -195,7 +195,7 @@ function renderContent() {
 
 const isPrivileged = () => state.user.role === 'DIRECTOR' || state.user.role === 'SENIOR_MASTER';
 
-const renderHomePage = () => { renderMainContributionChart(); };
+const renderHomePage = () => { renderDashboard(); renderMainContributionChart(); };
 function renderOrdersStats() {
     const container = document.getElementById('orders-stats-container');
     if (!isPrivileged() || !container) {
@@ -565,6 +565,31 @@ function renderFinanceCharts(leaderboardData) {
     }
 }
 
+function renderDashboard() {
+  const { weekStats, todayOrders, user } = state.data;
+  if (!weekStats || !user) return;
+
+  const userIsPrivileged = isPrivileged();
+
+  document.querySelector('#dash-revenue .dashboard-item-value').textContent = formatCurrency(weekStats.revenue);
+  document.querySelector('#dash-revenue .dashboard-item-title').textContent = userIsPrivileged ? 'Выручка (неделя)' : 'Моя выручка';
+  document.querySelector('#dash-orders .dashboard-item-value').textContent = weekStats.ordersCount || 0;
+  document.querySelector('#dash-avg-check .dashboard-item-value').textContent = formatCurrency(weekStats.avgCheck);
+
+  const todayValueEl = document.querySelector('#dash-today-personal .dashboard-item-value');
+  const todayTitleEl = document.querySelector('#dash-today-personal .dashboard-item-title');
+
+  if(userIsPrivileged) {
+    const totalTodayRevenue = (todayOrders || []).reduce((sum, o) => sum + o.amount, 0);
+    todayValueEl.textContent = formatCurrency(totalTodayRevenue);
+    todayTitleEl.textContent = 'Сегодня (всего)';
+  } else {
+    const personalTodayRevenue = (todayOrders || []).filter(o => o.masterName === user.name).reduce((sum, o) => sum + o.amount, 0);
+    todayValueEl.textContent = formatCurrency(personalTodayRevenue);
+    todayTitleEl.textContent = 'Сегодня (лично)';
+  }
+}
+
 function renderMainContributionChart() {
   const container = document.getElementById('main-contribution-chart-container');
   if (!container) return;
@@ -577,16 +602,17 @@ function renderMainContributionChart() {
 
   const maxRevenue = Math.max(...leaderboardData.map(m => m.revenue), 0);
 
-  const DULL_GREEN = { h: 100, s: 30, l: 35 };
-  const BRIGHT_GREEN = { h: 120, s: 65, l: 55 };
+  const PALE_YELLOW = { h: 60, s: 80, l: 75 };
+  const RICH_GREEN = { h: 120, s: 60, l: 45 };
 
   let html = '<div class="chart">';
   leaderboardData.forEach(master => {
     const percentageOfMax = maxRevenue > 0 ? (master.revenue / maxRevenue) : 0;
 
-    const saturation = DULL_GREEN.s + (BRIGHT_GREEN.s - DULL_GREEN.s) * percentageOfMax;
-    const lightness = DULL_GREEN.l + (BRIGHT_GREEN.l - DULL_GREEN.l) * percentageOfMax;
-    const barColor = `hsl(${DULL_GREEN.h}, ${saturation}%, ${lightness}%)`;
+    const hue = PALE_YELLOW.h + (RICH_GREEN.h - PALE_YELLOW.h) * percentageOfMax;
+    const saturation = PALE_YELLOW.s + (RICH_GREEN.s - PALE_YELLOW.s) * percentageOfMax;
+    const lightness = PALE_YELLOW.l + (RICH_GREEN.l - PALE_YELLOW.l) * percentageOfMax;
+    const barColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
 
     const barWidth = maxRevenue > 0 ? (master.revenue / maxRevenue) * 100 : 0;
 
