@@ -374,7 +374,80 @@ body.is-privileged .tab-content.privileged-only.active {
 
 .finance-actions { margin-top: 24px; }
 
+/* Стили для автозаполнения поиска */
+.input-with-icon {
+    position: relative;
+}
+.search-results-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    z-index: 10;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    display: none;
+}
+.search-results-list.active {
+    display: block;
+}
+.search-result-item {
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.search-result-item:hover {
+    background-color: var(--bg);
+}
+.search-result-item.disabled {
+    cursor: default;
+    color: var(--text-muted);
+}
+.search-result-item strong {
+    color: var(--text);
+}
+
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: var(--transition);
+    color: var(--text);
+    font-family: inherit;
+    resize: vertical;
+    min-height: 80px;
+}
+.form-group textarea:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
 /* Улучшения для фильтров архива */
+.archive-search-wrapper {
+    position: relative;
+    width: 250px;
+}
+.archive-search-wrapper .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+}
+.archive-search-wrapper .form-control {
+    padding-left: 35px;
+    width: 100%;
+}
+.archive-search-wrapper .search-results-list {
+    width: 100%;
+}
 .archive-filters .input-with-icon {
     position: relative;
     display: flex;
