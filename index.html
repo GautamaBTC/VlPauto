@@ -98,7 +98,12 @@
             </div>
           </div>
           <button id="apply-archive-filter" class="btn btn-secondary">Применить</button>
-          <button data-action="open-export-modal" class="btn btn-accent"><i class="fas fa-file-csv"></i> Экспорт в CSV</button>
+          <div class="archive-period-buttons">
+            <button class="btn btn-sm btn-secondary" data-action="set-archive-period" data-period="week">Неделя</button>
+            <button class="btn btn-sm btn-secondary" data-action="set-archive-period" data-period="month">Месяц</button>
+            <button class="btn btn-sm btn-secondary" data-action="set-archive-period" data-period="year">Год</button>
+          </div>
+          <button data-action="export-csv-archive" class="btn btn-accent"><i class="fas fa-file-csv"></i> Экспорт в CSV</button>
         </div>
         <div id="archiveListContainer" class="orders-list-container"></div>
       </div>
