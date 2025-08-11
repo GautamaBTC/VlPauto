@@ -47,13 +47,13 @@ document.addEventListener('DOMContentLoaded', () => {
     initSocketConnection();
     initEventListeners();
 
+    // Determine initial tab but don't activate it yet
     const savedTabId = localStorage.getItem('vipauto_active_tab') || 'home';
     const tabToActivate = document.querySelector(`.nav-tab[data-tab="${savedTabId}"]`);
-
-    if (tabToActivate && tabToActivate.style.display !== 'none') {
-        tabToActivate.click();
+    if (tabToActivate && getComputedStyle(tabToActivate).display !== 'none') {
+      state.activeTab = savedTabId;
     } else {
-        document.querySelector('.nav-tab[data-tab="home"]').click();
+      state.activeTab = 'home';
     }
   } catch (error) {
     console.error("КРИТИЧЕСКАЯ ОШИБКА:", error);
@@ -197,6 +197,17 @@ function updateAndRender(data, isInitialLoad = false) {
   state.user = data.user;
   state.masters = data.masters;
   document.body.classList.toggle('is-privileged', isPrivileged());
+
+  if (isInitialLoad) {
+    const tabButton = document.querySelector(`.nav-tab[data-tab="${state.activeTab}"]`);
+    if (tabButton) {
+      document.querySelector('.nav-tab.active')?.classList.remove('active');
+      document.querySelector('.tab-content.active')?.classList.remove('active');
+      tabButton.classList.add('active');
+      document.getElementById(state.activeTab)?.classList.add('active');
+    }
+  }
+
   renderContent();
 }
 
