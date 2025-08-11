@@ -94,7 +94,6 @@ function initClock() {
 function initSocketConnection() {
   state.socket = io({ auth: { token: state.token } });
   state.socket.on('connect', () => console.log('Подключено к серверу.'));
-  state.socket.on('disconnect', () => showNotification('Соединение потеряно', 'error'));
   state.socket.on('connect_error', (err) => {
     console.error('Socket connect_error:', err);
     showNotification('Ошибка подключения к серверу.', 'error');
@@ -138,7 +137,7 @@ function handleAction(target) {
   const actions = {
     'logout': logout,
     'add-order': () => openOrderModal(),
-    'view-salary': openSalaryModal,
+    'view-clients': () => showNotification('Раздел "Клиенты" находится в разработке.', 'success'),
     'open-export-modal': openExportModal,
     'export-period': () => {
         const period = target.dataset.period;
@@ -196,7 +195,7 @@ function renderContent() {
 
 const isPrivileged = () => state.user.role === 'DIRECTOR' || state.user.role === 'SENIOR_MASTER';
 
-const renderHomePage = () => { renderDashboard(); renderLeaderboard(); renderContributionChart(); };
+const renderHomePage = () => { renderDashboard(); };
 const renderOrdersPage = () => {
     const container = document.getElementById('ordersList');
     const masterFilter = document.getElementById('master-filter');
@@ -667,30 +666,6 @@ function openOrderModal(order = null) {
   });
 }
 
-function openSalaryModal() {
-    closeModal();
-    const modal = document.createElement('div');
-    modal.className = 'modal-backdrop show';
-    const salaryData = state.data.leaderboard.map(m => ({ ...m, salary: m.revenue * 0.5, bonus: 0 }));
-
-    modal.innerHTML = `<div class="modal-content" id="salary-modal-content"><div class="modal-header"><h3 class="modal-title">Расчет Зарплаты</h3><button class="modal-close-btn" data-action="close-modal">&times;</button></div><div class="modal-body"><table class="salary-table leaderboard-table"><thead><tr><th>Мастер</th><th>ЗП (50%)</th><th>Премия</th><th>Итог</th></tr></thead><tbody>
-      ${salaryData.map(m => `<tr><td>${m.name}</td><td>${formatCurrency(m.salary)}</td><td><input type="number" class="form-control" data-master-name="${m.name}" value="0"></td><td class="final-salary">${formatCurrency(m.salary)}</td></tr>`).join('')}
-    </tbody></table></div></div>`;
-    document.body.appendChild(modal);
-    modal.addEventListener('click', (e) => { if (e.target.closest('[data-action="close-modal"]') || e.target === modal) closeModal(); });
-
-    modal.querySelectorAll('input[type="number"]').forEach(input => {
-        input.addEventListener('input', (e) => {
-            const masterName = e.target.dataset.masterName;
-            const bonus = parseFloat(e.target.value) || 0;
-            const masterData = salaryData.find(m => m.name === masterName);
-            if (!masterData) return;
-            const finalSalary = masterData.salary + bonus;
-            const row = e.target.closest('tr');
-            if (row) row.querySelector('.final-salary').textContent = formatCurrency(finalSalary);
-        });
-    });
-}
 
 function finalizeWeek() {
     const salaryItems = document.querySelectorAll('.salary-item');
