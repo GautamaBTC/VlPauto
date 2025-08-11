@@ -7,7 +7,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --font-numeric: 'Orbitron', sans-serif;
   --light-bg: #F7F8FA;
   --light-panel-bg: #FFFFFF;
   --light-border: #E4E7ED;
@@ -170,11 +169,23 @@ html:not([data-theme="dark"]) .nav-tab[data-tab="archive"].active {
 .btn-with-icon { display: flex; align-items: center; justify-content: center; gap: 8px; }
 
 /* 6. Компоненты */
-.dashboard { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
-.dashboard-item { background: var(--panel-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
-.dashboard-item-icon .fas { font-size: 20px; color: var(--accent); margin-bottom: 4px; }
-.dashboard-item-title { font-size: 0.8rem; color: var(--text-muted); }
-.dashboard-item-value { font-size: 1.4rem; font-weight: 700; }
+.dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.dashboard-item {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.dashboard-item-icon .fas { font-size: 22px; color: var(--accent); }
+.dashboard-item-title { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; }
+.dashboard-item-value { font-size: 1.3rem; font-weight: 700; }
+
+@media (max-width: 768px) {
+    .dashboard { grid-template-columns: repeat(2, 1fr); }
+}
 
 .quick-actions-grid { padding: 16px; display: grid; gap: 12px; grid-template-columns: 1fr 1fr; }
 .quick-actions-grid .btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding-top: 12px; padding-bottom: 12px; font-size: 1rem; }
@@ -650,7 +661,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .stats-total,
 .week-summary-header .week-revenue,
 .salary-details strong {
-  font-family: var(--font-numeric);
+  font-feature-settings: 'tnum' on, 'ss01' on;
+  -webkit-font-feature-settings: 'tnum' on, 'ss01' on;
+  -moz-font-feature-settings: 'tnum' on, 'ss01' on;
 }
 
 /* Стили для модального окна бонусов */
