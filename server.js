@@ -21,7 +21,7 @@ const io = new Server(server, { cors: { origin: "*" } });
 app.use(express.json());
 app.use(express.static(__dirname));
 
-let db = { users: {}, orders: [], history: [] };
+let db = { users: {}, orders: [], history: [], clients: [] };
 
 const saveDB = async () => fs.writeFile(DB_PATH, JSON.stringify(db, null, 2)).catch(err => console.error('!!! ОШИБКА СОХРАНЕНИЯ БД:', err));
 
@@ -30,18 +30,20 @@ const loadDB = async () => {
     const fileContent = await fs.readFile(DB_PATH, 'utf-8');
     if (fileContent.length < 20) throw new Error("Empty DB file");
     const parsedDb = JSON.parse(fileContent);
-    if (!parsedDb.orders || parsedDb.orders.length === 0) {
+
+    // Ensure all parts of the DB exist
+    db = { users: {}, orders: [], history: [], clients: [], ...parsedDb };
+
+    if (!db.orders || db.orders.length === 0) {
       console.log(`[DB] База пуста. Заполняем тестовыми данными.`);
-      db = parsedDb;
       seedDatabaseWithTestData();
       await saveDB();
     } else {
-      db = parsedDb;
-      console.log(`[DB] База успешно загружена. Заказов: ${db.orders.length}`);
+      console.log(`[DB] База успешно загружена. Заказов: ${db.orders.length}, Клиентов: ${db.clients.length}`);
     }
   } catch (error) {
     console.log(`[DB] Файл db.json не найден или поврежден. Создаем новую базу.`);
-    db = { users: {}, orders: [], history: [] };
+    db = { users: {}, orders: [], history: [], clients: [] };
     seedDatabaseWithTestData();
     await saveDB();
   }
@@ -58,16 +60,29 @@ const seedDatabaseWithTestData = () => {
         'maxim': { password: 'Max2B7nS', role: 'MASTER', name: 'Максим' },
         'artyom': { password: 'Art5H4qF', role: 'MASTER', name: 'Артём' }
     };
+
     const masterNames = Object.values(db.users).filter(u => u.role.includes('MASTER')).map(u => u.name);
     const carBrands = ['Lada Vesta', 'Toyota Camry', 'Ford Focus', 'BMW X5', 'Mercedes C-Class', 'Audi A6', 'Kia Rio', 'Hyundai Solaris'];
     const services = ['Замена масла ДВС', 'Комплексный шиномонтаж', 'Диагностика ходовой', 'Ремонт тормозной системы', 'Замена ГРМ'];
-    const clientNames = ['Иван Петров', 'Сергей Смирнов', 'Анна Кузнецова', 'Ольга Васильева', 'Дмитрий Попов'];
+
+    const clientsData = [
+        { name: 'Иван Петров', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
+        { name: 'Сергей Смирнов', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
+        { name: 'Анна Кузнецова', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
+        { name: 'Ольга Васильева', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
+        { name: 'Дмитрий Попов', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
+    ];
+
+    db.clients = clientsData.map((c, i) => ({ ...c, id: `client-${Date.now()}-${i}`, createdAt: new Date().toISOString() }));
 
     let testOrders = [];
     for (let i = 0; i < 50; i++) {
         const date = new Date();
         date.setDate(date.getDate() - Math.floor(Math.random() * 7));
         date.setHours(Math.floor(Math.random() * 10) + 9, Math.floor(Math.random() * 60));
+
+        const randomClient = db.clients[Math.floor(Math.random() * db.clients.length)];
+
         testOrders.push({
             id: `ord-${Date.now()}-${i}`,
             masterName: masterNames[Math.floor(Math.random() * masterNames.length)],
@@ -76,12 +91,13 @@ const seedDatabaseWithTestData = () => {
             amount: Math.floor(Math.random() * 2500 + 500),
             paymentType: ['Картой', 'Наличные', 'Перевод'][Math.floor(Math.random() * 3)],
             createdAt: date.toISOString(),
-            clientName: clientNames[Math.floor(Math.random() * clientNames.length)],
-            clientPhone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}`
+            clientName: randomClient.name,
+            clientPhone: randomClient.phone,
+            clientId: randomClient.id,
         });
     }
     db.orders = testOrders;
-    console.log(`[SEED] Создано ${testOrders.length} тестовых заказ-нарядов.`);
+    console.log(`[SEED] Создано ${testOrders.length} тестовых заказ-нарядов и ${db.clients.length} клиентов.`);
 };
 
 const isPrivileged = (user) => user && (user.role === 'DIRECTOR' || user.role === 'SENIOR_MASTER');
@@ -122,8 +138,47 @@ io.use((socket, next) => {
 
 io.on('connection', (socket) => {
   console.log(`[Socket] Подключился: '${socket.user.name}'`);
+
   socket.emit('initialData', prepareDataForUser(socket.user));
-  socket.on('addOrder', async (d) => { if (!isPrivileged(socket.user)) d.masterName = socket.user.name; db.orders.unshift({ ...d, id: `ord-${Date.now()}`, createdAt: new Date().toISOString() }); await saveDB(); broadcastUpdates(); });
+
+  socket.on('searchClients', (query) => {
+    if (!query) return socket.emit('clientSearchResults', []);
+    const lowerCaseQuery = query.toLowerCase();
+    const results = db.clients.filter(c =>
+        c.name.toLowerCase().includes(lowerCaseQuery) ||
+        c.phone.includes(query)
+    ).slice(0, 10); // Limit results
+    socket.emit('clientSearchResults', results);
+  });
+
+  socket.on('addOrder', async (orderData) => {
+    if (!isPrivileged(socket.user)) orderData.masterName = socket.user.name;
+
+    const { clientName, clientPhone } = orderData;
+    let client = db.clients.find(c => c.phone === clientPhone);
+
+    if (!client && clientPhone) { // Create new client only if phone is provided
+        client = {
+            id: `client-${Date.now()}`,
+            name: clientName || 'Новый клиент',
+            phone: clientPhone,
+            createdAt: new Date().toISOString()
+        };
+        db.clients.push(client);
+    }
+
+    const newOrder = {
+        ...orderData,
+        id: `ord-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        clientId: client ? client.id : null
+    };
+
+    db.orders.unshift(newOrder);
+    await saveDB();
+    broadcastUpdates();
+  });
+
   socket.on('updateOrder', async (d) => {
     const orderIndex = db.orders.findIndex(o => o.id === d.id);
     if (orderIndex === -1) return socket.emit('serverError', 'Заказ-наряд не найден.');

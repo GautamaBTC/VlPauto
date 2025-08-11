@@ -110,6 +110,22 @@ function initSocketConnection() {
   state.socket.on('initialData', (data) => updateAndRender(data, true));
   state.socket.on('dataUpdate', (data) => { updateAndRender(data); showNotification('Данные обновлены', 'success'); });
   state.socket.on('serverError', (msg) => showNotification(msg, 'error'));
+
+  state.socket.on('clientSearchResults', (results) => {
+    const activeResultsContainer = document.querySelector('.search-results-list.active');
+    if (!activeResultsContainer) return;
+
+    if (results.length === 0) {
+        activeResultsContainer.innerHTML = '<div class="search-result-item disabled">Совпадений не найдено</div>';
+        return;
+    }
+
+    activeResultsContainer.innerHTML = results.map(client =>
+        `<div class="search-result-item" data-id="${client.id}" data-name="${client.name}" data-phone="${client.phone}">
+            <strong>${client.name}</strong> (${client.phone})
+         </div>`
+    ).join('');
+  });
 }
 
 function initEventListeners() {
@@ -119,6 +135,22 @@ function initEventListeners() {
     if (actionTarget) handleAction(actionTarget);
     if (tabTarget) handleTabSwitch(tabTarget);
   });
+
+  const archiveSearchInput = document.getElementById('archive-client-search');
+  if(archiveSearchInput) {
+    archiveSearchInput.addEventListener('input', (e) => {
+      const query = e.target.value;
+      const resultsContainer = document.getElementById('archive-search-results');
+      if (query.length < 2) {
+        resultsContainer.innerHTML = '';
+        resultsContainer.classList.remove('active');
+        return;
+      }
+      resultsContainer.classList.add('active');
+      state.socket.emit('searchClients', query);
+    });
+  }
+
   const themeToggle = document.getElementById('theme-toggle');
   if (themeToggle) {
       themeToggle.addEventListener('change', (e) => {
@@ -138,6 +170,20 @@ function initEventListeners() {
           finalizeWeek();
       }
   });
+
+  const archiveResultsContainer = document.getElementById('archive-search-results');
+  if (archiveResultsContainer) {
+    archiveResultsContainer.addEventListener('click', (e) => {
+        const item = e.target.closest('.search-result-item:not(.disabled)');
+        if (!item) return;
+
+        const client = { id: item.dataset.id, name: item.dataset.name, phone: item.dataset.phone };
+        openClientHistoryModal(client);
+
+        archiveResultsContainer.classList.remove('active');
+        document.getElementById('archive-client-search').value = '';
+    });
+  }
 }
 
 // --- БЛОК 4: ОБРАБОТЧИКИ ДЕЙСТВИЙ ---
@@ -726,9 +772,71 @@ function openOrderModal(order = null) {
   const priv = isPrivileged();
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop show';
-  modal.innerHTML = `<div class="modal-content"><div class="modal-header"><h3 class="modal-title">${isEdit ? 'Редактировать' : 'Добавить'} заказ-наряд</h3><button class="modal-close-btn" data-action="close-modal">&times;</button></div><form id="order-form"><div class="modal-body"><input type="hidden" name="id" value="${isEdit ? order.id : ''}"><div class="form-group"><label>Исполнитель</label><select name="masterName" ${!priv ? 'disabled' : ''}>${priv ? state.masters.map(n => `<option value="${n}" ${isEdit && order.masterName === n ? 'selected' : ''}>${n}</option>`).join('') : `<option>${state.user.name}</option>`}</select></div><div class="form-group"><label>Модель авто</label><input type="text" name="carModel" required value="${isEdit ? order.carModel || '' : ''}"></div><div class="form-group"><label>Описание работ</label><textarea name="description" rows="3" required>${isEdit ? order.description : ''}</textarea></div><div class="form-group"><label>Имя клиента</label><input type="text" name="clientName" required value="${isEdit ? order.clientName || '' : ''}"></div><div class="form-group"><label>Телефон клиента</label><input type="tel" name="clientPhone" required value="${isEdit ? order.clientPhone || '' : ''}"></div><div class="form-group"><label>Сумма</label><input type="number" name="amount" required value="${isEdit ? order.amount : ''}"></div><div class="form-group"><label>Тип оплаты</label><select name="paymentType">${['Картой', 'Наличные', 'Перевод'].map(t => `<option value="${t}" ${isEdit && order.paymentType === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-action="close-modal">Отмена</button><button type="submit" class="btn btn-accent">${isEdit ? 'Сохранить' : 'Добавить'}</button></div></form></div>`;
+  modal.innerHTML = `<div class="modal-content"><div class="modal-header"><h3 class="modal-title">${isEdit ? 'Редактировать' : 'Добавить'} заказ-наряд</h3><button class="modal-close-btn" data-action="close-modal">&times;</button></div><form id="order-form"><div class="modal-body"><input type="hidden" name="id" value="${isEdit ? order.id : ''}"><div class="form-group"><label>Исполнитель</label><select name="masterName" ${!priv ? 'disabled' : ''}>${priv ? state.masters.map(n => `<option value="${n}" ${isEdit && order.masterName === n ? 'selected' : ''}>${n}</option>`).join('') : `<option>${state.user.name}</option>`}</select></div><div class="form-group"><label>Модель авто</label><input type="text" name="carModel" required value="${isEdit ? order.carModel || '' : ''}"></div><div class="form-group"><label>Описание работ</label><textarea name="description" rows="3" required>${isEdit ? order.description : ''}</textarea></div><div class="form-group"><label>Имя клиента</label><div class="input-with-icon"><input type="text" name="clientName" required value="${isEdit ? order.clientName || '' : ''}" autocomplete="off"><div class="search-results-list" id="client-name-results"></div></div></div><div class="form-group"><label>Телефон клиента</label><div class="input-with-icon"><input type="tel" name="clientPhone" required value="${isEdit ? order.clientPhone || '' : ''}" autocomplete="off"><div class="search-results-list" id="client-phone-results"></div></div></div><div class="form-group"><label>Сумма</label><input type="number" name="amount" required value="${isEdit ? order.amount : ''}"></div><div class="form-group"><label>Тип оплаты</label><select name="paymentType">${['Картой', 'Наличные', 'Перевод'].map(t => `<option value="${t}" ${isEdit && order.paymentType === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-action="close-modal">Отмена</button><button type="submit" class="btn btn-accent">${isEdit ? 'Сохранить' : 'Добавить'}</button></div></form></div>`;
   document.body.appendChild(modal);
-  modal.addEventListener('click', (e) => { if (e.target.closest('[data-action="close-modal"]') || e.target === modal) closeModal(); });
+
+  const clientNameInput = modal.querySelector('[name="clientName"]');
+  const clientPhoneInput = modal.querySelector('[name="clientPhone"]');
+  const nameResultsContainer = modal.querySelector('#client-name-results');
+  const phoneResultsContainer = modal.querySelector('#client-phone-results');
+
+  const handleSearch = (e) => {
+    const query = e.target.value;
+    const isPhone = e.target.name === 'clientPhone';
+    const resultsContainer = isPhone ? phoneResultsContainer : nameResultsContainer;
+
+    // Clear other results
+    if(isPhone) nameResultsContainer.innerHTML = ''; else phoneResultsContainer.innerHTML = '';
+
+    if (query.length < 2) {
+      resultsContainer.innerHTML = '';
+      resultsContainer.classList.remove('active');
+      return;
+    }
+    state.socket.emit('searchClients', query);
+  };
+
+  clientNameInput.addEventListener('input', handleSearch);
+  clientPhoneInput.addEventListener('input', handleSearch);
+
+  const populateResults = (results) => {
+      const resultsContainer = document.querySelector('.search-results-list.active');
+      if (!resultsContainer) return;
+
+      if (results.length === 0) {
+          resultsContainer.innerHTML = '<div class="search-result-item disabled">Совпадений не найдено</div>';
+          return;
+      }
+
+      resultsContainer.innerHTML = results.map(client =>
+          `<div class="search-result-item" data-name="${client.name}" data-phone="${client.phone}">
+              <strong>${client.name}</strong> (${client.phone})
+           </div>`
+      ).join('');
+  };
+
+  clientNameInput.addEventListener('focus', () => nameResultsContainer.classList.add('active'));
+  clientPhoneInput.addEventListener('focus', () => phoneResultsContainer.classList.add('active'));
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.input-with-icon')) {
+      document.querySelectorAll('.search-results-list').forEach(r => r.classList.remove('active'));
+    }
+  });
+
+  modal.addEventListener('click', (e) => {
+    const item = e.target.closest('#client-name-results .search-result-item:not(.disabled), #client-phone-results .search-result-item:not(.disabled)');
+    if (item) {
+        clientNameInput.value = item.dataset.name;
+        clientPhoneInput.value = item.dataset.phone;
+        nameResultsContainer.classList.remove('active');
+        phoneResultsContainer.classList.remove('active');
+    }
+    if (e.target.closest('[data-action="close-modal"]') || e.target === modal) {
+        closeModal();
+    }
+  });
+
   modal.querySelector('#order-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -938,6 +1046,43 @@ function openBonusModal(masterName) {
       closeModal();
     }
   });
+}
+
+function openClientHistoryModal(client) {
+    closeModal();
+    const allOrders = [...state.data.weekOrders, ...state.data.history.flatMap(h => h.orders)];
+    const clientOrders = allOrders.filter(o => o.clientId === client.id || o.clientPhone === client.phone).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    const totalRevenue = clientOrders.reduce((sum, o) => sum + o.amount, 0);
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-backdrop show';
+    modal.innerHTML = `
+      <div class="modal-content modal-xl">
+        <div class="modal-header">
+          <div>
+            <h3 class="modal-title">История клиента: ${client.name}</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">${client.phone}</p>
+          </div>
+          <button class="modal-close-btn" data-action="close-modal">&times;</button>
+        </div>
+        <div class="modal-body" id="client-history-orders-container">
+          <!-- renderOrdersList will populate this -->
+        </div>
+        <div class="modal-footer" style="justify-content: space-between;">
+            <div>
+                <span>Всего заказ-нарядов: <strong>${clientOrders.length}</strong></span>
+                <span style="margin-left: 16px;">Общая сумма: <strong>${formatCurrency(totalRevenue)}</strong></span>
+            </div>
+            <button type="button" class="btn btn-secondary" data-action="close-modal">Закрыть</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target.closest('[data-action="close-modal"]') || e.target === modal) closeModal(); });
+
+    const ordersContainer = modal.querySelector('#client-history-orders-container');
+    renderOrdersList(ordersContainer, clientOrders);
 }
 
 // --- БЛОК 7: ВЫХОД ---

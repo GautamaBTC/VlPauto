@@ -74,7 +74,14 @@
 
     <div id="archive" class="tab-content">
       <div class="section">
-        <div class="section-header"><h3 class="section-title">Архив</h3></div>
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
+          <h3 class="section-title">Архив</h3>
+          <div class="archive-search-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="archive-client-search" class="form-control" placeholder="Поиск клиентов...">
+            <div class="search-results-list" id="archive-search-results"></div>
+          </div>
+        </div>
         <div class="section-content archive-filters">
           <div class="form-group">
             <label for="filter-start-date">С:</label>
