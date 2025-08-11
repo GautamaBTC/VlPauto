@@ -193,10 +193,29 @@ function handleAction(target) {
     'logout': logout,
     'add-order': () => openOrderModal(),
     'view-clients': () => showNotification('Раздел "Клиенты" находится в разработке.', 'success'),
-    'open-export-modal': openExportModal,
-    'export-period': () => {
+    'export-csv-archive': () => exportData(),
+    'set-archive-period': () => {
         const period = target.dataset.period;
-        if(period) exportData(period);
+        const startDateInput = document.getElementById('filter-start-date');
+        const endDateInput = document.getElementById('filter-end-date');
+        const now = new Date();
+        let startDate = new Date();
+
+        if (period === 'week') {
+            const dayOfWeek = now.getDay();
+            const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust for Sunday
+            startDate = new Date(now.setDate(diff));
+        } else if (period === 'month') {
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        } else if (period === 'year') {
+            startDate = new Date(now.getFullYear(), 0, 1);
+        }
+
+        startDateInput.value = startDate.toISOString().slice(0, 10);
+        endDateInput.value = new Date().toISOString().slice(0, 10);
+
+        // Trigger filter application
+        document.getElementById('apply-archive-filter').click();
     },
     'close-week': () => {
         const financeTab = document.querySelector('[data-tab="finance"]');
@@ -218,6 +237,11 @@ function handleAction(target) {
       const weekData = state.data.history.find(w => w.weekId === weekId);
       if (weekData) openArchivedWeekModal(weekData);
     },
+    'view-week-report': () => {
+        const weekId = target.dataset.weekId;
+        const weekData = state.data.history.find(w => w.weekId === weekId);
+        if(weekData) openWeekReportModal(weekData);
+    }
   };
   if (actions[action]) actions[action]();
 }
@@ -413,59 +437,22 @@ const renderArchivePage = () => {
     }
 };
 
-function openExportModal() {
-    closeModal();
-    const modal = document.createElement('div');
-    modal.className = 'modal-backdrop show';
-    modal.innerHTML = `
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 class="modal-title">Экспорт данных</h3>
-        <button class="modal-close-btn" data-action="close-modal">&times;</button>
-      </div>
-      <div class="modal-body" style="display: grid; gap: 12px;">
-        <button class="btn btn-secondary btn-full-width" data-action="export-period" data-period="week">Экспорт за текущую неделю</button>
-        <button class="btn btn-secondary btn-full-width" data-action="export-period" data-period="month">Экспорт за текущий месяц</button>
-        <button class="btn btn-secondary btn-full-width" data-action="export-period" data-period="year">Экспорт за текущий год</button>
-        <button class="btn btn-secondary btn-full-width" data-action="export-period" data-period="custom">Экспорт за выбранный период</button>
-      </div>
-    </div>
-    `;
-    document.body.appendChild(modal);
-    modal.addEventListener('click', (e) => {
-        if (e.target.closest('[data-action="close-modal"]') || e.target === modal) {
-            closeModal();
-        }
-    });
-}
+function exportData() {
+    const startDate = document.getElementById('filter-start-date').value;
+    const endDate = document.getElementById('filter-end-date').value;
 
-function exportData(period) {
-    closeModal();
-    let ordersToExport = [];
-    const now = new Date();
-    const allOrders = [...state.data.weekOrders, ...state.data.history.flatMap(h => h.orders)];
-
-    if (period === 'week') {
-        ordersToExport = state.data.weekOrders;
-    } else if (period === 'month') {
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        ordersToExport = allOrders.filter(o => new Date(o.createdAt) >= startOfMonth);
-    } else if (period === 'year') {
-        const startOfYear = new Date(now.getFullYear(), 0, 1);
-        ordersToExport = allOrders.filter(o => new Date(o.createdAt) >= startOfYear);
-    } else if (period === 'custom') {
-        const startDate = document.getElementById('filter-start-date').value;
-        const endDate = document.getElementById('filter-end-date').value;
-        if (!startDate || !endDate) {
-            return showNotification('Пожалуйста, выберите начальную и конечную дату.', 'error');
-        }
-        const start = new Date(startDate + 'T00:00:00.000Z');
-        const end = new Date(endDate + 'T23:59:59.999Z');
-        ordersToExport = allOrders.filter(o => {
-            const orderDate = new Date(o.createdAt);
-            return orderDate >= start && orderDate <= end;
-        });
+    if (!startDate || !endDate) {
+        return showNotification('Пожалуйста, выберите начальную и конечную дату для экспорта.', 'error');
     }
+
+    const start = new Date(startDate + 'T00:00:00.000Z');
+    const end = new Date(endDate + 'T23:59:59.999Z');
+
+    const allOrders = [...state.data.weekOrders, ...state.data.history.flatMap(h => h.orders)];
+    const ordersToExport = allOrders.filter(o => {
+        const orderDate = new Date(o.createdAt);
+        return orderDate >= start && orderDate <= end;
+    });
 
     if (!ordersToExport.length) {
         return showNotification('Нет данных для экспорта за указанный период.', 'error');
@@ -568,7 +555,31 @@ function renderFinancePage() {
   // Render charts
   renderFinanceCharts(weeklyLeaderboard);
 
-  // Event listeners for bonus button will be added in a separate step
+  // Render history reports
+  const historyContainer = document.createElement('div');
+  historyContainer.className = 'section';
+  let historyHtml = '<div class="section-header"><h3 class="section-title">Прошлые периоды</h3></div><div class="section-content list-container">';
+
+  const reportedWeeks = state.data.history.filter(h => h.salaryReport && h.salaryReport.length > 0);
+
+  if (reportedWeeks.length > 0) {
+      historyHtml += reportedWeeks.map(week => {
+          const weekRevenue = week.orders.reduce((sum, o) => sum + o.amount, 0);
+          const firstOrderDate = week.orders.length > 0 ? formatDate(week.orders[0].createdAt) : 'N/A';
+          return `
+              <button class="btn btn-secondary btn-full-width" data-action="view-week-report" data-week-id="${week.weekId}">
+                  <span>Отчет за неделю от ${firstOrderDate}</span>
+                  <span>${formatCurrency(weekRevenue)}</span>
+              </button>
+          `;
+      }).join('');
+  } else {
+      historyHtml += '<div class="empty-state" style="padding: 16px 0;">Нет закрытых периодов.</div>';
+  }
+
+  historyHtml += '</div>';
+  historyContainer.innerHTML = historyHtml;
+  container.appendChild(historyContainer);
 }
 
 function renderFinanceCharts(leaderboardData) {
@@ -744,7 +755,7 @@ function renderOrdersList(container, orders) {
       <div>
         <p class="order-description">${order.carModel}: ${order.description}</p>
         <div class="order-meta">
-          ${isPrivileged() ? `<span><i class="fas fa-user"></i>${order.masterName}</span>` : ''}
+          ${isPrivileged() ? `<span class="master-info"><i class="fas fa-crown icon-crown"></i> ${order.masterName}</span>` : ''}
           ${order.clientName ? `<span><i class="fas fa-user-tie"></i>${order.clientName}</span>` : ''}
           ${order.clientPhone ? `<span><i class="fas fa-phone"></i><a href="tel:${order.clientPhone}">${order.clientPhone}</a></span>` : ''}
           <span><i class="fas fa-tag"></i>${order.paymentType}</span>
@@ -766,14 +777,68 @@ function renderOrdersList(container, orders) {
 // --- БЛОК 6: МОДАЛЬНЫЕ ОКНА ---
 function closeModal() { document.querySelector('.modal-backdrop')?.remove(); }
 
+function createCustomSelect(wrapper, name, options, selectedValue, disabled = false) {
+    wrapper.innerHTML = `
+        <div class="custom-select ${disabled ? 'disabled' : ''}">
+            <input type="hidden" name="${name}" value="${selectedValue}">
+            <div class="custom-select-trigger">
+                <span>${selectedValue}</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="custom-options">
+                ${options.map(opt => `<span class="custom-option ${opt === selectedValue ? 'selected' : ''}" data-value="${opt}">${opt}</span>`).join('')}
+            </div>
+        </div>
+    `;
+
+    if (disabled) return;
+
+    const trigger = wrapper.querySelector('.custom-select-trigger');
+    const optionsContainer = wrapper.querySelector('.custom-options');
+    const hiddenInput = wrapper.querySelector(`input[name="${name}"]`);
+    const selectedSpan = trigger.querySelector('span');
+
+    trigger.addEventListener('click', () => {
+        optionsContainer.classList.toggle('active');
+    });
+
+    optionsContainer.addEventListener('click', (e) => {
+        const option = e.target.closest('.custom-option');
+        if (option) {
+            const value = option.dataset.value;
+            hiddenInput.value = value;
+            selectedSpan.textContent = value;
+
+            wrapper.querySelector('.custom-option.selected')?.classList.remove('selected');
+            option.classList.add('selected');
+
+            optionsContainer.classList.remove('active');
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!wrapper.contains(e.target)) {
+            optionsContainer.classList.remove('active');
+        }
+    });
+}
+
 function openOrderModal(order = null) {
   closeModal();
   const isEdit = !!order;
   const priv = isPrivileged();
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop show';
-  modal.innerHTML = `<div class="modal-content"><div class="modal-header"><h3 class="modal-title">${isEdit ? 'Редактировать' : 'Добавить'} заказ-наряд</h3><button class="modal-close-btn" data-action="close-modal">&times;</button></div><form id="order-form"><div class="modal-body"><input type="hidden" name="id" value="${isEdit ? order.id : ''}"><div class="form-group"><label>Исполнитель</label><select name="masterName" ${!priv ? 'disabled' : ''}>${priv ? state.masters.map(n => `<option value="${n}" ${isEdit && order.masterName === n ? 'selected' : ''}>${n}</option>`).join('') : `<option>${state.user.name}</option>`}</select></div><div class="form-group"><label>Модель авто</label><input type="text" name="carModel" required value="${isEdit ? order.carModel || '' : ''}"></div><div class="form-group"><label>Описание работ</label><textarea name="description" rows="3" required>${isEdit ? order.description : ''}</textarea></div><div class="form-group"><label>Имя клиента</label><div class="input-with-icon"><input type="text" name="clientName" required value="${isEdit ? order.clientName || '' : ''}" autocomplete="off"><div class="search-results-list" id="client-name-results"></div></div></div><div class="form-group"><label>Телефон клиента</label><div class="input-with-icon"><input type="tel" name="clientPhone" required value="${isEdit ? order.clientPhone || '' : ''}" autocomplete="off"><div class="search-results-list" id="client-phone-results"></div></div></div><div class="form-group"><label>Сумма</label><input type="number" name="amount" required value="${isEdit ? order.amount : ''}"></div><div class="form-group"><label>Тип оплаты</label><select name="paymentType">${['Картой', 'Наличные', 'Перевод'].map(t => `<option value="${t}" ${isEdit && order.paymentType === t ? 'selected' : ''}>${t}</option>`).join('')}</select></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-action="close-modal">Отмена</button><button type="submit" class="btn btn-accent">${isEdit ? 'Сохранить' : 'Добавить'}</button></div></form></div>`;
+  const paymentTypes = ['Картой', 'Наличные', 'Перевод'];
+  const masters = priv ? state.masters : [state.user.name];
+  const selectedMaster = isEdit ? order.masterName : state.user.name;
+  const selectedPaymentType = isEdit ? order.paymentType : paymentTypes[0];
+
+  modal.innerHTML = `<div class="modal-content"><div class="modal-header"><h3 class="modal-title">${isEdit ? 'Редактировать' : 'Добавить'} заказ-наряд</h3><button class="modal-close-btn" data-action="close-modal">&times;</button></div><form id="order-form"><div class="modal-body"><input type="hidden" name="id" value="${isEdit ? order.id : ''}"><div class="form-group"><label>Исполнитель</label><div class="custom-select-wrapper" id="master-select-wrapper"></div></div><div class="form-group"><label>Модель авто</label><input type="text" name="carModel" required value="${isEdit ? order.carModel || '' : ''}"></div><div class="form-group"><label>Описание работ</label><textarea name="description" rows="3" required>${isEdit ? order.description : ''}</textarea></div><div class="form-group"><label>Имя клиента</label><div class="input-with-icon"><input type="text" name="clientName" required value="${isEdit ? order.clientName || '' : ''}" autocomplete="off"><div class="search-results-list" id="client-name-results"></div></div></div><div class="form-group"><label>Телефон клиента</label><div class="input-with-icon"><input type="tel" name="clientPhone" required value="${isEdit ? order.clientPhone || '' : ''}" autocomplete="off"><div class="search-results-list" id="client-phone-results"></div></div></div><div class="form-group"><label>Сумма</label><input type="number" name="amount" required value="${isEdit ? order.amount : ''}"></div><div class="form-group"><label>Тип оплаты</label><div class="custom-select-wrapper" id="payment-select-wrapper"></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-action="close-modal">Отмена</button><button type="submit" class="btn btn-accent">${isEdit ? 'Сохранить' : 'Добавить'}</button></div></form></div>`;
   document.body.appendChild(modal);
+
+  createCustomSelect(modal.querySelector('#master-select-wrapper'), 'masterName', masters, selectedMaster, !priv);
+  createCustomSelect(modal.querySelector('#payment-select-wrapper'), 'paymentType', paymentTypes, selectedPaymentType);
 
   const clientNameInput = modal.querySelector('[name="clientName"]');
   const clientPhoneInput = modal.querySelector('[name="clientPhone"]');
@@ -971,7 +1036,7 @@ function openCloseWeekModal() {
 }
 
 function openBonusModal(masterName) {
-  closeModal(); // Close any existing modals
+  closeModal();
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop show';
 
@@ -982,24 +1047,38 @@ function openBonusModal(masterName) {
   const currentBonusPercentage = baseSalary > 0 ? (currentBonus / baseSalary * 100) : 0;
 
   modal.innerHTML = `
-    <div class="modal-content">
+    <div class="modal-content bonus-modal">
       <div class="modal-header">
         <h3 class="modal-title">Премия для: ${masterName}</h3>
         <button class="modal-close-btn" data-action="close-modal">&times;</button>
       </div>
       <div class="modal-body">
-        <p>Базовая зарплата: <strong>${formatCurrency(baseSalary)}</strong></p>
-        <div class="form-group">
-          <label for="bonus-slider">Бонус (<span id="bonus-percentage-display">${currentBonusPercentage.toFixed(0)}%</span>)</label>
-          <input type="range" class="bonus-slider" id="bonus-slider" min="0" max="20" step="2" value="${currentBonusPercentage.toFixed(0)}">
+        <div class="bonus-info-row">
+            <span>Базовая зарплата</span>
+            <strong>${formatCurrency(baseSalary)}</strong>
         </div>
-        <p>Сумма премии: <strong id="bonus-amount-display">${formatCurrency(currentBonus)}</strong></p>
+
+        <div class="form-group">
+          <label for="bonus-slider">Бонус (<span class="bonus-percentage-value">${currentBonusPercentage.toFixed(0)}%</span>)</label>
+          <div class="slider-container">
+            <input type="range" class="bonus-slider" id="bonus-slider" min="0" max="20" step="2" value="${currentBonusPercentage.toFixed(0)}">
+            <div class="slider-ticks"></div>
+          </div>
+        </div>
+
+        <div class="bonus-info-row">
+            <span>Сумма премии</span>
+            <strong id="bonus-amount-display">${formatCurrency(currentBonus)}</strong>
+        </div>
         <hr>
-        <p style="font-weight: 600; font-size: 1.1rem;">Итоговая зарплата: <strong id="total-salary-display">${formatCurrency(baseSalary + currentBonus)}</strong></p>
+        <div class="bonus-info-row total">
+            <span>Итоговая зарплата</span>
+            <strong id="total-salary-display">${formatCurrency(baseSalary + currentBonus)}</strong>
+        </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-action="close-modal">Отмена</button>
-        <button type="button" class="btn btn-accent" id="confirm-bonus">Начислить</button>
+        <button type="button" class="btn btn-success btn-lg" id="confirm-bonus">Начислить</button>
       </div>
     </div>
   `;
@@ -1007,9 +1086,15 @@ function openBonusModal(masterName) {
   document.body.appendChild(modal);
 
   const bonusSlider = modal.querySelector('#bonus-slider');
-  const percentageDisplay = modal.querySelector('#bonus-percentage-display');
+  const percentageDisplay = modal.querySelector('.bonus-percentage-value');
   const bonusAmountDisplay = modal.querySelector('#bonus-amount-display');
   const totalSalaryDisplay = modal.querySelector('#total-salary-display');
+  const ticksContainer = modal.querySelector('.slider-ticks');
+
+  for (let i = 0; i <= 20; i += 2) {
+      const tick = document.createElement('span');
+      ticksContainer.appendChild(tick);
+  }
 
   const updateTotal = () => {
     const bonusPercentage = parseInt(bonusSlider.value, 10);
@@ -1083,6 +1168,68 @@ function openClientHistoryModal(client) {
 
     const ordersContainer = modal.querySelector('#client-history-orders-container');
     renderOrdersList(ordersContainer, clientOrders);
+}
+
+function openWeekReportModal(weekData) {
+    closeModal();
+    const modal = document.createElement('div');
+    modal.className = 'modal-backdrop show';
+
+    const weekRevenue = weekData.orders.reduce((sum, o) => sum + o.amount, 0);
+    const serviceProfit = weekRevenue * 0.5;
+    const totalPayout = weekData.salaryReport.reduce((sum, r) => sum + r.finalSalary, 0);
+    const firstOrderDate = weekData.orders.length > 0 ? formatDate(weekData.orders[0].createdAt) : 'N/A';
+
+    let reportHtml = weekData.salaryReport.map(r => `
+        <tr>
+            <td>${r.name}</td>
+            <td>${formatCurrency(r.baseSalary)}</td>
+            <td>${formatCurrency(r.bonus)}</td>
+            <td>${formatCurrency(r.finalSalary)}</td>
+        </tr>
+    `).join('');
+
+    modal.innerHTML = `
+      <div class="modal-content modal-lg">
+        <div class="modal-header">
+          <h3 class="modal-title">Финансовый отчет за неделю от ${firstOrderDate}</h3>
+          <button class="modal-close-btn" data-action="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="dashboard" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                <div class="dashboard-item">
+                    <div class="dashboard-item-title">Общая выручка</div>
+                    <div class="dashboard-item-value">${formatCurrency(weekRevenue)}</div>
+                </div>
+                <div class="dashboard-item">
+                    <div class="dashboard-item-title">Прибыль сервиса</div>
+                    <div class="dashboard-item-value">${formatCurrency(serviceProfit)}</div>
+                </div>
+                <div class="dashboard-item">
+                    <div class="dashboard-item-title">Всего выплачено</div>
+                    <div class="dashboard-item-value">${formatCurrency(totalPayout)}</div>
+                </div>
+            </div>
+            <h4 style="margin-top: 24px; margin-bottom: 12px;">Детализация по мастерам</h4>
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Мастер</th>
+                        <th>Базовая ЗП (50%)</th>
+                        <th>Премия</th>
+                        <th>Итог к выплате</th>
+                    </tr>
+                </thead>
+                <tbody>${reportHtml}</tbody>
+            </table>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-action="close-modal">Закрыть</button>
+        </div>
+      </div>`;
+
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target.closest('[data-action="close-modal"]') || e.target === modal) closeModal(); });
 }
 
 // --- БЛОК 7: ВЫХОД ---
