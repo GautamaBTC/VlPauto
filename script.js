@@ -195,8 +195,78 @@ function renderContent() {
 
 const isPrivileged = () => state.user.role === 'DIRECTOR' || state.user.role === 'SENIOR_MASTER';
 
-const renderHomePage = () => { renderDashboard(); };
+const renderHomePage = () => { renderMainContributionChart(); };
+function renderOrdersStats() {
+    const container = document.getElementById('orders-stats-container');
+    if (!isPrivileged() || !container) {
+        if(container) container.style.display = 'none';
+        return;
+    }
+    container.style.display = 'block';
+
+    const allOrders = [...state.data.weekOrders, ...state.data.history.flatMap(h => h.orders)];
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10);
+
+    // Create a new date for start of month to avoid mutating 'now'
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+
+    const ordersToday = allOrders.filter(o => o.createdAt.slice(0, 10) === today);
+    const ordersThisWeek = state.data.weekOrders;
+    const ordersThisMonth = allOrders.filter(o => new Date(o.createdAt) >= startOfMonth);
+    const ordersThisYear = allOrders.filter(o => new Date(o.createdAt) >= startOfYear);
+
+    const countOrdersByMaster = (orders) => orders.reduce((acc, order) => {
+        acc[order.masterName] = (acc[order.masterName] || 0) + 1;
+        return acc;
+    }, {});
+
+    const stats = {
+        day: { total: ordersToday.length },
+        week: { total: ordersThisWeek.length, byMaster: countOrdersByMaster(ordersThisWeek) },
+        month: { total: ordersThisMonth.length },
+        year: { total: ordersThisYear.length },
+    };
+
+    let masterDetailsHtml = Object.entries(stats.week.byMaster)
+        .sort((a, b) => b[1] - a[1]) // Sort by count descending
+        .map(([name, count]) => `<li><strong>${name}:</strong> ${count}</li>`)
+        .join('');
+
+    if (!masterDetailsHtml) {
+        masterDetailsHtml = '<li>Нет данных за неделю</li>';
+    }
+
+    const html = `
+        <div class="orders-stats-grid">
+            <div class="stats-period">
+                <div class="stats-header">За день</div>
+                <div class="stats-total">${stats.day.total}</div>
+            </div>
+            <div class="stats-period">
+                <div class="stats-header">За неделю</div>
+                <div class="stats-total">${stats.week.total}</div>
+            </div>
+            <div class="stats-period">
+                <div class="stats-header">За месяц</div>
+                <div class="stats-total">${stats.month.total}</div>
+            </div>
+            <div class="stats-period">
+                <div class="stats-header">За год</div>
+                <div class="stats-total">${stats.year.total}</div>
+            </div>
+        </div>
+        <div class="master-stats-details">
+            <h4 class="master-stats-title">Вклад мастеров (за неделю)</h4>
+            <ul>${masterDetailsHtml}</ul>
+        </div>
+    `;
+    container.innerHTML = html;
+}
+
 const renderOrdersPage = () => {
+    renderOrdersStats();
     const container = document.getElementById('ordersList');
     const masterFilter = document.getElementById('master-filter');
     const filterContainer = document.querySelector('.order-filters');
@@ -380,12 +450,12 @@ function renderFinancePage() {
     </div>
 
     <div class="section">
-        <div class="section-header"><h3 class="section-title">Вклад мастеров (Столбчатая диаграмма)</h3></div>
+        <div class="section-header"><h3 class="section-title">Вклад мастеров</h3></div>
         <div id="finance-bar-chart-container" class="section-content" style="padding: 16px;"></div>
     </div>
 
     <div class="section">
-        <div class="section-header"><h3 class="section-title">Вклад мастеров (Круговая диаграмма)</h3></div>
+        <div class="section-header"><h3 class="section-title">Вклад мастеров</h3></div>
         <div id="finance-pie-chart-container" class="section-content" style="padding: 16px; display: flex; justify-content: center; align-items: center; min-height: 350px;"></div>
     </div>
 
@@ -495,33 +565,36 @@ function renderFinanceCharts(leaderboardData) {
     }
 }
 
-function renderContributionChart() {
-  const container = document.getElementById('contribution-chart-container');
-  const section = document.getElementById('contribution-chart-section');
+function renderMainContributionChart() {
+  const container = document.getElementById('main-contribution-chart-container');
+  if (!container) return;
 
-  if (!isPrivileged()) {
-    if(section) section.style.display = 'none';
-    return;
-  }
-
-  if(section) section.style.display = 'block';
-
-  if (!container || !state.data.leaderboard?.length) {
+  const leaderboardData = state.data.leaderboard;
+  if (!leaderboardData || leaderboardData.length === 0) {
     container.innerHTML = '<div class="empty-state"><p>Нет данных для графика.</p></div>';
     return;
   }
 
-  const leaderboardData = state.data.leaderboard;
   const maxRevenue = Math.max(...leaderboardData.map(m => m.revenue), 0);
+
+  const DULL_GREEN = { h: 100, s: 30, l: 35 };
+  const BRIGHT_GREEN = { h: 120, s: 65, l: 55 };
 
   let html = '<div class="chart">';
   leaderboardData.forEach(master => {
+    const percentageOfMax = maxRevenue > 0 ? (master.revenue / maxRevenue) : 0;
+
+    const saturation = DULL_GREEN.s + (BRIGHT_GREEN.s - DULL_GREEN.s) * percentageOfMax;
+    const lightness = DULL_GREEN.l + (BRIGHT_GREEN.l - DULL_GREEN.l) * percentageOfMax;
+    const barColor = `hsl(${DULL_GREEN.h}, ${saturation}%, ${lightness}%)`;
+
     const barWidth = maxRevenue > 0 ? (master.revenue / maxRevenue) * 100 : 0;
+
     html += `
       <div class="chart-item">
         <div class="chart-label">${master.name}</div>
         <div class="chart-bar-container">
-          <div class="chart-bar" style="width: ${barWidth}%;"></div>
+          <div class="chart-bar" style="width: ${barWidth}%; background-color: ${barColor};"></div>
         </div>
         <div class="chart-value">${formatCurrency(master.revenue)}</div>
       </div>
@@ -532,30 +605,6 @@ function renderContributionChart() {
 }
 
 
-function renderDashboard() {
-  const { weekStats, todayOrders, user } = state.data;
-  if (!weekStats || !user) return;
-
-  const userIsPrivileged = isPrivileged();
-
-  document.querySelector('#dash-revenue .dashboard-item-value').textContent = formatCurrency(weekStats.revenue);
-  document.querySelector('#dash-revenue .dashboard-item-title').textContent = userIsPrivileged ? 'Выручка (неделя)' : 'Моя выручка';
-  document.querySelector('#dash-orders .dashboard-item-value').textContent = weekStats.ordersCount || 0;
-  document.querySelector('#dash-avg-check .dashboard-item-value').textContent = formatCurrency(weekStats.avgCheck);
-
-  const todayValueEl = document.querySelector('#dash-today-personal .dashboard-item-value');
-  const todayTitleEl = document.querySelector('#dash-today-personal .dashboard-item-title');
-
-  if(userIsPrivileged) {
-    const totalTodayRevenue = (todayOrders || []).reduce((sum, o) => sum + o.amount, 0);
-    todayValueEl.textContent = formatCurrency(totalTodayRevenue);
-    todayTitleEl.textContent = 'Сегодня (всего)';
-  } else {
-    const personalTodayRevenue = (todayOrders || []).filter(o => o.masterName === user.name).reduce((sum, o) => sum + o.amount, 0);
-    todayValueEl.textContent = formatCurrency(personalTodayRevenue);
-    todayTitleEl.textContent = 'Сегодня (лично)';
-  }
-}
 
 function canEditOrder(order) {
   const user = state.user;
