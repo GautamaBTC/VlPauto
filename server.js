@@ -83,10 +83,23 @@ const seedDatabaseWithTestData = () => {
 
         const randomClient = db.clients[Math.floor(Math.random() * db.clients.length)];
 
+        const generateLicensePlate = () => {
+            const letters = 'АВЕКМНОРСТУХ';
+            const region = ['77', '99', '177', '199', '777', '161', '61', '93', '123'][Math.floor(Math.random() * 9)];
+            const l1 = letters[Math.floor(Math.random() * letters.length)];
+            const d1 = String(Math.floor(Math.random() * 10));
+            const d2 = String(Math.floor(Math.random() * 10));
+            const d3 = String(Math.floor(Math.random() * 10));
+            const l2 = letters[Math.floor(Math.random() * letters.length)];
+            const l3 = letters[Math.floor(Math.random() * letters.length)];
+            return `${l1} ${d1}${d2}${d3} ${l2}${l3} ${region}`;
+        };
+
         testOrders.push({
             id: `ord-${Date.now()}-${i}`,
             masterName: masterNames[Math.floor(Math.random() * masterNames.length)],
             carModel: carBrands[Math.floor(Math.random() * carBrands.length)],
+            licensePlate: generateLicensePlate(),
             description: services[Math.floor(Math.random() * services.length)],
             amount: Math.floor(Math.random() * 2500 + 500),
             paymentType: ['Картой', 'Наличные', 'Перевод'][Math.floor(Math.random() * 3)],

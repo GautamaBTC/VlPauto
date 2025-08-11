@@ -560,7 +560,7 @@ function renderFinancePage() {
   // --- HTML Structure ---
   let html = `
     <div class="finance-header">
-      <div class="dashboard" style="grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));">
+      <div class="dashboard">
         <div class="dashboard-item">
           <div class="dashboard-item-title">Общая выручка</div>
           <div class="dashboard-item-value">${formatCurrency(totalRevenue)}</div>
@@ -589,7 +589,7 @@ function renderFinancePage() {
       html += `
         <div class="salary-item" data-master-name="${master.name}">
           <div class="salary-item-header">
-            <span class="master-name">${master.name}</span>
+            <span class="master-name"><i class="fas fa-crown icon-crown"></i> ${master.name}</span>
             <span class="final-salary" data-base-salary="${baseSalary}">${formatCurrency(baseSalary)}</span>
           </div>
           <div class="salary-details">
@@ -802,7 +802,11 @@ function renderOrdersList(container, orders) {
     const smsBody = encodeURIComponent(`Здравствуйте, ${order.clientName || 'клиент'}. Ваш автомобиль ${order.carModel || ''} готов к выдаче. С уважением, VipАвто.`);
     item.innerHTML = `
       <div>
-        <p class="order-description">${order.carModel}: ${order.description}</p>
+        <div class="order-title">
+            <p class="order-description">${order.carModel}</p>
+            ${order.licensePlate ? `<div class="license-plate">${order.licensePlate}</div>` : ''}
+        </div>
+        <p class="order-work-description">${order.description}</p>
         <div class="order-meta">
           ${isPrivileged() ? `<span class="master-info"><i class="fas fa-crown icon-crown"></i> ${order.masterName}</span>` : ''}
           ${order.clientName ? `<span><i class="fas fa-user-tie"></i>${order.clientName}</span>` : ''}
@@ -883,7 +887,7 @@ function openOrderModal(order = null) {
   const selectedMaster = isEdit ? order.masterName : state.user.name;
   const selectedPaymentType = isEdit ? order.paymentType : paymentTypes[0];
 
-  modal.innerHTML = `<div class="modal-content"><div class="modal-header"><h3 class="modal-title">${isEdit ? 'Редактировать' : 'Добавить'} заказ-наряд</h3><button class="modal-close-btn" data-action="close-modal">&times;</button></div><form id="order-form"><div class="modal-body"><input type="hidden" name="id" value="${isEdit ? order.id : ''}"><div class="form-group"><label>Исполнитель</label><div class="custom-select-wrapper" id="master-select-wrapper"></div></div><div class="form-group"><label>Модель авто</label><input type="text" name="carModel" required value="${isEdit ? order.carModel || '' : ''}"></div><div class="form-group"><label>Описание работ</label><textarea name="description" rows="3" required>${isEdit ? order.description : ''}</textarea></div><div class="form-group"><label>Имя клиента</label><div class="input-with-icon"><input type="text" name="clientName" required value="${isEdit ? order.clientName || '' : ''}" autocomplete="off"><div class="search-results-list" id="client-name-results"></div></div></div><div class="form-group"><label>Телефон клиента</label><div class="input-with-icon"><input type="tel" name="clientPhone" required value="${isEdit ? order.clientPhone || '' : ''}" autocomplete="off"><div class="search-results-list" id="client-phone-results"></div></div></div><div class="form-group"><label>Сумма</label><input type="number" name="amount" required value="${isEdit ? order.amount : ''}"></div><div class="form-group"><label>Тип оплаты</label><div class="custom-select-wrapper" id="payment-select-wrapper"></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-action="close-modal">Отмена</button><button type="submit" class="btn btn-accent">${isEdit ? 'Сохранить' : 'Добавить'}</button></div></form></div>`;
+  modal.innerHTML = `<div class="modal-content"><div class="modal-header"><h3 class="modal-title">${isEdit ? 'Редактировать' : 'Добавить'} заказ-наряд</h3><button class="modal-close-btn" data-action="close-modal">&times;</button></div><form id="order-form"><div class="modal-body"><input type="hidden" name="id" value="${isEdit ? order.id : ''}"><div class="form-group"><label>Исполнитель</label><div class="custom-select-wrapper" id="master-select-wrapper"></div></div><div class="form-row"><div class="form-group"><label>Модель авто</label><input type="text" name="carModel" required value="${isEdit ? order.carModel || '' : ''}"></div><div class="form-group"><label>Гос. номер</label><input type="text" name="licensePlate" value="${isEdit ? order.licensePlate || '' : ''}" placeholder="А 123 ВС 777"></div></div><div class="form-group"><label>Описание работ</label><textarea name="description" rows="3" required>${isEdit ? order.description : ''}</textarea></div><div class="form-group"><label>Имя клиента</label><div class="input-with-icon"><input type="text" name="clientName" required value="${isEdit ? order.clientName || '' : ''}" autocomplete="off"><div class="search-results-list" id="client-name-results"></div></div></div><div class="form-group"><label>Телефон клиента</label><div class="input-with-icon"><input type="tel" name="clientPhone" required value="${isEdit ? order.clientPhone || '' : ''}" autocomplete="off"><div class="search-results-list" id="client-phone-results"></div></div></div><div class="form-group"><label>Сумма</label><input type="number" name="amount" required value="${isEdit ? order.amount : ''}"></div><div class="form-group"><label>Тип оплаты</label><div class="custom-select-wrapper" id="payment-select-wrapper"></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-action="close-modal">Отмена</button><button type="submit" class="btn btn-accent">${isEdit ? 'Сохранить' : 'Добавить'}</button></div></form></div>`;
   document.body.appendChild(modal);
 
   createCustomSelect(modal.querySelector('#master-select-wrapper'), 'masterName', masters, selectedMaster, !priv);
