@@ -31,25 +31,16 @@
   <main class="main-content">
     <!-- ВКЛАДКА: ГЛАВНАЯ -->
     <div id="home" class="tab-content active">
-      <div class="dashboard" id="dashboard-grid">
-        <div class="dashboard-item" id="dash-revenue"> <div class="dashboard-item-icon"><i class="fas fa-ruble-sign"></i></div> <div class="dashboard-item-content"><div class="dashboard-item-title">Выручка</div><div class="dashboard-item-value">…</div></div></div>
-        <div class="dashboard-item" id="dash-orders"> <div class="dashboard-item-icon"><i class="fas fa-file-invoice"></i></div> <div class="dashboard-item-content"><div class="dashboard-item-title">Заказ-наряды</div><div class="dashboard-item-value">…</div></div></div>
-        <div class="dashboard-item" id="dash-avg-check"> <div class="dashboard-item-icon"><i class="fas fa-receipt"></i></div> <div class="dashboard-item-content"><div class="dashboard-item-title">Средний чек</div><div class="dashboard-item-value">…</div></div></div>
-        <div class="dashboard-item" id="dash-today-personal"> <div class="dashboard-item-icon"><i class="fas fa-user-clock"></i></div> <div class="dashboard-item-content"><div class="dashboard-item-title">Сегодня</div><div class="dashboard-item-value">…</div></div></div>
-      </div>
-      <div class="section">
-        <div class="section-header"><h3 class="section-title">Быстрые действия</h3></div>
-        <div class="quick-actions-grid">
-          <button class="btn btn-accent quick-action-main" data-action="add-order"><i class="fas fa-plus"></i> Добавить заказ-наряд</button>
-          <button class="btn btn-secondary privileged-only" data-action="view-clients"><i class="fas fa-users"></i> Клиенты</button>
-          <button class="btn btn-success privileged-only quick-action-main" data-action="close-week"><i class="fas fa-calendar-check"></i> Закрыть неделю</button>
-        </div>
+      <div class="section" id="main-contribution-chart-section">
+        <div class="section-header"><h3 class="section-title">Вклад мастеров за неделю</h3></div>
+        <div id="main-contribution-chart-container" class="section-content" style="padding: 16px;"></div>
       </div>
     </div>
     
     <div id="orders" class="tab-content">
       <div class="section">
-        <div class="section-header"><h3 class="section-title">Заказ-наряды за неделю</h3></div>
+        <div class="section-header"><h3 class="section-title">Заказ-наряды</h3></div>
+        <div id="orders-stats-container" class="section-content" style="padding: 16px; border-bottom: 1px solid var(--border);"></div>
         <div class="section-content order-filters privileged-only">
           <div class="form-group">
             <label for="master-filter">Мастер:</label>
@@ -73,11 +64,17 @@
         <div class="section-content archive-filters">
           <div class="form-group">
             <label for="filter-start-date">С:</label>
-            <input type="date" id="filter-start-date" class="form-control">
+            <div class="input-with-icon">
+              <input type="date" id="filter-start-date" class="form-control">
+              <i class="fas fa-calendar-alt input-icon-right"></i>
+            </div>
           </div>
           <div class="form-group">
             <label for="filter-end-date">По:</label>
-            <input type="date" id="filter-end-date" class="form-control">
+            <div class="input-with-icon">
+              <input type="date" id="filter-end-date" class="form-control">
+              <i class="fas fa-calendar-alt input-icon-right"></i>
+            </div>
           </div>
           <button id="apply-archive-filter" class="btn btn-secondary">Применить</button>
           <button data-action="open-export-modal" class="btn btn-accent"><i class="fas fa-file-csv"></i> Экспорт в CSV</button>
@@ -91,9 +88,8 @@
                 <i class="fas fa-exclamation-triangle"></i>
                 <span><strong>Внимание:</strong> Действия в этой секции необратимы.</span>
             </div>
-            <button class="btn btn-danger" data-action="clear-history">Очистить историю</button>
-            <button class="btn btn-hazard" data-action="clear-data" title="Сбросить все данные">
-                <i class="fas fa-triangle-exclamation"></i>
+            <button class="btn btn-biohazard" data-action="clear-data" title="Сбросить все данные">
+                <i class="fas fa-biohazard"></i>
             </button>
         </div>
       </div>
