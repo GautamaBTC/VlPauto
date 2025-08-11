@@ -37,6 +37,7 @@ const state = {
   data: { weekOrders: [], todayOrders: [], leaderboard: [], weekStats: {}, archive: [], history: [] },
   selectedMaster: 'all',
 };
+let isConnectionErrorShown = false;
 
 // --- БЛОК 3: ИНИЦИАЛИЗАЦИЯ ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -102,11 +103,20 @@ function initClock() {
 
 function initSocketConnection() {
   state.socket = io({ auth: { token: state.token } });
-  state.socket.on('connect', () => console.log('Подключено к серверу.'));
+
+  state.socket.on('connect', () => {
+    console.log('Подключено к серверу.');
+    isConnectionErrorShown = false;
+  });
+
   state.socket.on('connect_error', (err) => {
     console.error('Socket connect_error:', err);
-    showNotification('Ошибка подключения к серверу.', 'error');
+    if (!isConnectionErrorShown) {
+      showNotification('Ошибка подключения к серверу.', 'error');
+      isConnectionErrorShown = true;
+    }
   });
+
   state.socket.on('initialData', (data) => updateAndRender(data, true));
   state.socket.on('dataUpdate', (data) => { updateAndRender(data); showNotification('Данные обновлены', 'success'); });
   state.socket.on('serverError', (msg) => showNotification(msg, 'error'));
@@ -244,6 +254,27 @@ function handleAction(target) {
     }
   };
   if (actions[action]) actions[action]();
+}
+
+function filterSalaryList(masterName) {
+    const salaryItems = document.querySelectorAll('#finance .salary-item');
+    const filterStatus = document.getElementById('salary-filter-status');
+    const filterText = document.getElementById('salary-filter-text');
+
+    if (!filterStatus || !filterText || salaryItems.length === 0) return;
+
+    if (masterName) {
+        salaryItems.forEach(item => {
+            item.style.display = item.dataset.masterName === masterName ? 'grid' : 'none';
+        });
+        filterText.textContent = `Фильтр: ${masterName}`;
+        filterStatus.style.display = 'flex';
+    } else {
+        salaryItems.forEach(item => {
+            item.style.display = 'grid';
+        });
+        filterStatus.style.display = 'none';
+    }
 }
 
 function handleTabSwitch(target) {
@@ -511,7 +542,13 @@ function renderFinancePage() {
     </div>
 
     <div class="section">
-        <div class="section-header"><h3 class="section-title">Расчет зарплаты и премии</h3></div>
+        <div class="section-header">
+            <h3 class="section-title">Расчет зарплаты и премии</h3>
+            <div id="salary-filter-status" style="display: none;">
+                <span id="salary-filter-text"></span>
+                <button id="reset-salary-filter" class="btn btn-secondary btn-sm">Сбросить</button>
+            </div>
+        </div>
         <div class="salary-calculation-list">
   `;
 
@@ -552,8 +589,19 @@ function renderFinancePage() {
 
   container.innerHTML = html;
 
-  // Render charts
+  // Render charts and set up interactivity
   renderFinanceCharts(weeklyLeaderboard);
+
+  const pieContainer = container.querySelector('#finance-pie-chart-container');
+  pieContainer.addEventListener('click', (e) => {
+      const target = e.target.closest('[data-master-name]');
+      if (!target) return;
+      filterSalaryList(target.dataset.masterName);
+  });
+
+  container.querySelector('#reset-salary-filter').addEventListener('click', () => {
+      filterSalaryList(null); // Pass null to reset
+  });
 
   // Render history reports
   const historyContainer = document.createElement('div');
@@ -604,11 +652,12 @@ function renderFinanceCharts(leaderboardData) {
                         stroke-width="50"
                         stroke-dasharray="${percent} ${100 - percent}"
                         stroke-dashoffset="${25 - startAngle / 3.6}"
-                        transform="rotate(-90 50 50)"></circle>`;
+                        transform="rotate(-90 50 50)"
+                        data-master-name="${item.name}"></circle>`;
         }).join('');
 
         const legend = leaderboardData.map((item, index) => `
-            <div class="pie-chart-legend-item">
+            <div class="pie-chart-legend-item" data-master-name="${item.name}">
                 <span class="legend-color-box" style="background-color: ${colors[index % colors.length]}"></span>
                 <span class="legend-label">${item.name} (${((item.revenue / totalRevenue) * 100).toFixed(1)}%)</span>
             </div>
