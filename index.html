@@ -31,6 +31,20 @@
   <main class="main-content">
     <!-- ВКЛАДКА: ГЛАВНАЯ -->
     <div id="home" class="tab-content">
+      <div class="section" id="client-search-card">
+        <div class="section-header">
+            <h3 class="section-title"><i class="fas fa-search"></i> Поиск по базе клиентов</h3>
+        </div>
+        <div class="section-content" style="padding: 16px;">
+            <div class="client-search-wrapper">
+                <input type="text" id="home-client-search" class="form-control" placeholder="Введите имя, телефон или начните говорить...">
+                <button class="btn-icon voice-search-btn" id="voice-search-btn" title="Голосовой поиск">
+                    <i class="fas fa-microphone"></i>
+                </button>
+                <div class="search-results-list" id="home-search-results"></div>
+            </div>
+        </div>
+      </div>
       <div class="dashboard" id="dashboard-grid">
         <div class="dashboard-item" id="dash-revenue"> <div class="dashboard-item-icon"><i class="fas fa-ruble-sign"></i></div> <div class="dashboard-item-content"><div class="dashboard-item-title">Выручка</div><div class="dashboard-item-value">…</div></div></div>
         <div class="dashboard-item" id="dash-orders"> <div class="dashboard-item-icon"><i class="fas fa-file-invoice"></i></div> <div class="dashboard-item-content"><div class="dashboard-item-title">Заказ-наряды</div><div class="dashboard-item-value">…</div></div></div>
@@ -73,32 +87,23 @@
     </div>
 
     <div id="archive" class="tab-content">
-      <div class="section" id="client-search-card">
-        <div class="section-header">
-            <h3 class="section-title"><i class="fas fa-search"></i> Поиск по базе клиентов</h3>
-        </div>
-        <div class="section-content" style="padding: 16px;">
-            <div class="client-search-wrapper">
-                <input type="text" id="archive-client-search" class="form-control" placeholder="Введите имя или телефон клиента...">
-                <div class="search-results-list" id="archive-search-results"></div>
-            </div>
-        </div>
-      </div>
       <div class="section">
         <div class="section-header">
           <h3 class="section-title">История заказ-нарядов</h3>
         </div>
         <div class="section-content archive-filters">
-          <div class="form-group date-range-group">
-            <label>Период:</label>
-            <div class="input-with-icon">
-              <input type="date" id="filter-start-date" class="form-control" title="Начальная дата">
-              <i class="fas fa-calendar-alt input-icon-right"></i>
-            </div>
-            <span>&mdash;</span>
-            <div class="input-with-icon">
-              <input type="date" id="filter-end-date" class="form-control" title="Конечная дата">
-              <i class="fas fa-calendar-alt input-icon-right"></i>
+          <div class="form-group">
+            <label><i class="fas fa-calendar-day"></i> Период</label>
+            <div class="date-range-picker">
+                <div class="date-input-wrapper">
+                    <input type="date" id="filter-start-date" class="form-control" title="Начальная дата">
+                    <i class="fas fa-calendar-alt picker-icon"></i>
+                </div>
+                <span class="date-range-separator">&mdash;</span>
+                <div class="date-input-wrapper">
+                    <input type="date" id="filter-end-date" class="form-control" title="Конечная дата">
+                    <i class="fas fa-calendar-alt picker-icon"></i>
+                </div>
             </div>
           </div>
           <button id="apply-archive-filter" class="btn btn-secondary">Применить</button>
