@@ -95,7 +95,10 @@ function initSocketConnection() {
   state.socket = io({ auth: { token: state.token } });
   state.socket.on('connect', () => console.log('Подключено к серверу.'));
   state.socket.on('disconnect', () => showNotification('Соединение потеряно', 'error'));
-  state.socket.on('connect_error', logout);
+  state.socket.on('connect_error', (err) => {
+    console.error('Socket connect_error:', err);
+    showNotification('Ошибка подключения к серверу.', 'error');
+  });
   state.socket.on('initialData', (data) => updateAndRender(data, true));
   state.socket.on('dataUpdate', (data) => { updateAndRender(data); showNotification('Данные обновлены', 'success'); });
   state.socket.on('serverError', (msg) => showNotification(msg, 'error'));
