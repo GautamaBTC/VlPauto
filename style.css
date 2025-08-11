@@ -139,6 +139,9 @@ button { font-family: inherit; cursor: pointer; }
 .nav-tabs { display: flex; justify-content: space-around; height: 100%; }
 .nav-tab { display: flex; flex-direction: column; align-items: center; justify-content: center; flex-grow: 1; gap: 4px; color: var(--text-muted); border: none; background: none; transition: var(--transition); }
 .nav-tab.active { color: var(--accent); }
+.nav-tab[data-tab="finance"].active { color: var(--gold); }
+.nav-tab[data-tab="archive"].active { color: var(--silver); }
+.nav-tab[data-tab="orders"].active { color: #38bdf8; } /* Lighter blue, same as dark accent */
 .nav-tab i { font-size: 1.5rem; }
 .nav-tab span { font-size: 0.7rem; }
 
