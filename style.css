@@ -223,8 +223,8 @@ body.is-privileged .quick-actions-grid .btn.privileged-only {
     display: flex !important;
 }
 
-body.is-privileged .tab-content.privileged-only,
-body.is-privileged .section.privileged-only {
+body.is-privileged .section.privileged-only,
+body.is-privileged .tab-content.privileged-only.active {
     display: block !important;
 }
 #notification-root { position: fixed; top: 20px; right: 20px; z-index: 9999; }

@@ -41,18 +41,9 @@
         <div class="section-header"><h3 class="section-title">Быстрые действия</h3></div>
         <div class="quick-actions-grid">
           <button class="btn btn-accent quick-action-main" data-action="add-order"><i class="fas fa-plus"></i> Добавить заказ-наряд</button>
-          <button class="btn btn-secondary privileged-only" data-action="view-salary"><i class="fas fa-wallet"></i> Зарплата</button>
-          <button class="btn btn-secondary privileged-only" data-action="export-csv"><i class="fas fa-file-csv"></i> Экспорт</button>
+          <button class="btn btn-secondary privileged-only" data-action="view-clients"><i class="fas fa-users"></i> Клиенты</button>
           <button class="btn btn-success privileged-only quick-action-main" data-action="close-week"><i class="fas fa-calendar-check"></i> Закрыть неделю</button>
         </div>
-      </div>
-      <div class="section">
-        <div class="section-header"><h3 class="section-title">Доска лидеров</h3></div>
-        <div id="leaderboard-container"></div>
-      </div>
-       <div class="section privileged-only" id="contribution-chart-section">
-        <div class="section-header"><h3 class="section-title">Вклад мастеров</h3></div>
-        <div id="contribution-chart-container" class="section-content" style="padding: 16px;"></div>
       </div>
     </div>
     
@@ -69,6 +60,13 @@
       </div>
     </div>
     
+    <div id="finance" class="tab-content privileged-only">
+      <div class="section">
+        <div class="section-header"><h3 class="section-title">Финансы и Статистика</h3></div>
+        <div id="finance-content-container" class="section-content" style="padding: 16px;"></div>
+      </div>
+    </div>
+
     <div id="archive" class="tab-content">
       <div class="section">
         <div class="section-header"><h3 class="section-title">Архив</h3></div>
@@ -82,7 +80,7 @@
             <input type="date" id="filter-end-date" class="form-control">
           </div>
           <button id="apply-archive-filter" class="btn btn-secondary">Применить</button>
-          <button data-action="open-export-modal" class="btn btn-accent"><i class="fas fa-file-export"></i> Расширенный экспорт</button>
+          <button data-action="open-export-modal" class="btn btn-accent"><i class="fas fa-file-csv"></i> Экспорт в CSV</button>
         </div>
         <div id="archiveListContainer" class="orders-list-container"></div>
       </div>
@@ -100,21 +98,14 @@
         </div>
       </div>
     </div>
-
-    <div id="finance" class="tab-content privileged-only">
-      <div class="section">
-        <div class="section-header"><h3 class="section-title">Финансы и Статистика</h3></div>
-        <div id="finance-content-container" class="section-content" style="padding: 16px;"></div>
-      </div>
-    </div>
   </main>
   
   <nav class="nav-container">
     <div class="nav-tabs">
       <button class="nav-tab active" data-tab="home"><i class="fas fa-home"></i><span>Главная</span></button>
       <button class="nav-tab" data-tab="orders"><i class="fas fa-history"></i><span>Наряды</span></button>
-      <button class="nav-tab" data-tab="archive"><i class="fas fa-archive"></i><span>Архив</span></button>
       <button class="nav-tab privileged-only" data-tab="finance"><i class="fas fa-coins"></i><span>Финансы</span></button>
+      <button class="nav-tab" data-tab="archive"><i class="fas fa-archive"></i><span>Архив</span></button>
     </div>
   </nav>
   
