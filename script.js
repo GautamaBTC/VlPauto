@@ -46,6 +46,15 @@ document.addEventListener('DOMContentLoaded', () => {
     initClock();
     initSocketConnection();
     initEventListeners();
+
+    const savedTabId = localStorage.getItem('vipauto_active_tab') || 'home';
+    const tabToActivate = document.querySelector(`.nav-tab[data-tab="${savedTabId}"]`);
+
+    if (tabToActivate && tabToActivate.style.display !== 'none') {
+        tabToActivate.click();
+    } else {
+        document.querySelector('.nav-tab[data-tab="home"]').click();
+    }
   } catch (error) {
     console.error("КРИТИЧЕСКАЯ ОШИБКА:", error);
     logout();
@@ -170,6 +179,9 @@ function handleAction(target) {
 function handleTabSwitch(target) {
   const tabId = target.dataset.tab;
   if (state.activeTab === tabId) return;
+
+  localStorage.setItem('vipauto_active_tab', tabId);
+
   document.querySelector('.nav-tab.active')?.classList.remove('active');
   target.classList.add('active');
   document.querySelector('.tab-content.active')?.classList.remove('active');
@@ -451,11 +463,6 @@ function renderFinancePage() {
 
     <div class="section">
         <div class="section-header"><h3 class="section-title">Вклад мастеров</h3></div>
-        <div id="finance-bar-chart-container" class="section-content" style="padding: 16px;"></div>
-    </div>
-
-    <div class="section">
-        <div class="section-header"><h3 class="section-title">Вклад мастеров</h3></div>
         <div id="finance-pie-chart-container" class="section-content" style="padding: 16px; display: flex; justify-content: center; align-items: center; min-height: 350px;"></div>
     </div>
 
@@ -508,24 +515,6 @@ function renderFinancePage() {
 }
 
 function renderFinanceCharts(leaderboardData) {
-    // Bar Chart
-    const barContainer = document.getElementById('finance-bar-chart-container');
-    if (barContainer) {
-        const maxRevenue = Math.max(...leaderboardData.map(m => m.revenue), 0);
-        let barHtml = '<div class="chart">';
-        leaderboardData.forEach(master => {
-            const barWidth = maxRevenue > 0 ? (master.revenue / maxRevenue) * 100 : 0;
-            barHtml += `
-            <div class="chart-item">
-                <div class="chart-label">${master.name}</div>
-                <div class="chart-bar-container"><div class="chart-bar" style="width: ${barWidth}%;"></div></div>
-                <div class="chart-value">${formatCurrency(master.revenue)}</div>
-            </div>`;
-        });
-        barHtml += '</div>';
-        barContainer.innerHTML = leaderboardData.length > 0 ? barHtml : '<div class="empty-state"><p>Нет данных для графика.</p></div>';
-    }
-
     // Pie Chart
     const pieContainer = document.getElementById('finance-pie-chart-container');
     if (pieContainer) {
