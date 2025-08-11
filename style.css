@@ -7,6 +7,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
+  --font-numeric: 'Orbitron', sans-serif;
   --light-bg: #F7F8FA;
   --light-panel-bg: #FFFFFF;
   --light-border: #E4E7ED;
@@ -485,28 +486,41 @@ body.is-privileged .tab-content.privileged-only.active {
 }
 
 /* Улучшения для фильтров архива */
+.client-search-container {
+    display: flex;
+    max-width: 500px;
+    margin: 0 auto;
+}
 .client-search-wrapper {
     position: relative;
-    display: flex;
-    align-items: center;
+    flex-grow: 1;
 }
 .client-search-wrapper .form-control {
     height: 48px;
     font-size: 1rem;
-    padding-left: 16px;
-    padding-right: 50px; /* Make space for voice icon */
-    flex-grow: 1;
+    padding-left: 20px;
+    border-radius: 24px 0 0 24px;
+    border-right: none;
 }
-.voice-search-btn {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 1.4rem;
+.client-search-wrapper .form-control:focus {
+    z-index: 1;
+}
+#client-search-card .voice-search-btn {
+    border-radius: 0 24px 24px 0;
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    border-left-width: 0;
     color: var(--text-muted);
+    font-size: 1.2rem;
+    padding: 0 16px;
 }
-.voice-search-btn.is-recording {
+#client-search-card .voice-search-btn:hover {
+    background-color: color-mix(in srgb, var(--text) 5%, var(--bg));
+}
+#client-search-card .voice-search-btn.is-recording {
     color: var(--accent);
+    border-color: var(--accent);
+    z-index: 2;
 }
 .client-search-wrapper .search-results-list {
     width: 100%;
@@ -636,9 +650,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .stats-total,
 .week-summary-header .week-revenue,
 .salary-details strong {
-  font-feature-settings: 'tnum' on, 'ss01' on;
-  -webkit-font-feature-settings: 'tnum' on, 'ss01' on;
-  -moz-font-feature-settings: 'tnum' on, 'ss01' on;
+  font-family: var(--font-numeric);
 }
 
 /* Стили для модального окна бонусов */

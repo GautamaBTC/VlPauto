@@ -6,7 +6,7 @@
   <title>Бортовой журнал — VIPавто</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron&display=swap" rel="stylesheet">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -36,12 +36,14 @@
             <h3 class="section-title"><i class="fas fa-search"></i> Поиск по базе клиентов</h3>
         </div>
         <div class="section-content" style="padding: 16px;">
-            <div class="client-search-wrapper">
-                <input type="text" id="home-client-search" class="form-control" placeholder="Введите имя, телефон или начните говорить...">
-                <button class="btn-icon voice-search-btn" id="voice-search-btn" title="Голосовой поиск">
+            <div class="client-search-container">
+                <div class="client-search-wrapper">
+                    <input type="text" id="home-client-search" class="form-control" placeholder="Имя или телефон клиента...">
+                    <div class="search-results-list" id="home-search-results"></div>
+                </div>
+                <button class="btn voice-search-btn" id="voice-search-btn" title="Голосовой поиск">
                     <i class="fas fa-microphone"></i>
                 </button>
-                <div class="search-results-list" id="home-search-results"></div>
             </div>
         </div>
       </div>
