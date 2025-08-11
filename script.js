@@ -150,39 +150,60 @@ function initEventListeners() {
   const homeSearchInput = document.getElementById('home-client-search');
 
   // Voice Search Logic
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    if (voiceSearchBtn) voiceSearchBtn.style.display = 'none';
-  } else {
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'ru-RU';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    if (voiceSearchBtn && homeSearchInput) {
+  if (!window.isSecureContext) {
+    if (voiceSearchBtn) {
+        voiceSearchBtn.style.opacity = '0.5';
+        voiceSearchBtn.style.cursor = 'not-allowed';
         voiceSearchBtn.addEventListener('click', () => {
-            recognition.start();
+            showNotification('Голосовой поиск доступен только на защищенном соединении (HTTPS).', 'error');
         });
+    }
+  } else {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        if (voiceSearchBtn) voiceSearchBtn.style.display = 'none';
+    } else {
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'ru-RU';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
 
-        recognition.addEventListener('speechstart', () => {
-            voiceSearchBtn.classList.add('is-recording');
-        });
+        if (voiceSearchBtn && homeSearchInput) {
+            voiceSearchBtn.addEventListener('click', () => {
+                try {
+                    recognition.start();
+                } catch(e) {
+                    voiceSearchBtn.classList.remove('is-recording');
+                    showNotification('Распознавание уже активно.', 'error');
+                }
+            });
 
-        recognition.addEventListener('speechend', () => {
-            recognition.stop();
-            voiceSearchBtn.classList.remove('is-recording');
-        });
+            recognition.addEventListener('speechstart', () => {
+                voiceSearchBtn.classList.add('is-recording');
+            });
 
-        recognition.addEventListener('result', (e) => {
-            const transcript = e.results[0][0].transcript;
-            homeSearchInput.value = transcript;
-            homeSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
-        });
+            recognition.addEventListener('speechend', () => {
+                recognition.stop();
+                voiceSearchBtn.classList.remove('is-recording');
+            });
 
-        recognition.addEventListener('error', (e) => {
-            voiceSearchBtn.classList.remove('is-recording');
-            showNotification(`Ошибка распознавания: ${e.error}`, 'error');
-        });
+            recognition.addEventListener('result', (e) => {
+                const transcript = e.results[0][0].transcript;
+                homeSearchInput.value = transcript;
+                homeSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+
+            recognition.addEventListener('error', (e) => {
+                voiceSearchBtn.classList.remove('is-recording');
+                let errorMessage = `Ошибка: ${e.error}`;
+                if (e.error === 'not-allowed') {
+                    errorMessage = 'Необходимо разрешить доступ к микрофону в настройках браузера.';
+                } else if (e.error === 'no-speech') {
+                    errorMessage = 'Речь не распознана. Попробуйте еще раз.';
+                }
+                showNotification(errorMessage, 'error');
+            });
+        }
     }
   }
 
