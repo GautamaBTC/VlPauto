@@ -146,11 +146,51 @@ function initEventListeners() {
     if (tabTarget) handleTabSwitch(tabTarget);
   });
 
-  const archiveSearchInput = document.getElementById('archive-client-search');
-  if(archiveSearchInput) {
-    archiveSearchInput.addEventListener('input', (e) => {
+  const voiceSearchBtn = document.getElementById('voice-search-btn');
+  const homeSearchInput = document.getElementById('home-client-search');
+
+  // Voice Search Logic
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    if (voiceSearchBtn) voiceSearchBtn.style.display = 'none';
+  } else {
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'ru-RU';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    if (voiceSearchBtn && homeSearchInput) {
+        voiceSearchBtn.addEventListener('click', () => {
+            recognition.start();
+        });
+
+        recognition.addEventListener('speechstart', () => {
+            voiceSearchBtn.classList.add('is-recording');
+        });
+
+        recognition.addEventListener('speechend', () => {
+            recognition.stop();
+            voiceSearchBtn.classList.remove('is-recording');
+        });
+
+        recognition.addEventListener('result', (e) => {
+            const transcript = e.results[0][0].transcript;
+            homeSearchInput.value = transcript;
+            homeSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+
+        recognition.addEventListener('error', (e) => {
+            voiceSearchBtn.classList.remove('is-recording');
+            showNotification(`Ошибка распознавания: ${e.error}`, 'error');
+        });
+    }
+  }
+
+  // Text Search Logic
+  if(homeSearchInput) {
+    homeSearchInput.addEventListener('input', (e) => {
       const query = e.target.value;
-      const resultsContainer = document.getElementById('archive-search-results');
+      const resultsContainer = document.getElementById('home-search-results');
       if (query.length < 2) {
         resultsContainer.innerHTML = '';
         resultsContainer.classList.remove('active');
@@ -254,27 +294,6 @@ function handleAction(target) {
     }
   };
   if (actions[action]) actions[action]();
-}
-
-function filterSalaryList(masterName) {
-    const salaryItems = document.querySelectorAll('#finance .salary-item');
-    const filterStatus = document.getElementById('salary-filter-status');
-    const filterText = document.getElementById('salary-filter-text');
-
-    if (!filterStatus || !filterText || salaryItems.length === 0) return;
-
-    if (masterName) {
-        salaryItems.forEach(item => {
-            item.style.display = item.dataset.masterName === masterName ? 'grid' : 'none';
-        });
-        filterText.textContent = `Фильтр: ${masterName}`;
-        filterStatus.style.display = 'flex';
-    } else {
-        salaryItems.forEach(item => {
-            item.style.display = 'grid';
-        });
-        filterStatus.style.display = 'none';
-    }
 }
 
 function handleTabSwitch(target) {
@@ -537,17 +556,8 @@ function renderFinancePage() {
     </div>
 
     <div class="section">
-        <div class="section-header"><h3 class="section-title">Вклад мастеров</h3></div>
-        <div id="finance-pie-chart-container" class="section-content" style="padding: 16px; display: flex; justify-content: center; align-items: center; min-height: 350px;"></div>
-    </div>
-
-    <div class="section">
         <div class="section-header">
             <h3 class="section-title">Расчет зарплаты и премии</h3>
-            <div id="salary-filter-status" style="display: none;">
-                <span id="salary-filter-text"></span>
-                <button id="reset-salary-filter" class="btn btn-secondary btn-sm">Сбросить</button>
-            </div>
         </div>
         <div class="salary-calculation-list">
   `;
@@ -589,20 +599,6 @@ function renderFinancePage() {
 
   container.innerHTML = html;
 
-  // Render charts and set up interactivity
-  renderFinanceCharts(weeklyLeaderboard);
-
-  const pieContainer = container.querySelector('#finance-pie-chart-container');
-  pieContainer.addEventListener('click', (e) => {
-      const target = e.target.closest('[data-master-name]');
-      if (!target) return;
-      filterSalaryList(target.dataset.masterName);
-  });
-
-  container.querySelector('#reset-salary-filter').addEventListener('click', () => {
-      filterSalaryList(null); // Pass null to reset
-  });
-
   // Render history reports
   const historyContainer = document.createElement('div');
   historyContainer.className = 'section';
@@ -628,47 +624,6 @@ function renderFinancePage() {
   historyHtml += '</div>';
   historyContainer.innerHTML = historyHtml;
   container.appendChild(historyContainer);
-}
-
-function renderFinanceCharts(leaderboardData) {
-    // Pie Chart
-    const pieContainer = document.getElementById('finance-pie-chart-container');
-    if (pieContainer) {
-        if (!leaderboardData || leaderboardData.length === 0) {
-            pieContainer.innerHTML = '<div class="empty-state"><p>Нет данных для графика.</p></div>';
-            return;
-        }
-
-        const totalRevenue = leaderboardData.reduce((sum, item) => sum + item.revenue, 0);
-        const colors = ['#38BDF8', '#FBBF24', '#34D399', '#F87171', '#818CF8', '#A78BFA'];
-
-        let cumulativePercent = 0;
-        const segments = leaderboardData.map((item, index) => {
-            const percent = totalRevenue > 0 ? (item.revenue / totalRevenue) * 100 : 0;
-            const startAngle = cumulativePercent / 100 * 360;
-            cumulativePercent += percent;
-            return `<circle class="pie-chart-slice" r="25" cx="50" cy="50" fill="transparent"
-                        stroke="${colors[index % colors.length]}"
-                        stroke-width="50"
-                        stroke-dasharray="${percent} ${100 - percent}"
-                        stroke-dashoffset="${25 - startAngle / 3.6}"
-                        transform="rotate(-90 50 50)"
-                        data-master-name="${item.name}"></circle>`;
-        }).join('');
-
-        const legend = leaderboardData.map((item, index) => `
-            <div class="pie-chart-legend-item" data-master-name="${item.name}">
-                <span class="legend-color-box" style="background-color: ${colors[index % colors.length]}"></span>
-                <span class="legend-label">${item.name} (${((item.revenue / totalRevenue) * 100).toFixed(1)}%)</span>
-            </div>
-        `).join('');
-
-        pieContainer.innerHTML = `
-            <div class="pie-chart-wrapper">
-                <svg viewBox="0 0 100 100" class="pie-chart">${segments}</svg>
-                <div class="pie-chart-legend">${legend}</div>
-            </div>`;
-    }
 }
 
 function renderDashboard() {

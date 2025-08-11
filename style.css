@@ -320,59 +320,6 @@ body.is-privileged .tab-content.privileged-only.active {
   justify-self: end;
 }
 
-.pie-chart-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-.pie-chart {
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
-}
-.pie-chart-slice, .pie-chart-legend-item {
-    cursor: pointer;
-    transition: opacity 0.2s;
-}
-.pie-chart-slice:hover, .pie-chart-legend-item:hover {
-    opacity: 0.8;
-}
-.pie-chart-legend {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.pie-chart-legend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.9rem;
-}
-.legend-color-box {
-  width: 14px;
-  height: 14px;
-  border-radius: 4px;
-}
-
-.section-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.filter-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.9rem;
-    background-color: var(--bg);
-    padding: 4px 8px;
-    border-radius: 6px;
-}
 
 .warning-banner {
   grid-column: 1 / -1;
@@ -540,36 +487,80 @@ body.is-privileged .tab-content.privileged-only.active {
 /* Улучшения для фильтров архива */
 .client-search-wrapper {
     position: relative;
+    display: flex;
+    align-items: center;
 }
 .client-search-wrapper .form-control {
     height: 48px;
     font-size: 1rem;
     padding-left: 16px;
+    padding-right: 50px; /* Make space for voice icon */
+    flex-grow: 1;
+}
+.voice-search-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.4rem;
+    color: var(--text-muted);
+}
+.voice-search-btn.is-recording {
+    color: var(--accent);
 }
 .client-search-wrapper .search-results-list {
     width: 100%;
 }
-.archive-filters .input-with-icon {
+.archive-filters .form-group label {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.date-range-picker {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0 12px;
+    height: 44px;
+    transition: var(--transition);
+}
+.date-range-picker:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.date-input-wrapper {
     position: relative;
     display: flex;
     align-items: center;
 }
-.archive-filters .date-range-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.date-range-picker .form-control {
+    background: transparent;
+    border: none;
+    padding: 0;
+    height: 42px;
+    width: 125px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 1rem;
 }
-.archive-filters .date-range-group .form-control {
-    width: 150px;
+.date-range-picker .form-control:focus {
+    outline: none;
 }
-.archive-filters .input-with-icon .form-control {
-    padding-right: 35px; /* Место для иконки */
-}
-.archive-filters .input-with-icon .input-icon-right {
-    position: absolute;
-    right: 12px;
+.date-range-picker .picker-icon {
     color: var(--text-muted);
-    pointer-events: none; /* Иконка не перехватывает клики */
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+}
+.date-range-separator {
+    color: var(--text-muted);
+    margin: 0 8px;
 }
 .archive-filters .btn-accent {
     min-width: 160px;
