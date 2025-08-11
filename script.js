@@ -648,27 +648,51 @@ function renderFinancePage() {
 }
 
 function renderDashboard() {
-  const { weekStats, todayOrders, user } = state.data;
+  const { weekStats, todayOrders, user, weekOrders, history, masters } = state.data;
   if (!weekStats || !user) return;
 
   const userIsPrivileged = isPrivileged();
 
+  // --- Standard Metrics ---
   document.querySelector('#dash-revenue .dashboard-item-value').textContent = formatCurrency(weekStats.revenue);
-  document.querySelector('#dash-revenue .dashboard-item-title').textContent = userIsPrivileged ? 'Выручка (неделя)' : 'Моя выручка';
   document.querySelector('#dash-orders .dashboard-item-value').textContent = weekStats.ordersCount || 0;
   document.querySelector('#dash-avg-check .dashboard-item-value').textContent = formatCurrency(weekStats.avgCheck);
 
+  // --- Today's Revenue ---
   const todayValueEl = document.querySelector('#dash-today-personal .dashboard-item-value');
-  const todayTitleEl = document.querySelector('#dash-today-personal .dashboard-item-title');
-
   if(userIsPrivileged) {
     const totalTodayRevenue = (todayOrders || []).reduce((sum, o) => sum + o.amount, 0);
     todayValueEl.textContent = formatCurrency(totalTodayRevenue);
-    todayTitleEl.textContent = 'Сегодня (всего)';
   } else {
     const personalTodayRevenue = (todayOrders || []).filter(o => o.masterName === user.name).reduce((sum, o) => sum + o.amount, 0);
     todayValueEl.textContent = formatCurrency(personalTodayRevenue);
-    todayTitleEl.textContent = 'Сегодня (лично)';
+    document.querySelector('#dash-today-personal .dashboard-item-title').textContent = 'Моя выручка (сегодня)';
+  }
+
+  if(userIsPrivileged) {
+    // --- New Director-Level Metrics ---
+    // 1. Weekly Profit
+    const weeklyProfit = weekStats.revenue * 0.5; // Assuming 50% profit margin
+    document.querySelector('#dash-profit .dashboard-item-value').textContent = formatCurrency(weeklyProfit);
+
+    // 2. Unique Clients
+    const weeklyClientIds = new Set((weekOrders || []).map(o => o.clientId));
+    document.querySelector('#dash-unique-clients .dashboard-item-value').textContent = weeklyClientIds.size;
+
+    // 3. Master Utilization
+    const masterLoad = (masters?.length > 0) ? (weekStats.ordersCount / masters.length).toFixed(1) : 0;
+    document.querySelector('#dash-master-load .dashboard-item-value').textContent = masterLoad;
+
+    // 4. New Client %
+    const historicalClientIds = new Set((history || []).flatMap(h => h.orders).map(o => o.clientId));
+    let newClientCount = 0;
+    weeklyClientIds.forEach(id => {
+        if (!historicalClientIds.has(id)) {
+            newClientCount++;
+        }
+    });
+    const newClientPercentage = weeklyClientIds.size > 0 ? (newClientCount / weeklyClientIds.size * 100).toFixed(0) : 0;
+    document.querySelector('#dash-new-clients .dashboard-item-value').textContent = `${newClientPercentage}%`;
   }
 }
 
