@@ -9,6 +9,8 @@ import { openOrderModal, openConfirmationModal, openClearDataCaptchaModal, openB
 import { logout } from './app.js';
 import { showNotification, downloadCSV } from './utils.js';
 
+let flatpickrInstance = null;
+
 export function handleAction(target) {
   const { action, id, masterName, weekId, period } = target.dataset;
 
@@ -18,8 +20,7 @@ export function handleAction(target) {
     'view-clients': () => showNotification('Раздел "Клиенты" находится в разработке.', 'success'),
     'export-csv-archive': () => exportData(),
     'set-archive-period': () => {
-        const startDateInput = document.getElementById('filter-start-date');
-        const endDateInput = document.getElementById('filter-end-date');
+        if (!flatpickrInstance) return;
         const now = new Date();
         let startDate = new Date();
 
@@ -33,9 +34,7 @@ export function handleAction(target) {
             startDate = new Date(now.getFullYear(), 0, 1);
         }
 
-        startDateInput.value = startDate.toISOString().slice(0, 10);
-        endDateInput.value = new Date().toISOString().slice(0, 10);
-        document.getElementById('apply-archive-filter').click();
+        flatpickrInstance.setDate([startDate, new Date()], true); // true to trigger onChange
     },
     'close-week': () => {
         const financeTab = document.querySelector('[data-tab="finance"]');
@@ -101,6 +100,23 @@ export function initEventListeners() {
     });
   }
 
+  // Flatpickr Initialization
+  const datePicker = document.getElementById('archive-date-picker');
+  if (datePicker) {
+    flatpickrInstance = flatpickr(datePicker, {
+      mode: "range",
+      dateFormat: "Y-m-d",
+      locale: "ru", // Requires Russian locale to be loaded
+      onChange: function(selectedDates, dateStr, instance) {
+        // When a date range is selected, automatically trigger the filter.
+        if (selectedDates.length === 2) {
+          document.getElementById('apply-archive-filter').click();
+        }
+      }
+    });
+  }
+
+
   document.getElementById('apply-archive-filter')?.addEventListener('click', renderArchivePage);
   document.getElementById('master-filter')?.addEventListener('change', (e) => {
     state.selectedMaster = e.target.value;
@@ -163,15 +179,14 @@ function finalizeWeek() {
 }
 
 function exportData() {
-    const startDate = document.getElementById('filter-start-date').value;
-    const endDate = document.getElementById('filter-end-date').value;
-
-    if (!startDate || !endDate) {
-        return showNotification('Пожалуйста, выберите начальную и конечную дату для экспорта.', 'error');
+    const datePickerInput = document.getElementById('archive-date-picker');
+    if (!datePickerInput || !datePickerInput._flatpickr || datePickerInput._flatpickr.selectedDates.length !== 2) {
+        return showNotification('Пожалуйста, выберите диапазон дат для экспорта.', 'error');
     }
 
-    const start = new Date(startDate + 'T00:00:00.000Z');
-    const end = new Date(endDate + 'T23:59:59.999Z');
+    const [start, end] = datePickerInput._flatpickr.selectedDates;
+    const endOfDay = new Date(end.getTime());
+    endOfDay.setHours(23, 59, 59, 999);
 
     const allOrders = [...state.data.weekOrders, ...state.data.history.flatMap(h => h.orders)];
     const ordersToExport = allOrders.filter(o => {
@@ -193,7 +208,10 @@ function exportData() {
         'Сумма': o.amount,
         'Оплата': o.paymentType
     }));
-    downloadCSV(data, `report-${startDate}-to-${endDate}.csv`);
+
+    const startStr = start.toISOString().slice(0, 10);
+    const endStr = end.toISOString().slice(0, 10);
+    downloadCSV(data, `report-${startStr}-to-${endStr}.csv`);
 }
 
 // --- Voice Search Helpers ---

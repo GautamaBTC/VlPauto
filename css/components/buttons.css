@@ -62,7 +62,7 @@
     font-size: 3rem;
     font-weight: 300; /* Makes the icon lines thinner */
     text-shadow: 0 1px 1px rgba(0,0,0,0.2); /* Adds a subtle shadow */
-    color: #dc2626; /* Red-600 */
+    color: #000; /* Black as requested */
 }
 .btn-biohazard:hover {
     background-color: #ea580c; /* Orange-700 */

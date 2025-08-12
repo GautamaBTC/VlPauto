@@ -20,13 +20,11 @@
     gap: 8px;
 }
 .order-title {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 4px 12px;
+    display: block; /* Changed from flex to ensure block layout */
 }
 .order-description {
   font-weight: 600;
+  margin-bottom: 8px; /* Added margin for spacing */
 }
 .order-work-description {
     color: var(--text-muted);
@@ -63,7 +61,7 @@
     display: inline-block;
 }
 .plate-digits {
-    font-size: 1.38em; /* Further increased size as requested */
+    font-size: 1.725em; /* Increased by 25% from 1.38em */
     letter-spacing: 0.5px;
 }
 .plate-region {
