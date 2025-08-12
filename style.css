@@ -240,22 +240,36 @@ html:not([data-theme="dark"]) .nav-tab[data-tab="archive"].active {
 .license-plate {
     font-family: "Arial Black", Gadget, sans-serif;
     font-weight: 900;
-    padding: 3px 8px;
     border: 1.5px solid #000;
     border-radius: 4px;
     background-color: #fff;
     color: #000;
     white-space: nowrap;
-    letter-spacing: 0.5px;
     font-size: 0.9em;
     line-height: 1;
     vertical-align: middle;
     text-transform: uppercase;
+    display: inline-flex; /* Use flexbox for alignment */
+    align-items: stretch; /* Make children fill height */
 }
+.license-plate .plate-main {
+    padding: 3px 6px 3px 8px;
+    letter-spacing: 0.5px;
+}
+.license-plate .plate-region {
+    border-left: 1.5px solid #000;
+    padding: 3px 8px 3px 6px;
+    font-size: 1.1em; /* Make region numbers slightly larger */
+    line-height: 0.9; /* Adjust line-height for vertical centering */
+}
+
 html[data-theme="dark"] .license-plate {
     border-color: #fff;
     background-color: #E5E7EB; /* A light grey for the plate background */
     color: #000;
+}
+html[data-theme="dark"] .license-plate .plate-region {
+    border-left-color: #000;
 }
 .order-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 0.8rem; color: var(--text-muted); }
 .order-meta span { display: flex; align-items: center; gap: 4px; }
