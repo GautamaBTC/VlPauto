@@ -52,7 +52,7 @@
 .plate-main {
     padding: 2px 8px;
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 0.1em;
 }
 .plate-letter, .plate-letters {
