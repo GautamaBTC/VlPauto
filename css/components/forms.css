@@ -219,28 +219,30 @@
     background-color: var(--bg);
     border: 1px solid var(--border);
     border-radius: 8px;
-    padding: 0 12px;
-    height: 44px;
     transition: var(--transition);
+    height: 44px;
+    padding: 0;
 }
 .date-range-picker:focus-within {
     border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 .date-input-wrapper {
     position: relative;
     display: flex;
     align-items: center;
+    padding: 0 12px;
+    height: 100%;
 }
 .date-range-picker .form-control {
     background: transparent;
     border: none;
-    padding: 0;
+    padding: 0 8px 0 0;
     height: 42px;
-    width: 125px;
+    width: 135px;
     color: var(--text);
     font-family: inherit;
-    font-size: 1rem;
+    font-size: 0.9rem;
 }
 .date-range-picker .form-control:focus {
     outline: none;
@@ -248,12 +250,12 @@
 .date-range-picker .picker-icon {
     color: var(--text-muted);
     pointer-events: none;
-    position: absolute;
-    right: 0;
 }
 .date-range-separator {
-    color: var(--text-muted);
-    margin: 0 8px;
+    color: var(--border);
+    font-size: 1.5rem;
+    line-height: 1;
+    font-weight: 300;
 }
 .archive-filters .btn-accent {
     min-width: 160px;

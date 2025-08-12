@@ -35,41 +35,49 @@
 .license-plate {
     display: inline-flex;
     align-items: stretch;
-    border: 2px solid #333;
-    border-radius: 6px;
+    border: 1px solid #333;
+    border-radius: 4px;
     background-color: #fff;
     color: #000;
     font-family: 'PT Sans', 'Helvetica', 'Arial', sans-serif;
     font-weight: 700;
     text-transform: uppercase;
     overflow: hidden;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+    font-size: 0.9em; /* Reduced base size */
+    height: 28px; /* Reduced height */
 }
 .license-plate-fallback {
-    padding: 4px 10px;
+    padding: 2px 8px;
+    font-size: 1.1em;
 }
 .plate-main {
-    padding: 4px 10px;
-    font-size: 1.2em;
-    letter-spacing: 1px;
+    padding: 2px 8px;
     display: flex;
     align-items: center;
-    gap: 0.2em;
+    gap: 0.1em;
 }
-.plate-main .plate-digits-pair {
-    letter-spacing: -0.5px;
+.plate-letter, .plate-letters {
+    font-size: 0.9em; /* Letters are smaller than digits */
+    transform: scaleY(0.95); /* Slightly squash letters */
+    display: inline-block;
+}
+.plate-digits {
+    font-size: 1.1em; /* Digits are larger */
+    letter-spacing: 0.5px;
 }
 .plate-region {
-    border-left: 2px solid #333;
-    padding: 4px 8px;
+    border-left: 1px solid #333;
+    padding: 2px 6px;
     text-align: center;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    min-width: 36px; /* Give region a bit of space */
 }
 .region-code {
-    font-size: 1.3em;
+    font-size: 1.2em;
     line-height: 1;
 }
 .region-flag {
