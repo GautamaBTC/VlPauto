@@ -65,4 +65,29 @@
     }
 }
 
+.dashboard-controls {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: center;
+}
+.period-toggle {
+  display: inline-flex;
+  background-color: var(--bg);
+  border-radius: 8px;
+  padding: 4px;
+  border: 1px solid var(--border);
+}
+.period-toggle .btn {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.period-toggle .btn.active {
+  background-color: var(--panel-bg);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border-radius: 6px;
+}
+
 .finance-header { margin-bottom: 16px; }
