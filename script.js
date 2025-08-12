@@ -567,28 +567,46 @@ function renderFinancePage() {
     <div class="finance-header">
       <div class="dashboard">
         <div class="dashboard-item">
-          <div class="dashboard-item-title">Общая выручка</div>
-          <div class="dashboard-item-value">${formatCurrency(totalRevenue)}</div>
+          <div class="dashboard-item-icon"><i class="fas fa-ruble-sign"></i></div>
+          <div class="dashboard-item-content">
+            <div class="dashboard-item-title">Общая выручка</div>
+            <div class="dashboard-item-value">${formatCurrency(totalRevenue)}</div>
+          </div>
         </div>
         <div class="dashboard-item">
-          <div class="dashboard-item-title">Прибыль сервиса</div>
-          <div class="dashboard-item-value">${formatCurrency(directorProfit)}</div>
+          <div class="dashboard-item-icon"><i class="fas fa-sack-dollar"></i></div>
+          <div class="dashboard-item-content">
+            <div class="dashboard-item-title">Прибыль сервиса</div>
+            <div class="dashboard-item-value">${formatCurrency(directorProfit)}</div>
+          </div>
         </div>
         <div class="dashboard-item">
-          <div class="dashboard-item-title">Всего заказ-нарядов</div>
-          <div class="dashboard-item-value">${totalOrders}</div>
+          <div class="dashboard-item-icon"><i class="fas fa-file-invoice"></i></div>
+          <div class="dashboard-item-content">
+            <div class="dashboard-item-title">Всего заказ-нарядов</div>
+            <div class="dashboard-item-value">${totalOrders}</div>
+          </div>
         </div>
         <div class="dashboard-item">
-          <div class="dashboard-item-title">Базовый ФОТ</div>
-          <div class="dashboard-item-value">${formatCurrency(totalBasePayroll)}</div>
+          <div class="dashboard-item-icon"><i class="fas fa-wallet"></i></div>
+          <div class="dashboard-item-content">
+            <div class="dashboard-item-title">Базовый ФОТ</div>
+            <div class="dashboard-item-value">${formatCurrency(totalBasePayroll)}</div>
+          </div>
         </div>
         <div class="dashboard-item">
-          <div class="dashboard-item-title">Прибыль с заказа</div>
-          <div class="dashboard-item-value">${formatCurrency(avgProfitPerOrder)}</div>
+          <div class="dashboard-item-icon"><i class="fas fa-chart-line"></i></div>
+          <div class="dashboard-item-content">
+            <div class="dashboard-item-title">Прибыль с заказа</div>
+            <div class="dashboard-item-value">${formatCurrency(avgProfitPerOrder)}</div>
+          </div>
         </div>
         <div class="dashboard-item">
-          <div class="dashboard-item-title">Доля ФОТ в выручке</div>
-          <div class="dashboard-item-value">${payrollToRevenueRatio.toFixed(1)}%</div>
+          <div class="dashboard-item-icon"><i class="fas fa-percentage"></i></div>
+          <div class="dashboard-item-content">
+            <div class="dashboard-item-title">Доля ФОТ в выручке</div>
+            <div class="dashboard-item-value">${payrollToRevenueRatio.toFixed(1)}%</div>
+          </div>
         </div>
       </div>
     </div>
@@ -812,6 +830,20 @@ function renderLeaderboard() {
 function renderOrdersList(container, orders) {
   if (!container) return;
   if (!orders?.length) return container.innerHTML = '<div class="empty-state"><p>Заказ-нарядов нет</p></div>';
+
+  const formatPlate = (plate) => {
+    if (!plate) return '';
+    // Regex to find the region code (last 2 or 3 digits)
+    const match = plate.toUpperCase().replace(/[^A-Z0-9]/g, '').match(/(.*?)(\d{2,3})$/);
+    if (match) {
+        const main = match[1];
+        const region = match[2];
+        return `<div class="license-plate"><span class="plate-main">${main}</span><span class="plate-region">${region}</span></div>`;
+    }
+    // Fallback for non-standard plates
+    return `<div class="license-plate">${plate}</div>`;
+  };
+
   container.innerHTML = '';
   orders.forEach(order => {
     const item = document.createElement('div');
@@ -821,7 +853,7 @@ function renderOrdersList(container, orders) {
       <div>
         <div class="order-title">
             <p class="order-description">${order.carModel}</p>
-            ${order.licensePlate ? `<div class="license-plate">${order.licensePlate}</div>` : ''}
+            ${formatPlate(order.licensePlate)}
         </div>
         <p class="order-work-description">${order.description}</p>
         <div class="order-meta">
