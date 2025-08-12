@@ -379,6 +379,9 @@ body.is-privileged .tab-content.privileged-only.active {
 }
 
 @media (max-width: 480px) {
+    .finance-header .dashboard {
+        grid-template-columns: repeat(2, 1fr);
+    }
     .archive-filters {
         flex-direction: column;
         align-items: stretch;
@@ -386,6 +389,8 @@ body.is-privileged .tab-content.privileged-only.active {
     }
     .archive-filters .btn, .archive-filters .date-range-picker {
         width: 100%;
+    }
+    .archive-filters .btn {
         justify-content: center;
     }
     .date-range-picker {
