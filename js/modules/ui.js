@@ -269,8 +269,8 @@ export function renderOrdersList(container, orders) {
       const letters2 = match[3];
       const region = match[4];
 
-      // Construct the main part of the plate with proper spacing for display
-      const mainPart = `${letter1} ${digits.slice(0,1)}<span class="plate-digits-pair">${digits.slice(1,3)}</span> ${letters2}`;
+      // Construct the main part of the plate with specific classes for styling
+      const mainPart = `<span class="plate-letter">${letter1}</span><span class="plate-digits">${digits}</span><span class="plate-letters">${letters2}</span>`;
 
       return `<div class="license-plate">
                 <div class="plate-main">${mainPart}</div>
