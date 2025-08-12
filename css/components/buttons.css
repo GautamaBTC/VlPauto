@@ -48,7 +48,7 @@
 .btn-biohazard {
     background-color: #f97316; /* Orange-600 */
     color: #000000;
-    border: none;
+    border: 2px solid #000;
     width: 80px;
     height: 80px;
     border-radius: 12px;
@@ -60,6 +60,8 @@
 }
 .btn-biohazard .fas {
     font-size: 3rem;
+    font-weight: 300; /* Makes the icon lines thinner */
+    text-shadow: 0 1px 1px rgba(255,255,255,0.2); /* Adds a subtle highlight */
 }
 .btn-biohazard:hover {
     background-color: #ea580c; /* Orange-700 */
