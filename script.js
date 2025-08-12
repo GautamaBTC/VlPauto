@@ -110,11 +110,9 @@ function initSocketConnection() {
   });
 
   state.socket.on('connect_error', (err) => {
+    // This error can be spammy on tab focus, especially with transient network issues.
+    // The user will know there's an issue if an action fails. Logging is sufficient.
     console.error('Socket connect_error:', err);
-    if (!isConnectionErrorShown) {
-      showNotification('Ошибка подключения к серверу.', 'error');
-      isConnectionErrorShown = true;
-    }
   });
 
   state.socket.on('initialData', (data) => updateAndRender(data, true));
@@ -555,7 +553,14 @@ function renderFinancePage() {
   const weeklyLeaderboard = state.data.leaderboard || [];
   const totalRevenue = weeklyLeaderboard.reduce((sum, m) => sum + m.revenue, 0);
   const totalOrders = weeklyLeaderboard.reduce((sum, m) => sum + m.ordersCount, 0);
-  const directorProfit = totalRevenue * 0.5; // Assuming 50% profit margin for the director
+  const directorProfit = totalRevenue * 0.5; // Assuming 50% profit margin
+
+  // --- New Metric Calculations ---
+  // Note: Bonuses are not in state, so we can only calculate base payroll here.
+  const totalBasePayroll = weeklyLeaderboard.reduce((sum, m) => sum + (m.revenue * 0.5), 0);
+  const avgProfitPerOrder = totalOrders > 0 ? (directorProfit / totalOrders) : 0;
+  const payrollToRevenueRatio = totalRevenue > 0 ? (totalBasePayroll / totalRevenue) * 100 : 0;
+
 
   // --- HTML Structure ---
   let html = `
@@ -572,6 +577,18 @@ function renderFinancePage() {
         <div class="dashboard-item">
           <div class="dashboard-item-title">Всего заказ-нарядов</div>
           <div class="dashboard-item-value">${totalOrders}</div>
+        </div>
+        <div class="dashboard-item">
+          <div class="dashboard-item-title">Базовый ФОТ</div>
+          <div class="dashboard-item-value">${formatCurrency(totalBasePayroll)}</div>
+        </div>
+        <div class="dashboard-item">
+          <div class="dashboard-item-title">Прибыль с заказа</div>
+          <div class="dashboard-item-value">${formatCurrency(avgProfitPerOrder)}</div>
+        </div>
+        <div class="dashboard-item">
+          <div class="dashboard-item-title">Доля ФОТ в выручке</div>
+          <div class="dashboard-item-value">${payrollToRevenueRatio.toFixed(1)}%</div>
         </div>
       </div>
     </div>
