@@ -63,7 +63,7 @@
     display: inline-block;
 }
 .plate-digits {
-    font-size: 1.15em; /* 15% larger than letters */
+    font-size: 1.38em; /* Further increased size as requested */
     letter-spacing: 0.5px;
 }
 .plate-region {
