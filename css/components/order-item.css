@@ -59,6 +59,8 @@
     font-size: 1em; /* Base size for letters */
     transform: scaleY(0.95);
     display: inline-block;
+    position: relative;
+    top: 0.12em; /* Nudge letters down to align with baseline of larger digits */
 }
 .plate-digits {
     font-size: 1.725em; /* Increased by 25% from 1.38em */
