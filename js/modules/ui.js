@@ -68,18 +68,21 @@ export function renderOrdersPage() {
 
 export function renderArchivePage() {
     const container = document.getElementById('archiveListContainer');
-    const startDate = document.getElementById('filter-start-date').value;
-    const endDate = document.getElementById('filter-end-date').value;
+    const datePickerInput = document.getElementById('archive-date-picker');
 
-    if (startDate || endDate) {
+    // Check if flatpickr instance exists and has selected dates
+    if (datePickerInput && datePickerInput._flatpickr && datePickerInput._flatpickr.selectedDates.length === 2) {
         const allArchivedOrders = state.data.history.flatMap(h => h.orders);
-        const start = startDate ? new Date(startDate + 'T00:00:00.000Z') : null;
-        const end = endDate ? new Date(endDate + 'T23:59:59.999Z') : null;
+        const [start, end] = datePickerInput._flatpickr.selectedDates;
+
+        // Ensure the end date covers the entire day
+        const endOfDay = new Date(end.getTime());
+        endOfDay.setHours(23, 59, 59, 999);
 
         const filteredOrders = allArchivedOrders.filter(order => {
             if (!order.createdAt) return false;
             const orderDate = new Date(order.createdAt);
-            return (!start || orderDate >= start) && (!end || orderDate <= end);
+            return orderDate >= start && orderDate <= endOfDay;
         });
         renderOrdersList(container, filteredOrders);
     } else {

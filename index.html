@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -98,27 +99,21 @@
           <h3 class="section-title">История заказ-нарядов</h3>
         </div>
         <div class="section-content archive-filters">
-          <div class="form-group">
-            <label><i class="fas fa-calendar-day"></i> Период</label>
-            <div class="date-range-picker">
-                <div class="date-input-wrapper">
-                    <input type="date" id="filter-start-date" class="form-control" title="Начальная дата">
-                    <i class="fas fa-calendar-alt picker-icon"></i>
-                </div>
-                <span class="date-range-separator">&mdash;</span>
-                <div class="date-input-wrapper">
-                    <input type="date" id="filter-end-date" class="form-control" title="Конечная дата">
-                    <i class="fas fa-calendar-alt picker-icon"></i>
-                </div>
+          <div class="filter-group">
+            <div class="form-group">
+              <label for="archive-date-picker"><i class="fas fa-calendar-day"></i> Период</label>
+              <input type="text" id="archive-date-picker" class="form-control" placeholder="Выберите диапазон дат...">
+            </div>
+            <div class="archive-period-buttons">
+              <button class="btn btn-sm btn-secondary" data-action="set-archive-period" data-period="week">Неделя</button>
+              <button class="btn btn-sm btn-secondary" data-action="set-archive-period" data-period="month">Месяц</button>
+              <button class="btn btn-sm btn-secondary" data-action="set-archive-period" data-period="year">Год</button>
             </div>
           </div>
-          <button id="apply-archive-filter" class="btn btn-secondary">Применить</button>
-          <div class="archive-period-buttons">
-            <button class="btn btn-sm btn-secondary" data-action="set-archive-period" data-period="week">Неделя</button>
-            <button class="btn btn-sm btn-secondary" data-action="set-archive-period" data-period="month">Месяц</button>
-            <button class="btn btn-sm btn-secondary" data-action="set-archive-period" data-period="year">Год</button>
+          <div class="filter-group-actions">
+            <button id="apply-archive-filter" class="btn btn-accent"><i class="fas fa-filter"></i> Применить</button>
+            <button data-action="export-csv-archive" class="btn btn-secondary"><i class="fas fa-file-csv"></i> Экспорт</button>
           </div>
-          <button data-action="export-csv-archive" class="btn btn-accent"><i class="fas fa-file-csv"></i> Экспорт в CSV</button>
         </div>
         <div id="archiveListContainer" class="orders-list-container"></div>
       </div>
@@ -130,7 +125,7 @@
                 <span><strong>Внимание:</strong> Действия в этой секции необратимы.</span>
             </div>
             <button class="btn btn-biohazard" data-action="clear-data" title="Сбросить все данные">
-                <i class="fas fa-biohazard"></i>
+                <i class="fas fa-skull-crossbones"></i>
             </button>
         </div>
       </div>
@@ -150,6 +145,8 @@
   <div id="notification-root"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
   <script src="js/modules/app.js" type="module" defer></script>
 </body>
 </html>
