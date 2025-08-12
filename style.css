@@ -374,13 +374,20 @@ body.is-privileged .tab-content.privileged-only.active {
 
 .finance-header .dashboard {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(3, 1fr); /* Default to 3 columns for desktop */
     gap: 12px;
+}
+
+@media (max-width: 768px) {
+    /* Override the main dashboard rule for finance specifically */
+    .finance-header .dashboard {
+        grid-template-columns: repeat(2, 1fr); /* 2 columns for tablets */
+    }
 }
 
 @media (max-width: 480px) {
     .finance-header .dashboard {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr; /* 1 column for mobile */
     }
     .archive-filters {
         flex-direction: column;
