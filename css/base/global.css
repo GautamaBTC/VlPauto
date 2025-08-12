@@ -1,0 +1,48 @@
+/* 2. Применение темы */
+body {
+  --bg: var(--light-bg);
+  --panel-bg: var(--light-panel-bg);
+  --border: var(--light-border);
+  --text: var(--light-text);
+  --text-muted: var(--light-text-muted);
+  --accent: var(--light-accent);
+  background-color: var(--bg);
+  color: var(--text);
+}
+
+html[data-theme="dark"] body {
+  --bg: var(--dark-bg);
+  --panel-bg: var(--dark-panel-bg);
+  --border: var(--dark-border);
+  --text: var(--dark-text);
+  --text-muted: var(--dark-text-muted);
+  --accent: var(--dark-accent);
+}
+
+/* 3. Базовый сброс и глобальные стили */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--font-main);
+  padding-top: var(--header-height);
+  padding-bottom: var(--nav-height);
+  -webkit-font-smoothing: antialiased;
+  transition: var(--transition);
+  line-height: 1.5;
+}
+*:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+* { -webkit-tap-highlight-color: transparent; }
+button { font-family: inherit; cursor: pointer; }
+
+/* 10. Улучшенная типографика для цифр */
+.dashboard-item-value,
+.order-amount-value,
+.chart-value,
+.final-salary,
+.bonus-info-row strong,
+.stats-total,
+.week-summary-header .week-revenue,
+.salary-details strong {
+  font-feature-settings: 'tnum' on, 'ss01' on;
+  -webkit-font-feature-settings: 'tnum' on, 'ss01' on;
+  -moz-font-feature-settings: 'tnum' on, 'ss01' on;
+}

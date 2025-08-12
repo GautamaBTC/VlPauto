@@ -1,0 +1,28 @@
+/* 1. Шрифты и переменные */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --light-bg: #F7F8FA;
+  --light-panel-bg: #FFFFFF;
+  --light-border: #E4E7ED;
+  --light-text: #1F2937;
+  --light-text-muted: #6B7280;
+  --light-accent: #2D63D8;
+
+  --dark-bg: #111827;
+  --dark-panel-bg: #1F2937;
+  --dark-border: #374151;
+  --dark-text: #E5E7EB;
+  --dark-text-muted: #9CA3AF;
+  --dark-accent: #38BDF8;
+
+  --gold: #FBBF24;
+  --silver: #D1D5DB;
+  --bronze: #D97706;
+
+  --font-main: 'Inter', sans-serif;
+  --header-height: 60px;
+  --nav-height: 65px;
+  --radius: 12px;
+  --transition: all 0.2s ease-in-out;
+}

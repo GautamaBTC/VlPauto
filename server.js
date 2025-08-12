@@ -7,12 +7,10 @@ const http = require('http');
 const express = require('express');
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
-const fs = require('fs').promises;
-const path = require('path');
+const db = require('./database');
 
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-for-vipauto-dont-share-it';
-const DB_PATH = path.join(__dirname, 'db.json');
 
 const app = express();
 const server = http.createServer(app);
@@ -21,124 +19,42 @@ const io = new Server(server, { cors: { origin: "*" } });
 app.use(express.json());
 app.use(express.static(__dirname));
 
-let db = { users: {}, orders: [], history: [], clients: [] };
-
-const saveDB = async () => fs.writeFile(DB_PATH, JSON.stringify(db, null, 2)).catch(err => console.error('!!! ОШИБКА СОХРАНЕНИЯ БД:', err));
-
-const loadDB = async () => {
-  try {
-    const fileContent = await fs.readFile(DB_PATH, 'utf-8');
-    if (fileContent.length < 20) throw new Error("Empty DB file");
-    const parsedDb = JSON.parse(fileContent);
-
-    // Ensure all parts of the DB exist
-    db = { users: {}, orders: [], history: [], clients: [], ...parsedDb };
-
-    if (!db.orders || db.orders.length === 0) {
-      console.log(`[DB] База пуста. Заполняем тестовыми данными.`);
-      seedDatabaseWithTestData();
-      await saveDB();
-    } else {
-      console.log(`[DB] База успешно загружена. Заказов: ${db.orders.length}, Клиентов: ${db.clients.length}`);
-    }
-  } catch (error) {
-    console.log(`[DB] Файл db.json не найден или поврежден. Создаем новую базу.`);
-    db = { users: {}, orders: [], history: [], clients: [] };
-    seedDatabaseWithTestData();
-    await saveDB();
-  }
-};
-
-const seedDatabaseWithTestData = () => {
-    console.log('[SEED] Запуск генерации тестовых данных...');
-    db.users = {
-        'director': { password: 'Dir7wK9c', role: 'DIRECTOR', name: 'Владимир Орлов' },
-        'vladimir.ch': { password: 'Vch4R5tG', role: 'SENIOR_MASTER', name: 'Владимир Ч.' },
-        'vladimir.a': { password: 'Vla9L2mP', role: 'MASTER', name: 'Владимир А.' },
-        'andrey': { password: 'And3Z8xY', role: 'MASTER', name: 'Андрей' },
-        'danila': { password: 'Dan6J1vE', role: 'MASTER', name: 'Данила' },
-        'maxim': { password: 'Max2B7nS', role: 'MASTER', name: 'Максим' },
-        'artyom': { password: 'Art5H4qF', role: 'MASTER', name: 'Артём' }
-    };
-
-    const masterNames = Object.values(db.users).filter(u => u.role.includes('MASTER')).map(u => u.name);
-    const carBrands = ['Lada Vesta', 'Toyota Camry', 'Ford Focus', 'BMW X5', 'Mercedes C-Class', 'Audi A6', 'Kia Rio', 'Hyundai Solaris'];
-    const services = ['Замена масла ДВС', 'Комплексный шиномонтаж', 'Диагностика ходовой', 'Ремонт тормозной системы', 'Замена ГРМ'];
-
-    const clientsData = [
-        { name: 'Иван Петров', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
-        { name: 'Сергей Смирнов', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
-        { name: 'Анна Кузнецова', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
-        { name: 'Ольга Васильева', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
-        { name: 'Дмитрий Попов', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
-    ];
-
-    db.clients = clientsData.map((c, i) => ({ ...c, id: `client-${Date.now()}-${i}`, createdAt: new Date().toISOString() }));
-
-    let testOrders = [];
-    for (let i = 0; i < 50; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - Math.floor(Math.random() * 7));
-        date.setHours(Math.floor(Math.random() * 10) + 9, Math.floor(Math.random() * 60));
-
-        const randomClient = db.clients[Math.floor(Math.random() * db.clients.length)];
-
-        const generateLicensePlate = () => {
-            const letters = 'АВЕКМНОРСТУХ';
-            const region = ['77', '99', '177', '199', '777', '161', '61', '93', '123'][Math.floor(Math.random() * 9)];
-            const l1 = letters[Math.floor(Math.random() * letters.length)];
-            const d1 = String(Math.floor(Math.random() * 10));
-            const d2 = String(Math.floor(Math.random() * 10));
-            const d3 = String(Math.floor(Math.random() * 10));
-            const l2 = letters[Math.floor(Math.random() * letters.length)];
-            const l3 = letters[Math.floor(Math.random() * letters.length)];
-            return `${l1} ${d1}${d2}${d3} ${l2}${l3} ${region}`;
-        };
-
-        testOrders.push({
-            id: `ord-${Date.now()}-${i}`,
-            masterName: masterNames[Math.floor(Math.random() * masterNames.length)],
-            carModel: carBrands[Math.floor(Math.random() * carBrands.length)],
-            licensePlate: generateLicensePlate(),
-            description: services[Math.floor(Math.random() * services.length)],
-            amount: Math.floor(Math.random() * 2500 + 500),
-            paymentType: ['Картой', 'Наличные', 'Перевод'][Math.floor(Math.random() * 3)],
-            createdAt: date.toISOString(),
-            clientName: randomClient.name,
-            clientPhone: randomClient.phone,
-            clientId: randomClient.id,
-        });
-    }
-    db.orders = testOrders;
-    console.log(`[SEED] Создано ${testOrders.length} тестовых заказ-нарядов и ${db.clients.length} клиентов.`);
-};
-
 const isPrivileged = (user) => user && (user.role === 'DIRECTOR' || user.role === 'SENIOR_MASTER');
-const getWeekOrders = () => (db.orders || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+const getWeekOrders = () => (db.getOrders() || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
 const prepareDataForUser = (user) => {
     const allWeekOrders = getWeekOrders();
-    const masters = Object.values(db.users).filter(u => u.role.includes('MASTER')).map(u => u.name);
+    const users = db.getUsers();
+    const history = db.getHistory();
+    const masters = Object.values(users).filter(u => u.role.includes('MASTER')).map(u => u.name);
+
     const userIsPrivileged = isPrivileged(user);
     const relevantOrders = userIsPrivileged ? allWeekOrders : allWeekOrders.filter(o => o.masterName === user.name);
+
     const weekStats = {
-        revenue: relevantOrders.reduce((s, o) => s + o.amount, 0), ordersCount: relevantOrders.length,
+        revenue: relevantOrders.reduce((s, o) => s + o.amount, 0),
+        ordersCount: relevantOrders.length,
         avgCheck: relevantOrders.length > 0 ? Math.round(relevantOrders.reduce((s, o) => s + o.amount, 0) / relevantOrders.length) : 0
     };
+
     const leaderboard = Object.values(allWeekOrders.reduce((acc, o) => {
         if (!acc[o.masterName]) acc[o.masterName] = { name: o.masterName, revenue: 0, ordersCount: 0 };
         acc[o.masterName].revenue += o.amount;
         acc[o.masterName].ordersCount++;
         return acc;
     }, {})).sort((a, b) => b.revenue - a.revenue);
-    return { weekOrders: relevantOrders, weekStats, todayOrders: relevantOrders.filter(o => o.createdAt.slice(0, 10) === new Date().toISOString().slice(0, 10)), leaderboard, masters, user, history: db.history || [] };
+
+    const todayOrders = relevantOrders.filter(o => o.createdAt.slice(0, 10) === new Date().toISOString().slice(0, 10));
+
+    return { weekOrders: relevantOrders, weekStats, todayOrders, leaderboard, masters, user, history: history || [] };
 };
 
 const broadcastUpdates = () => io.sockets.sockets.forEach(s => s.user && s.emit('dataUpdate', prepareDataForUser(s.user)));
 
 app.post('/login', (req, res) => {
   const { login, password } = req.body;
-  const userRecord = db.users[login];
+  const users = db.getUsers();
+  const userRecord = users[login];
   if (!userRecord || userRecord.password !== password) return res.status(401).json({ message: 'Неверный логин или пароль' });
   const token = jwt.sign({ login, role: userRecord.role, name: userRecord.name }, JWT_SECRET, { expiresIn: '24h' });
   res.json({ token, user: { login, name: userRecord.name, role: userRecord.role } });
@@ -155,12 +71,7 @@ io.on('connection', (socket) => {
   socket.emit('initialData', prepareDataForUser(socket.user));
 
   socket.on('searchClients', (query) => {
-    if (!query) return socket.emit('clientSearchResults', []);
-    const lowerCaseQuery = query.toLowerCase();
-    const results = db.clients.filter(c =>
-        c.name.toLowerCase().includes(lowerCaseQuery) ||
-        c.phone.includes(query)
-    ).slice(0, 10); // Limit results
+    const results = db.searchClients(query);
     socket.emit('clientSearchResults', results);
   });
 
@@ -168,7 +79,7 @@ io.on('connection', (socket) => {
     if (!isPrivileged(socket.user)) orderData.masterName = socket.user.name;
 
     const { clientName, clientPhone } = orderData;
-    let client = db.clients.find(c => c.phone === clientPhone);
+    let client = db.findClientByPhone(clientPhone);
 
     if (!client && clientPhone) { // Create new client only if phone is provided
         client = {
@@ -177,7 +88,7 @@ io.on('connection', (socket) => {
             phone: clientPhone,
             createdAt: new Date().toISOString()
         };
-        db.clients.push(client);
+        await db.addClient(client);
     }
 
     const newOrder = {
@@ -187,16 +98,16 @@ io.on('connection', (socket) => {
         clientId: client ? client.id : null
     };
 
-    db.orders.unshift(newOrder);
-    await saveDB();
+    await db.addOrder(newOrder);
     broadcastUpdates();
   });
 
-  socket.on('updateOrder', async (d) => {
-    const orderIndex = db.orders.findIndex(o => o.id === d.id);
+  socket.on('updateOrder', async (orderData) => {
+    const allOrders = db.getOrders();
+    const orderIndex = allOrders.findIndex(o => o.id === orderData.id);
     if (orderIndex === -1) return socket.emit('serverError', 'Заказ-наряд не найден.');
 
-    const order = db.orders[orderIndex];
+    const order = allOrders[orderIndex];
     const user = socket.user;
     const orderAge = Date.now() - new Date(order.createdAt).getTime();
     const twoHours = 2 * 60 * 60 * 1000;
@@ -216,30 +127,42 @@ io.on('connection', (socket) => {
       return socket.emit('serverError', 'У вас нет прав на редактирование или время истекло.');
     }
 
-    db.orders[orderIndex] = { ...order, ...d };
-    await saveDB();
+    await db.updateOrder(orderData);
     broadcastUpdates();
   });
-  socket.on('deleteOrder', async (id) => { if (isPrivileged(socket.user)) { db.orders = db.orders.filter(o => o.id !== id); await saveDB(); broadcastUpdates(); } });
-  socket.on('closeWeek', async (payload) => {
-    if (isPrivileged(socket.user) && db.orders.length) {
-      const { salaryReport } = payload;
-      db.history.unshift({
-        weekId: `week-${Date.now()}`,
-        orders: [...db.orders],
-        salaryReport: salaryReport || []
-      });
-      db.orders = [];
-      await saveDB();
+
+  socket.on('deleteOrder', async (id) => {
+    if (isPrivileged(socket.user)) {
+      await db.deleteOrder(id);
       broadcastUpdates();
     }
   });
-  socket.on('clearData', async () => { if (isPrivileged(socket.user)) { db.orders = []; db.history = []; await saveDB(); broadcastUpdates(); } });
-  socket.on('clearHistory', async () => { if (isPrivileged(socket.user)) { db.history = []; await saveDB(); broadcastUpdates(); } });
+
+  socket.on('closeWeek', async (payload) => {
+    if (isPrivileged(socket.user) && db.getOrders().length) {
+      await db.closeWeek(payload);
+      broadcastUpdates();
+    }
+  });
+
+  socket.on('clearData', async () => {
+    if (isPrivileged(socket.user)) {
+      await db.clearData();
+      broadcastUpdates();
+    }
+  });
+
+  socket.on('clearHistory', async () => {
+    if (isPrivileged(socket.user)) {
+      await db.clearHistory();
+      broadcastUpdates();
+    }
+  });
+
   socket.on('disconnect', () => console.log(`[Socket] Отключился: '${socket.user.name}'`));
 });
 
 server.listen(PORT, async () => {
-  await loadDB();
+  await db.loadDB();
   console.log(`>>> Сервер VIPавто v9.0 запущен на порту ${PORT} <<<`);
 });
