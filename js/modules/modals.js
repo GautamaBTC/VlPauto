@@ -6,6 +6,7 @@
 import { state, isPrivileged } from './state.js';
 import { formatCurrency, formatDate, showNotification } from './utils.js';
 import { renderOrdersList } from './ui.js';
+import { createElasticSlider } from './ElasticSlider.js';
 
 function closeModal() {
   document.querySelector('.modal-backdrop')?.remove();
@@ -156,8 +157,8 @@ export function openBonusModal(masterName) {
       <div class="modal-body">
         <div class="bonus-info-row"><span>Базовая зарплата</span><strong>${formatCurrency(baseSalary)}</strong></div>
         <div class="form-group">
-          <label for="bonus-slider">Бонус (<span class="bonus-percentage-value">${currentBonusPercentage.toFixed(0)}%</span>)</label>
-          <div class="slider-container"><input type="range" class="bonus-slider" id="bonus-slider" min="0" max="20" step="2" value="${currentBonusPercentage.toFixed(0)}"><div class="slider-ticks"></div></div>
+          <label>Бонус</label>
+          <div id="elastic-slider-container"></div>
         </div>
         <div class="bonus-info-row"><span>Сумма премии</span><strong id="bonus-amount-display">${formatCurrency(currentBonus)}</strong></div><hr>
         <div class="bonus-info-row total"><span>Итоговая зарплата</span><strong id="total-salary-display">${formatCurrency(baseSalary + currentBonus)}</strong></div>
@@ -166,28 +167,32 @@ export function openBonusModal(masterName) {
     </div>`;
   document.body.appendChild(modal);
 
-  const bonusSlider = modal.querySelector('#bonus-slider');
-  const percentageDisplay = modal.querySelector('.bonus-percentage-value');
   const bonusAmountDisplay = modal.querySelector('#bonus-amount-display');
   const totalSalaryDisplay = modal.querySelector('#total-salary-display');
-  const ticksContainer = modal.querySelector('.slider-ticks');
-  for (let i = 0; i <= 20; i += 2) ticksContainer.appendChild(document.createElement('span'));
 
-  const updateTotal = () => {
-    const bonusPercentage = parseInt(bonusSlider.value, 10);
-    const bonusAmount = baseSalary * (bonusPercentage / 100);
-    percentageDisplay.textContent = `${bonusPercentage}%`;
-    bonusAmountDisplay.textContent = formatCurrency(bonusAmount);
-    totalSalaryDisplay.textContent = formatCurrency(baseSalary + bonusAmount);
-  };
-  bonusSlider.addEventListener('input', updateTotal);
+  let bonusPercentage = currentBonusPercentage;
+
+  const slider = createElasticSlider(modal.querySelector('#elastic-slider-container'), {
+      startingValue: 0,
+      maxValue: 30,
+      defaultValue: currentBonusPercentage,
+      isStepped: true,
+      stepSize: 2,
+      leftIconHTML: '₽',
+      rightIconHTML: '₽',
+      onValueChange: (newValue) => {
+          bonusPercentage = newValue;
+          const bonusAmount = baseSalary * (bonusPercentage / 100);
+          bonusAmountDisplay.textContent = formatCurrency(bonusAmount);
+          totalSalaryDisplay.textContent = formatCurrency(baseSalary + bonusAmount);
+      }
+  });
 
   modal.querySelector('#confirm-bonus').addEventListener('click', () => {
-    const bonusAmount = baseSalary * (parseInt(bonusSlider.value, 10) / 100);
+    const bonusAmount = baseSalary * (bonusPercentage / 100);
     salaryItem.dataset.bonus = bonusAmount;
     finalSalaryEl.textContent = formatCurrency(baseSalary + bonusAmount);
 
-    // Toggle a class on the salary item for styling the icon via CSS
     if (bonusAmount > 0) {
       salaryItem.classList.add('bonus-awarded');
     } else {
@@ -196,6 +201,7 @@ export function openBonusModal(masterName) {
 
     closeModal();
   });
+
   modal.addEventListener('click', (e) => { if (e.target.closest('[data-action="close-modal"]') || e.target === modal) closeModal(); });
 }
 
