@@ -43,7 +43,6 @@ function renderHomePage() {
 }
 
 export function renderOrdersPage() {
-    renderOrdersStats();
     const container = document.getElementById('ordersList');
     const masterFilter = document.getElementById('master-filter');
     const filterContainer = document.querySelector('.order-filters');
@@ -119,24 +118,8 @@ function renderFinancePage() {
   }
 
   const weeklyLeaderboard = state.data.leaderboard || [];
-  const totalRevenue = weeklyLeaderboard.reduce((sum, m) => sum + m.revenue, 0);
-  const totalOrders = weeklyLeaderboard.reduce((sum, m) => sum + m.ordersCount, 0);
-  const directorProfit = totalRevenue * 0.5;
-  const totalBasePayroll = weeklyLeaderboard.reduce((sum, m) => sum + (m.revenue * 0.5), 0);
-  const avgProfitPerOrder = totalOrders > 0 ? (directorProfit / totalOrders) : 0;
-  const payrollToRevenueRatio = totalRevenue > 0 ? (totalBasePayroll / totalRevenue) * 100 : 0;
 
   let html = `
-    <div class="finance-header">
-      <div class="dashboard">
-        <div class="dashboard-item"><div class="dashboard-item-icon"><i class="fas fa-ruble-sign"></i></div><div class="dashboard-item-content"><div class="dashboard-item-title">Общая выручка</div><div class="dashboard-item-value">${formatCurrency(totalRevenue)}</div></div></div>
-        <div class="dashboard-item"><div class="dashboard-item-icon"><i class="fas fa-sack-dollar"></i></div><div class="dashboard-item-content"><div class="dashboard-item-title">Прибыль сервиса</div><div class="dashboard-item-value">${formatCurrency(directorProfit)}</div></div></div>
-        <div class="dashboard-item"><div class="dashboard-item-icon"><i class="fas fa-file-invoice"></i></div><div class="dashboard-item-content"><div class="dashboard-item-title">Всего заказ-нарядов</div><div class="dashboard-item-value">${totalOrders}</div></div></div>
-        <div class="dashboard-item"><div class="dashboard-item-icon"><i class="fas fa-wallet"></i></div><div class="dashboard-item-content"><div class="dashboard-item-title">Базовый ФОТ</div><div class="dashboard-item-value">${formatCurrency(totalBasePayroll)}</div></div></div>
-        <div class="dashboard-item"><div class="dashboard-item-icon"><i class="fas fa-chart-line"></i></div><div class="dashboard-item-content"><div class="dashboard-item-title">Прибыль с заказа</div><div class="dashboard-item-value">${formatCurrency(avgProfitPerOrder)}</div></div></div>
-        <div class="dashboard-item"><div class="dashboard-item-icon"><i class="fas fa-percentage"></i></div><div class="dashboard-item-content"><div class="dashboard-item-title">Доля ФОТ в выручке</div><div class="dashboard-item-value">${payrollToRevenueRatio.toFixed(1)}%</div></div></div>
-      </div>
-    </div>
     <div class="section">
         <div class="section-header"><h3 class="section-title">Расчет зарплаты и премии</h3></div>
         <div class="salary-calculation-list">`;
@@ -187,32 +170,41 @@ function renderFinancePage() {
 }
 
 function renderDashboard() {
-  const { weekStats, todayOrders, user, weekOrders, history, masters } = state.data;
-  if (!weekStats || !user) return;
+  const { dashboardStats, user } = state.data;
+  if (!dashboardStats || !user) return;
 
+  const dashboardGrid = document.getElementById('dashboard-grid');
   const userIsPrivileged = isPrivileged();
-  document.querySelector('#dash-revenue .dashboard-item-value').textContent = formatCurrency(weekStats.revenue);
-  document.querySelector('#dash-orders .dashboard-item-value').textContent = weekStats.ordersCount || 0;
-  document.querySelector('#dash-avg-check .dashboard-item-value').textContent = formatCurrency(weekStats.avgCheck);
 
-  const todayValueEl = document.querySelector('#dash-today-personal .dashboard-item-value');
-  if(userIsPrivileged) {
-    todayValueEl.textContent = formatCurrency((todayOrders || []).reduce((sum, o) => sum + o.amount, 0));
-  } else {
-    todayValueEl.textContent = formatCurrency((todayOrders || []).filter(o => o.masterName === user.name).reduce((sum, o) => sum + o.amount, 0));
-    document.querySelector('#dash-today-personal .dashboard-item-title').textContent = 'Моя выручка (сегодня)';
-  }
+  // Define cards for each role
+  const privilegedCards = {
+    'dash-revenue': { title: 'Выручка', value: formatCurrency(dashboardStats.revenue) },
+    'dash-profit': { title: 'Прибыль', value: formatCurrency(dashboardStats.revenue * 0.5) },
+    'dash-orders': { title: 'Заказы', value: dashboardStats.ordersCount || 0 },
+    'dash-avg-check': { title: 'Средний чек', value: formatCurrency(dashboardStats.avgCheck) },
+    'dash-unique-clients': { title: 'Уник. клиенты', value: 'N/A' }, // Note: These stats are not calculated on backend yet
+    'dash-new-clients': { title: 'Новые клиенты', value: 'N/A' }
+  };
 
-  if(userIsPrivileged) {
-    document.querySelector('#dash-profit .dashboard-item-value').textContent = formatCurrency(weekStats.revenue * 0.5);
-    const weeklyClientIds = new Set((weekOrders || []).map(o => o.clientId));
-    document.querySelector('#dash-unique-clients .dashboard-item-value').textContent = weeklyClientIds.size;
-    document.querySelector('#dash-master-load .dashboard-item-value').textContent = (masters?.length > 0) ? (weekStats.ordersCount / masters.length).toFixed(1) : 0;
-    const historicalClientIds = new Set((history || []).flatMap(h => h.orders).map(o => o.clientId));
-    let newClientCount = 0;
-    weeklyClientIds.forEach(id => { if (!historicalClientIds.has(id)) newClientCount++; });
-    const newClientPercentage = weeklyClientIds.size > 0 ? (newClientCount / weeklyClientIds.size * 100).toFixed(0) : 0;
-    document.querySelector('#dash-new-clients .dashboard-item-value').textContent = `${newClientPercentage}%`;
+  const masterCards = {
+    'dash-revenue': { title: 'Моя выручка', value: formatCurrency(dashboardStats.revenue) },
+    'dash-orders': { title: 'Мои заказы', value: dashboardStats.ordersCount || 0 },
+    'dash-avg-check': { title: 'Мой средний чек', value: formatCurrency(dashboardStats.avgCheck) }
+  };
+
+  const cardsToShow = userIsPrivileged ? privilegedCards : masterCards;
+
+  // Hide all cards first
+  dashboardGrid.querySelectorAll('.dashboard-item').forEach(item => item.style.display = 'none');
+
+  // Show and update the relevant cards
+  for (const [id, data] of Object.entries(cardsToShow)) {
+    const card = document.getElementById(id);
+    if (card) {
+      card.style.display = 'flex';
+      card.querySelector('.dashboard-item-title').textContent = data.title;
+      card.querySelector('.dashboard-item-value').textContent = data.value;
+    }
   }
 }
 
@@ -323,53 +315,4 @@ export function renderOrdersList(container, orders) {
       </div>`;
     container.appendChild(item);
   });
-}
-
-function renderOrdersStats() {
-    const container = document.getElementById('orders-stats-container');
-    if (!isPrivileged() || !container) {
-        if(container) container.style.display = 'none';
-        return;
-    }
-    container.style.display = 'block';
-
-    const allOrders = [...state.data.weekOrders, ...state.data.history.flatMap(h => h.orders)];
-    const today = new Date().toISOString().slice(0, 10);
-    const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-    const startOfYear = new Date(new Date().getFullYear(), 0, 1);
-
-    const ordersToday = allOrders.filter(o => o.createdAt.slice(0, 10) === today);
-    const ordersThisWeek = state.data.weekOrders;
-    const ordersThisMonth = allOrders.filter(o => new Date(o.createdAt) >= startOfMonth);
-    const ordersThisYear = allOrders.filter(o => new Date(o.createdAt) >= startOfYear);
-
-    const countOrdersByMaster = (orders) => orders.reduce((acc, order) => {
-        acc[order.masterName] = (acc[order.masterName] || 0) + 1;
-        return acc;
-    }, {});
-
-    const stats = {
-        day: { total: ordersToday.length },
-        week: { total: ordersThisWeek.length, byMaster: countOrdersByMaster(ordersThisWeek) },
-        month: { total: ordersThisMonth.length },
-        year: { total: ordersThisYear.length },
-    };
-
-    let masterDetailsHtml = Object.entries(stats.week.byMaster)
-        .sort((a, b) => b[1] - a[1])
-        .map(([name, count]) => `<li><strong>${name}:</strong> ${count}</li>`)
-        .join('');
-    if (!masterDetailsHtml) masterDetailsHtml = '<li>Нет данных за неделю</li>';
-
-    container.innerHTML = `
-        <div class="orders-stats-grid">
-            <div class="stats-period"><div class="stats-header">За день</div><div class="stats-total">${stats.day.total}</div></div>
-            <div class="stats-period"><div class="stats-header">За неделю</div><div class="stats-total">${stats.week.total}</div></div>
-            <div class="stats-period"><div class="stats-header">За месяц</div><div class="stats-total">${stats.month.total}</div></div>
-            <div class="stats-period"><div class="stats-header">За год</div><div class="stats-total">${stats.year.total}</div></div>
-        </div>
-        <div class="master-stats-details">
-            <h4 class="master-stats-title">Вклад мастеров (за неделю)</h4>
-            <ul>${masterDetailsHtml}</ul>
-        </div>`;
 }

@@ -123,6 +123,25 @@ export function initEventListeners() {
     renderOrdersPage();
   });
 
+  // Home dashboard period toggle
+  const periodToggle = document.querySelector('.period-toggle');
+  if (periodToggle) {
+    periodToggle.addEventListener('click', (e) => {
+      const button = e.target.closest('button');
+      if (!button || button.classList.contains('active')) return;
+
+      const period = button.dataset.period;
+      if (period) {
+        // Update active button
+        periodToggle.querySelector('.active')?.classList.remove('active');
+        button.classList.add('active');
+
+        // Request new data from server
+        state.socket.emit('getDashboardData', period);
+      }
+    });
+  }
+
   // Event delegation for dynamically added elements
   document.body.addEventListener('click', e => {
       if (e.target.id === 'finalize-week-btn') {

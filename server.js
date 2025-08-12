@@ -20,36 +20,59 @@ app.use(express.json());
 app.use(express.static(__dirname));
 
 const isPrivileged = (user) => user && (user.role === 'DIRECTOR' || user.role === 'SENIOR_MASTER');
+
 const getWeekOrders = () => (db.getOrders() || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-const prepareDataForUser = (user) => {
-    const allWeekOrders = getWeekOrders();
+const getMonthOrders = () => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const allDbOrders = [...db.getOrders(), ...db.getHistory().flatMap(h => h.orders)];
+    return allDbOrders
+        .filter(o => new Date(o.createdAt) >= startOfMonth)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+};
+
+const prepareDataForUser = (user, period = 'week') => {
+    const ordersForPeriod = period === 'month' ? getMonthOrders() : getWeekOrders();
     const users = db.getUsers();
     const history = db.getHistory();
     const masters = Object.values(users).filter(u => u.role.includes('MASTER')).map(u => u.name);
 
     const userIsPrivileged = isPrivileged(user);
-    const relevantOrders = userIsPrivileged ? allWeekOrders : allWeekOrders.filter(o => o.masterName === user.name);
+    // For dashboard stats, a master should only see their own stats. For the "orders" tab, they see their own orders from the current week.
+    const relevantStatsOrders = userIsPrivileged ? ordersForPeriod : ordersForPeriod.filter(o => o.masterName === user.name);
+    const relevantWeekOrders = userIsPrivileged ? getWeekOrders() : getWeekOrders().filter(o => o.masterName === user.name);
 
-    const weekStats = {
-        revenue: relevantOrders.reduce((s, o) => s + o.amount, 0),
-        ordersCount: relevantOrders.length,
-        avgCheck: relevantOrders.length > 0 ? Math.round(relevantOrders.reduce((s, o) => s + o.amount, 0) / relevantOrders.length) : 0
+    const periodStats = {
+        revenue: relevantStatsOrders.reduce((s, o) => s + o.amount, 0),
+        ordersCount: relevantStatsOrders.length,
+        avgCheck: relevantStatsOrders.length > 0 ? Math.round(relevantStatsOrders.reduce((s, o) => s + o.amount, 0) / relevantStatsOrders.length) : 0
     };
 
-    const leaderboard = Object.values(allWeekOrders.reduce((acc, o) => {
+    const leaderboard = Object.values(ordersForPeriod.reduce((acc, o) => {
         if (!acc[o.masterName]) acc[o.masterName] = { name: o.masterName, revenue: 0, ordersCount: 0 };
         acc[o.masterName].revenue += o.amount;
         acc[o.masterName].ordersCount++;
         return acc;
     }, {})).sort((a, b) => b.revenue - a.revenue);
 
-    const todayOrders = relevantOrders.filter(o => o.createdAt.slice(0, 10) === new Date().toISOString().slice(0, 10));
+    const todayOrders = getWeekOrders().filter(o =>
+        o.createdAt.slice(0, 10) === new Date().toISOString().slice(0, 10) &&
+        (userIsPrivileged || o.masterName === user.name)
+    );
 
-    return { weekOrders: relevantOrders, weekStats, todayOrders, leaderboard, masters, user, history: history || [] };
+    return {
+        weekOrders: relevantWeekOrders, // For the "Orders" tab, always show current week's orders
+        dashboardStats: periodStats,
+        todayOrders,
+        leaderboard,
+        masters,
+        user,
+        history: history || []
+    };
 };
 
-const broadcastUpdates = () => io.sockets.sockets.forEach(s => s.user && s.emit('dataUpdate', prepareDataForUser(s.user)));
+const broadcastUpdates = () => io.sockets.sockets.forEach(s => s.user && s.emit('dataUpdate', prepareDataForUser(s.user, s.user.activePeriod || 'week')));
 
 app.post('/login', (req, res) => {
   const { login, password } = req.body;
@@ -67,8 +90,16 @@ io.use((socket, next) => {
 
 io.on('connection', (socket) => {
   console.log(`[Socket] Подключился: '${socket.user.name}'`);
+  socket.user.activePeriod = 'week'; // Default period
 
-  socket.emit('initialData', prepareDataForUser(socket.user));
+  socket.emit('initialData', prepareDataForUser(socket.user, socket.user.activePeriod));
+
+  socket.on('getDashboardData', (period) => {
+    if (period === 'week' || period === 'month') {
+      socket.user.activePeriod = period;
+      socket.emit('dataUpdate', prepareDataForUser(socket.user, socket.user.activePeriod));
+    }
+  });
 
   socket.on('searchClients', (query) => {
     const results = db.searchClients(query);
