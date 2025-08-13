@@ -170,41 +170,42 @@ function renderFinancePage() {
 }
 
 function renderDashboard() {
-  const { dashboardStats, user } = state.data;
-  if (!dashboardStats || !user) return;
+  const { weekStats, todayOrders, user, weekOrders, history, masters } = state.data;
+  if (!weekStats || !user) return;
 
-  const dashboardGrid = document.getElementById('dashboard-grid');
+  // Restore all dashboard items to visible before updating
+  document.querySelectorAll('#dashboard-grid .dashboard-item').forEach(item => item.style.display = 'flex');
+
   const userIsPrivileged = isPrivileged();
+  document.querySelector('#dash-revenue .dashboard-item-value').textContent = formatCurrency(weekStats.revenue);
+  document.querySelector('#dash-orders .dashboard-item-value').textContent = weekStats.ordersCount || 0;
+  document.querySelector('#dash-avg-check .dashboard-item-value').textContent = formatCurrency(weekStats.avgCheck);
 
-  // Define cards for each role
-  const privilegedCards = {
-    'dash-revenue': { title: 'Выручка', value: formatCurrency(dashboardStats.revenue) },
-    'dash-profit': { title: 'Прибыль', value: formatCurrency(dashboardStats.revenue * 0.5) },
-    'dash-orders': { title: 'Заказы', value: dashboardStats.ordersCount || 0 },
-    'dash-avg-check': { title: 'Средний чек', value: formatCurrency(dashboardStats.avgCheck) },
-    'dash-unique-clients': { title: 'Уник. клиенты', value: 'N/A' }, // Note: These stats are not calculated on backend yet
-    'dash-new-clients': { title: 'Новые клиенты', value: 'N/A' }
-  };
+  const todayValueEl = document.querySelector('#dash-today-personal .dashboard-item-value');
+  if(userIsPrivileged) {
+    document.querySelector('#dash-today-personal .dashboard-item-title').textContent = 'Выручка (сегодня)';
+    todayValueEl.textContent = formatCurrency((state.data.todayOrders || []).reduce((sum, o) => sum + o.amount, 0));
+  } else {
+    todayValueEl.textContent = formatCurrency((state.data.todayOrders || []).filter(o => o.masterName === user.name).reduce((sum, o) => sum + o.amount, 0));
+    document.querySelector('#dash-today-personal .dashboard-item-title').textContent = 'Моя выручка (сегодня)';
+  }
 
-  const masterCards = {
-    'dash-revenue': { title: 'Моя выручка', value: formatCurrency(dashboardStats.revenue) },
-    'dash-orders': { title: 'Мои заказы', value: dashboardStats.ordersCount || 0 },
-    'dash-avg-check': { title: 'Мой средний чек', value: formatCurrency(dashboardStats.avgCheck) }
-  };
-
-  const cardsToShow = userIsPrivileged ? privilegedCards : masterCards;
-
-  // Hide all cards first
-  dashboardGrid.querySelectorAll('.dashboard-item').forEach(item => item.style.display = 'none');
-
-  // Show and update the relevant cards
-  for (const [id, data] of Object.entries(cardsToShow)) {
-    const card = document.getElementById(id);
-    if (card) {
-      card.style.display = 'flex';
-      card.querySelector('.dashboard-item-title').textContent = data.title;
-      card.querySelector('.dashboard-item-value').textContent = data.value;
-    }
+  if(userIsPrivileged) {
+    document.querySelector('#dash-profit .dashboard-item-value').textContent = formatCurrency(weekStats.revenue * 0.5);
+    const weeklyClientIds = new Set((state.data.weekOrders || []).map(o => o.clientId));
+    document.querySelector('#dash-unique-clients .dashboard-item-value').textContent = weeklyClientIds.size;
+    document.querySelector('#dash-master-load .dashboard-item-value').textContent = (masters?.length > 0) ? (weekStats.ordersCount / masters.length).toFixed(1) : 0;
+    const historicalClientIds = new Set((history || []).flatMap(h => h.orders).map(o => o.clientId));
+    let newClientCount = 0;
+    weeklyClientIds.forEach(id => { if (!historicalClientIds.has(id)) newClientCount++; });
+    const newClientPercentage = weeklyClientIds.size > 0 ? (newClientCount / weeklyClientIds.size * 100).toFixed(0) : 0;
+    document.querySelector('#dash-new-clients .dashboard-item-value').textContent = `${newClientPercentage}%`;
+  } else {
+    // Hide privileged cards for non-privileged users
+    document.querySelector('#dash-profit').style.display = 'none';
+    document.querySelector('#dash-unique-clients').style.display = 'none';
+    document.querySelector('#dash-new-clients').style.display = 'none';
+    document.querySelector('#dash-master-load').style.display = 'none';
   }
 }
 
