@@ -44,6 +44,17 @@ function renderClientsPage() {
 
   const clients = state.data.clients || [];
 
+  // Add client count stats
+  const statsContainer = document.querySelector('#clients .section-header');
+  let statsEl = statsContainer.querySelector('.header-stats');
+  if (!statsEl) {
+    statsEl = document.createElement('div');
+    statsEl.className = 'header-stats';
+    statsContainer.prepend(statsEl);
+  }
+  statsEl.innerHTML = `<span>Всего клиентов: <strong>${clients.length}</strong></span>`;
+
+
   if (clients.length === 0) {
     container.innerHTML = '<div class="empty-state"><p>Клиентов нет.</p></div>';
     return;
@@ -54,8 +65,14 @@ function renderClientsPage() {
       ${clients.map(client => `
         <div class="client-list-item">
           <div class="client-info">
-            <span class="client-name">${client.name}</span>
-            <span class="client-phone">${client.phone}</span>
+            <div class="client-main-info">
+                <span class="client-name">${client.name}</span>
+                <a href="tel:${client.phone}" class="client-phone"><i class="fas fa-phone"></i> ${client.phone}</a>
+            </div>
+            <div class="client-car-info">
+                <span>${client.carModel}</span>
+                ${formatPlate(client.licensePlate)}
+            </div>
           </div>
           <div class="client-actions">
             <button class="btn btn-secondary btn-sm" data-action="edit-client" data-id="${client.id}" title="Редактировать">
@@ -297,50 +314,50 @@ function renderMainContributionChart() {
   }).join('')}</div>`;
 }
 
+function formatPlate(plate) {
+  if (!plate) return '';
+
+  // Normalize plate: remove all non-alphanumeric chars and convert to uppercase
+  const sanitizedPlate = plate.replace(/[^a-zA-Zа-яА-Я0-9]/g, '').toUpperCase();
+
+  // Regex for Russian format: 1 letter, 3 digits, 2 letters, then 2-3 digits region
+  // e.g., A123BC77 or A123BC777
+  const rusRegex = /^([АВЕКМНОРСТУХ])(\d{3})([АВЕКМНОРСТУХ]{2})(\d{2,3})$/;
+  const match = sanitizedPlate.match(rusRegex);
+
+  if (match) {
+    const letter1 = match[1];
+    const digits = match[2];
+    const letters2 = match[3];
+    const region = match[4];
+
+    // Construct the main part of the plate with specific classes for styling
+    const mainPart = `<span class="plate-letter">${letter1}</span><span class="plate-digits">${digits}</span><span class="plate-letters">${letters2}</span>`;
+
+    return `<div class="license-plate">
+              <div class="plate-main">${mainPart}</div>
+              <div class="plate-region">
+                <span class="region-code">${region}</span>
+                <div class="region-flag">
+                  <div class="flag-white"></div>
+                  <div class="flag-blue"></div>
+                  <div class="flag-red"></div>
+                  <span class="flag-rus">RUS</span>
+                </div>
+              </div>
+            </div>`;
+  }
+
+  // Fallback for non-standard or foreign plates
+  return `<div class="license-plate license-plate-fallback">${sanitizedPlate}</div>`;
+}
+
 export function renderOrdersList(container, orders) {
   if (!container) return;
   if (!orders?.length) {
     container.innerHTML = '<div class="empty-state"><p>Заказ-нарядов нет</p></div>';
     return;
   }
-
-  const formatPlate = (plate) => {
-    if (!plate) return '';
-
-    // Normalize plate: remove all non-alphanumeric chars and convert to uppercase
-    const sanitizedPlate = plate.replace(/[^a-zA-Zа-яА-Я0-9]/g, '').toUpperCase();
-
-    // Regex for Russian format: 1 letter, 3 digits, 2 letters, then 2-3 digits region
-    // e.g., A123BC77 or A123BC777
-    const rusRegex = /^([АВЕКМНОРСТУХ])(\d{3})([АВЕКМНОРСТУХ]{2})(\d{2,3})$/;
-    const match = sanitizedPlate.match(rusRegex);
-
-    if (match) {
-      const letter1 = match[1];
-      const digits = match[2];
-      const letters2 = match[3];
-      const region = match[4];
-
-      // Construct the main part of the plate with specific classes for styling
-      const mainPart = `<span class="plate-letter">${letter1}</span><span class="plate-digits">${digits}</span><span class="plate-letters">${letters2}</span>`;
-
-      return `<div class="license-plate">
-                <div class="plate-main">${mainPart}</div>
-                <div class="plate-region">
-                  <span class="region-code">${region}</span>
-                  <div class="region-flag">
-                    <div class="flag-white"></div>
-                    <div class="flag-blue"></div>
-                    <div class="flag-red"></div>
-                    <span class="flag-rus">RUS</span>
-                  </div>
-                </div>
-              </div>`;
-    }
-
-    // Fallback for non-standard or foreign plates
-    return `<div class="license-plate license-plate-fallback">${sanitizedPlate}</div>`;
-  };
 
   container.innerHTML = '';
   // Safeguard sort: ensure newest orders are always at the top.

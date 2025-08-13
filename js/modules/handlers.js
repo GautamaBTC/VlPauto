@@ -95,21 +95,11 @@ export function handleTabSwitch(target) {
 }
 
 export function initEventListeners() {
-  const voiceSearchBtn = document.getElementById('voice-search-btn');
-  const homeSearchInput = document.getElementById('home-client-search');
-
-  // Voice Search Logic
-  if (isSecureContextAndSpeechRecognitionSupported()) {
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    setupVoiceRecognition(recognition, voiceSearchBtn, homeSearchInput);
-  } else {
-    disableVoiceSearch(voiceSearchBtn);
-  }
-
-  // Text Search Logic
-  if(homeSearchInput) {
-    homeSearchInput.addEventListener('input', (e) => {
-      handleClientSearch(e.target.value, 'home-search-results');
+  // Client Search Logic (now in the Clients tab)
+  const clientSearchInput = document.getElementById('client-search-input');
+  if(clientSearchInput) {
+    clientSearchInput.addEventListener('input', (e) => {
+      handleClientSearch(e.target.value, 'client-search-results');
     });
   }
 
@@ -161,17 +151,20 @@ export function initEventListeners() {
           finalizeWeek();
       }
       const clientItem = e.target.closest('.search-result-item:not(.disabled)');
-      if(clientItem && clientItem.parentElement.id === 'home-search-results') {
+      if(clientItem && (clientItem.parentElement.id === 'home-search-results' || clientItem.parentElement.id === 'client-search-results')) {
           const client = { id: clientItem.dataset.id, name: clientItem.dataset.name, phone: clientItem.dataset.phone };
           openClientHistoryModal(client);
           clientItem.parentElement.classList.remove('active');
-          homeSearchInput.value = '';
+          // Also clear the input field
+          const input = document.getElementById(clientItem.parentElement.id.replace('-results', '-input'));
+          if (input) input.value = '';
       }
   });
 }
 
 function handleClientSearch(query, resultsContainerId) {
     const resultsContainer = document.getElementById(resultsContainerId);
+    if (!resultsContainer) return;
     if (query.length < 2) {
       resultsContainer.innerHTML = '';
       resultsContainer.classList.remove('active');
@@ -244,51 +237,4 @@ function exportData() {
     const startStr = start.toISOString().slice(0, 10);
     const endStr = end.toISOString().slice(0, 10);
     downloadCSV(data, `report-${startStr}-to-${endStr}.csv`);
-}
-
-// --- Voice Search Helpers ---
-function isSecureContextAndSpeechRecognitionSupported() {
-    return window.isSecureContext && (window.SpeechRecognition || window.webkitSpeechRecognition);
-}
-
-function disableVoiceSearch(button) {
-    if (!button) return;
-    button.style.opacity = '0.5';
-    button.style.cursor = 'not-allowed';
-    const message = window.isSecureContext
-        ? 'Голосовой поиск не поддерживается в вашем браузере.'
-        : 'Голосовой поиск доступен только на защищенном соединении (HTTPS).';
-    button.addEventListener('click', () => showNotification(message, 'error'));
-}
-
-function setupVoiceRecognition(recognition, button, input) {
-    recognition.lang = 'ru-RU';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    button.addEventListener('click', () => {
-        try {
-            recognition.start();
-        } catch(e) {
-            button.classList.remove('is-recording');
-            showNotification('Распознавание уже активно.', 'error');
-        }
-    });
-
-    recognition.addEventListener('speechstart', () => button.classList.add('is-recording'));
-    recognition.addEventListener('speechend', () => {
-        recognition.stop();
-        button.classList.remove('is-recording');
-    });
-    recognition.addEventListener('result', (e) => {
-        input.value = e.results[0][0].transcript;
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-    recognition.addEventListener('error', (e) => {
-        button.classList.remove('is-recording');
-        let errorMessage = `Ошибка: ${e.error}`;
-        if (e.error === 'not-allowed') errorMessage = 'Необходимо разрешить доступ к микрофону.';
-        else if (e.error === 'no-speech') errorMessage = 'Речь не распознана.';
-        showNotification(errorMessage, 'error');
-    });
 }

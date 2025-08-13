@@ -69,6 +69,18 @@ const seedDatabaseWithTestData = () => {
     const carBrands = ['Lada Vesta', 'Toyota Camry', 'Ford Focus', 'BMW X5', 'Mercedes C-Class', 'Audi A6', 'Kia Rio', 'Hyundai Solaris'];
     const services = ['Замена масла ДВС', 'Комплексный шиномонтаж', 'Диагностика ходовой', 'Ремонт тормозной системы', 'Замена ГРМ'];
 
+    const generateLicensePlate = () => {
+        const letters = 'АВЕКМНОРСТУХ';
+        const region = ['77', '99', '177', '199', '777', '161', '61', '93', '123'][Math.floor(Math.random() * 9)];
+        const l1 = letters[Math.floor(Math.random() * letters.length)];
+        const d1 = String(Math.floor(Math.random() * 10));
+        const d2 = String(Math.floor(Math.random() * 10));
+        const d3 = String(Math.floor(Math.random() * 10));
+        const l2 = letters[Math.floor(Math.random() * letters.length)];
+        const l3 = letters[Math.floor(Math.random() * letters.length)];
+        return `${l1} ${d1}${d2}${d3} ${l2}${l3} ${region}`;
+    };
+
     const clientsData = [
         { name: 'Иван Петров', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
         { name: 'Сергей Смирнов', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
@@ -77,7 +89,13 @@ const seedDatabaseWithTestData = () => {
         { name: 'Дмитрий Попов', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
     ];
 
-    db.clients = clientsData.map((c, i) => ({ ...c, id: `client-${Date.now()}-${i}`, createdAt: new Date().toISOString() }));
+    db.clients = clientsData.map((c, i) => ({
+        ...c,
+        id: `client-${Date.now()}-${i}`,
+        createdAt: new Date().toISOString(),
+        carModel: carBrands[Math.floor(Math.random() * carBrands.length)],
+        licensePlate: generateLicensePlate()
+    }));
 
     let testOrders = [];
     for (let i = 0; i < 50; i++) {
