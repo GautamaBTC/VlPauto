@@ -32,38 +32,35 @@ const getMonthOrders = () => {
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 };
 
-const prepareDataForUser = (user, period = 'week') => {
-    const ordersForPeriod = period === 'month' ? getMonthOrders() : getWeekOrders();
+const prepareDataForUser = (user) => {
+    const allWeekOrders = getWeekOrders();
     const users = db.getUsers();
     const history = db.getHistory();
-    const masters = Object.values(users).filter(u => u.role.includes('MASTER')).map(u => u.name);
+    const masters = Object.values(users).filter(u => u.role === 'MASTER' || u.role === 'SENIOR_MASTER').map(u => u.name);
 
     const userIsPrivileged = isPrivileged(user);
-    // For dashboard stats, a master should only see their own stats. For the "orders" tab, they see their own orders from the current week.
-    const relevantStatsOrders = userIsPrivileged ? ordersForPeriod : ordersForPeriod.filter(o => o.masterName === user.name);
-    const relevantWeekOrders = userIsPrivileged ? getWeekOrders() : getWeekOrders().filter(o => o.masterName === user.name);
+    const relevantOrders = userIsPrivileged ? allWeekOrders : allWeekOrders.filter(o => o.masterName === user.name);
 
-    const periodStats = {
-        revenue: relevantStatsOrders.reduce((s, o) => s + o.amount, 0),
-        ordersCount: relevantStatsOrders.length,
-        avgCheck: relevantStatsOrders.length > 0 ? Math.round(relevantStatsOrders.reduce((s, o) => s + o.amount, 0) / relevantStatsOrders.length) : 0
+    const weekStats = {
+        revenue: relevantOrders.reduce((s, o) => s + o.amount, 0),
+        ordersCount: relevantOrders.length,
+        avgCheck: relevantOrders.length > 0 ? Math.round(relevantOrders.reduce((s, o) => s + o.amount, 0) / relevantOrders.length) : 0
     };
 
-    const leaderboard = Object.values(ordersForPeriod.reduce((acc, o) => {
+    const leaderboard = Object.values(allWeekOrders.reduce((acc, o) => {
         if (!acc[o.masterName]) acc[o.masterName] = { name: o.masterName, revenue: 0, ordersCount: 0 };
         acc[o.masterName].revenue += o.amount;
         acc[o.masterName].ordersCount++;
         return acc;
     }, {})).sort((a, b) => b.revenue - a.revenue);
 
-    const todayOrders = getWeekOrders().filter(o =>
-        o.createdAt.slice(0, 10) === new Date().toISOString().slice(0, 10) &&
-        (userIsPrivileged || o.masterName === user.name)
-    );
+    const todayOrders = relevantOrders.filter(o => o.createdAt.slice(0, 10) === new Date().toISOString().slice(0, 10));
 
+    // NOTE: This is a temporary simplification to fix a bug.
+    // The data structure is reverted to the old format.
     return {
-        weekOrders: relevantWeekOrders, // For the "Orders" tab, always show current week's orders
-        dashboardStats: periodStats,
+        weekOrders: relevantOrders,
+        weekStats: weekStats, // Reverted from dashboardStats
         todayOrders,
         leaderboard,
         masters,
@@ -72,7 +69,7 @@ const prepareDataForUser = (user, period = 'week') => {
     };
 };
 
-const broadcastUpdates = () => io.sockets.sockets.forEach(s => s.user && s.emit('dataUpdate', prepareDataForUser(s.user, s.user.activePeriod || 'week')));
+const broadcastUpdates = () => io.sockets.sockets.forEach(s => s.user && s.emit('dataUpdate', prepareDataForUser(s.user)));
 
 app.post('/login', (req, res) => {
   const { login, password } = req.body;
