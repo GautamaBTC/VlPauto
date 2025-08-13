@@ -43,7 +43,26 @@
   border: none;
 }
 .modal-body .form-group {
-  margin-bottom: 1rem;
+    margin-bottom: 1rem;
+}
+.compact-form .form-group {
+    margin-bottom: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Enforce left-alignment */
+}
+.compact-form .form-group label {
+    margin-bottom: 0.25rem;
+}
+.compact-form .form-row {
+    align-items: flex-start;
+}
+.form-group-small {
+    flex-grow: 0 !important;
+    flex-shrink: 1 !important;
+}
+.form-group-small input {
+    max-width: 120px;
 }
 .modal-body .form-group:last-child {
   margin-bottom: 0;
