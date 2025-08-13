@@ -23,8 +23,20 @@ export function openOrderModal(order = null) {
   const selectedMaster = isEdit ? order.masterName : state.user.name;
   const selectedPaymentType = isEdit ? order.paymentType : paymentTypes[0];
 
-  modal.innerHTML = `<div class="modal-content"><div class="modal-header"><h3 class="modal-title">${isEdit ? 'Редактировать' : 'Добавить'} заказ-наряд</h3><button class="modal-close-btn" data-action="close-modal">&times;</button></div><form id="order-form"><div class="modal-body"><input type="hidden" name="id" value="${isEdit ? order.id : ''}"><div class="form-group"><label>Исполнитель</label><div class="custom-select-wrapper" id="master-select-wrapper"></div></div><div class="form-row"><div class="form-group"><label>Модель авто</label><input type="text" name="carModel" required value="${isEdit ? order.carModel || '' : ''}"></div><div class="form-group"><label>Гос. номер</label><input type="text" name="licensePlate" value="${isEdit ? order.licensePlate || '' : ''}" placeholder="А 123 ВС 777"></div></div><div class="form-group"><label>Описание работ</label><textarea name="description" rows="3" required>${isEdit ? order.description : ''}</textarea></div><div class="form-group"><label>Имя клиента</label><div class="input-with-icon"><input type="text" name="clientName" required value="${isEdit ? order.clientName || '' : ''}" autocomplete="off"><div class="search-results-list" id="client-name-results"></div></div></div><div class="form-group"><label>Телефон клиента</label><div class="input-with-icon"><input type="tel" name="clientPhone" required value="${isEdit ? order.clientPhone || '' : ''}" autocomplete="off"><div class="search-results-list" id="client-phone-results"></div></div></div><div class="form-group"><label>Сумма</label><input type="number" name="amount" required value="${isEdit ? order.amount : ''}"></div><div class="form-group"><label>Тип оплаты</label><div class="custom-select-wrapper" id="payment-select-wrapper"></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-action="close-modal">Отмена</button><button type="submit" class="btn btn-accent">${isEdit ? 'Сохранить' : 'Добавить'}</button></div></form></div>`;
+  modal.innerHTML = `<div class="modal-content"><div class="modal-header"><h3 class="modal-title">${isEdit ? 'Редактировать' : 'Добавить'} заказ-наряд</h3><button class="modal-close-btn" data-action="close-modal">&times;</button></div><form id="order-form" class="compact-form"><div class="modal-body"><input type="hidden" name="id" value="${isEdit ? order.id : ''}"><div class="form-group"><label>Исполнитель</label><div class="custom-select-wrapper" id="master-select-wrapper"></div></div><div class="form-row"><div class="form-group"><label>Модель авто</label><input type="text" name="carModel" required value="${isEdit ? order.carModel || '' : ''}"></div><div class="form-group"><label>Гос. номер</label><div class="plate-input-group"><input type="text" name="licensePlateMain" class="plate-main-input" placeholder="А123ВС"><input type="text" name="licensePlateRegion" class="plate-region-input" placeholder="777" maxlength="3"></div></div></div><div class="form-group"><label>Описание работ</label><textarea name="description" rows="2" required>${isEdit ? order.description : ''}</textarea></div><div class="form-row"><div class="form-group"><label>Имя клиента</label><div class="input-with-icon"><input type="text" name="clientName" required value="${isEdit ? order.clientName || '' : ''}" autocomplete="off"><div class="search-results-list" id="client-name-results"></div></div></div><div class="form-group"><label>Телефон клиента</label><div class="phone-input-group"><span class="phone-prefix">+7</span><input type="tel" name="clientPhone" required value="${isEdit ? (order.clientPhone || '').replace(/^\+?7/, '') : ''}" placeholder="9181234567" autocomplete="off"><div class="search-results-list" id="client-phone-results"></div></div></div></div><div class="form-row"><div class="form-group form-group-small"><label>Сумма</label><input type="number" name="amount" class="amount-input" required value="${isEdit ? order.amount : ''}"></div><div class="form-group"><label>Тип оплаты</label><div class="custom-select-wrapper" id="payment-select-wrapper"></div></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary" data-action="close-modal">Отмена</button><button type="submit" class="btn btn-accent">${isEdit ? 'Сохранить' : 'Добавить'}</button></div></form></div>`;
   document.body.appendChild(modal);
+
+  // --- Populate fields for editing ---
+  if (isEdit && order.licensePlate) {
+    const plateRegex = /^([А-ЯA-Z0-9]+)(\d{2,3})$/;
+    const match = order.licensePlate.replace(/[^a-zA-Zа-яА-Я0-9]/g, '').toUpperCase().match(plateRegex);
+    if (match) {
+        modal.querySelector('[name="licensePlateMain"]').value = match[1];
+        modal.querySelector('[name="licensePlateRegion"]').value = match[2];
+    } else {
+        modal.querySelector('[name="licensePlateMain"]').value = order.licensePlate;
+    }
+  }
 
   createCustomSelect(modal.querySelector('#master-select-wrapper'), 'masterName', masters, selectedMaster, !priv);
   createCustomSelect(modal.querySelector('#payment-select-wrapper'), 'paymentType', paymentTypes, selectedPaymentType);
@@ -77,6 +89,17 @@ export function openOrderModal(order = null) {
     const formData = new FormData(e.target);
     if (!priv) formData.set('masterName', state.user.name);
     const data = Object.fromEntries(formData.entries());
+
+    // Combine license plate fields
+    data.licensePlate = `${data.licensePlateMain || ''}${data.licensePlateRegion || ''}`;
+    delete data.licensePlateMain;
+    delete data.licensePlateRegion;
+
+    // Add prefix to phone number
+    if (data.clientPhone) {
+      data.clientPhone = `+7${data.clientPhone.replace(/^\+?7/, '')}`;
+    }
+
     if (!data.amount || +data.amount <= 0) return showNotification('Сумма должна быть больше нуля.', 'error');
     data.amount = +data.amount;
     state.socket.emit(isEdit ? 'updateOrder' : 'addOrder', data);

@@ -252,3 +252,51 @@ span.flatpickr-weekday {
 .flatpickr-time input:hover, .flatpickr-time .flatpickr-am-pm:hover {
     background: var(--bg);
 }
+
+/* Styles for the two-part license plate input */
+.plate-input-group {
+    display: flex;
+    align-items: center;
+}
+.plate-main-input {
+    flex-grow: 1;
+    border-radius: 8px 0 0 8px !important;
+    border-right: none !important;
+    text-transform: uppercase;
+}
+.plate-region-input {
+    flex-grow: 0;
+    flex-basis: 70px;
+    border-radius: 0 8px 8px 0 !important;
+    text-align: center;
+}
+.plate-main-input:focus, .plate-region-input:focus {
+    z-index: 2;
+}
+
+/* Styles for the phone input with prefix */
+.phone-input-group {
+    display: flex;
+    align-items: center;
+}
+.phone-input-group .phone-prefix {
+    padding: 0 12px;
+    height: 48px;
+    line-height: 48px;
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    border-right: none;
+    border-radius: 8px 0 0 8px;
+    color: var(--text-muted);
+}
+.phone-input-group input[type="tel"] {
+    border-radius: 0 8px 8px 0 !important;
+}
+.phone-input-group input[type="tel"]:focus {
+    z-index: 2;
+}
+
+/* Styles for a smaller amount input */
+.amount-input {
+    max-width: 150px;
+}
