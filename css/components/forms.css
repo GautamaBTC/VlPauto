@@ -310,39 +310,44 @@ span.flatpickr-weekday {
 .phone-input-group {
     display: flex;
     align-items: center;
+    gap: 8px;
 }
-.phone-input-group .phone-prefix {
-    padding: 0 12px;
-    height: 48px;
-    line-height: 48px;
-    background-color: var(--bg);
-    border: 1px solid var(--border);
-    border-right: none;
-    border-radius: 8px 0 0 8px;
+.phone-input-group .phone-prefix-static {
+    font-size: 1rem;
+    font-weight: 500;
     color: var(--text-muted);
 }
 .phone-input-group input[type="tel"] {
-    border-radius: 0 8px 8px 0 !important;
-}
-.phone-input-group input[type="tel"]:focus {
-    z-index: 2;
+    flex-grow: 1;
 }
 
-.form-group label > span.required-asterisk {
+.form-group label .required-asterisk {
     color: var(--danger-color, #dc2626);
-    margin-left: 4px;
+    font-weight: 700;
+    margin-left: 2px;
+}
+
+.explainer-text {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 1rem;
+}
+.explainer-text span {
+    color: var(--danger-color, #dc2626);
+    font-weight: 700;
 }
 
 /* Styles for the amount input with suffix */
 .amount-input-group {
     display: flex;
     align-items: center;
+    width: 100%; /* Ensure the group takes full width */
 }
 .amount-input-group input[type="number"] {
     border-radius: 8px 0 0 8px !important;
     border-right: none !important;
     text-align: right;
-    flex-grow: 1;
+    flex-grow: 1; /* Allow input to grow */
 }
 .amount-input-group .amount-suffix {
     padding: 0 12px;

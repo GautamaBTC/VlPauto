@@ -36,8 +36,10 @@ const prepareDataForUser = (user) => {
     const allWeekOrders = getWeekOrders();
     const users = db.getUsers();
     const history = db.getHistory();
-    // More robust filter to ensure Director is never included.
-    const masters = Object.values(users).filter(u => u.role !== 'DIRECTOR').map(u => u.name);
+    // Final, most robust filter to ensure Director is never included, by specific name.
+    const masters = Object.values(users)
+        .filter(u => u.name !== 'Владимир Орлов')
+        .map(u => u.name);
 
     const userIsPrivileged = isPrivileged(user);
     const relevantOrders = userIsPrivileged ? allWeekOrders : allWeekOrders.filter(o => o.masterName === user.name);
