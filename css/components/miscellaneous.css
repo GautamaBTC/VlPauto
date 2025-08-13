@@ -295,3 +295,22 @@
   color: var(--text-muted);
   margin-right: auto;
 }
+
+@media (max-width: 480px) {
+  .client-list-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .client-info {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .client-info .license-plate,
+  .client-phone {
+    grid-column: 1 / -1;
+  }
+  .client-actions {
+    align-self: flex-end;
+  }
+}

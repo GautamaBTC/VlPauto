@@ -348,7 +348,7 @@ function formatPlate(plate) {
   return `<div class="license-plate license-plate-fallback">${sanitizedPlate}</div>`;
 }
 
-export function renderOrdersList(container, orders) {
+export function renderOrdersList(container, orders, context = 'default') {
   if (!container) return;
   if (!orders?.length) {
     container.innerHTML = '<div class="empty-state"><p>Заказ-нарядов нет</p></div>';
@@ -381,10 +381,12 @@ export function renderOrdersList(container, orders) {
       <div class="order-amount">
         <div class="order-amount-value">${formatCurrency(order.amount)}</div>
         <div class="order-actions">
-          <button class="btn btn-sm ${isDone ? 'btn-secondary' : 'btn-success'}" data-action="toggle-order-status" data-id="${order.id}" data-status="${order.status}" title="${isDone ? 'Вернуть в работу' : 'Завершить'}">
-            <i class="fas ${isDone ? 'fa-undo' : 'fa-check'}"></i>
-          </button>
-          ${order.clientPhone ? `<a href="sms:${order.clientPhone}?body=${smsBody}" class="btn btn-secondary btn-sm" title="Отправить SMS"><i class="fas fa-comment-sms"></i></a>` : ''}
+          ${context === 'default' ? `
+            <button class="btn btn-sm ${isDone ? 'btn-secondary' : 'btn-success'}" data-action="toggle-order-status" data-id="${order.id}" data-status="${order.status}" title="${isDone ? 'Вернуть в работу' : 'Завершить'}">
+              <i class="fas ${isDone ? 'fa-undo' : 'fa-check'}"></i>
+            </button>
+            ${order.clientPhone ? `<a href="sms:${order.clientPhone}?body=${smsBody}" class="btn btn-secondary btn-sm" title="Отправить SMS"><i class="fas fa-comment-sms"></i></a>` : ''}
+          ` : ''}
           ${canEditOrder(order, state.user) ? `<button class="btn btn-secondary btn-sm" data-action="edit-order" data-id="${order.id}"><i class="fas fa-pen"></i></button>` : ''}
           ${isPrivileged() ? `<button class="btn btn-danger btn-sm" data-action="delete-order" data-id="${order.id}"><i class="fas fa-trash"></i></button>` : ''}
         </div>

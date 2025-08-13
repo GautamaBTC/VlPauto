@@ -31,10 +31,7 @@
     .dashboard { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 480px) {
-    .dashboard { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 400px) {
-    #home .dashboard { grid-template-columns: 1fr; }
+    .dashboard { grid-template-columns: 1fr; }
 }
 
 .finance-header .dashboard {

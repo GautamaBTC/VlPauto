@@ -183,4 +183,5 @@
 
 @media (max-width: 768px) {
   .modal-content { width: 95%; }
+  .modal-content.modal-xl { max-width: 95%; }
 }
