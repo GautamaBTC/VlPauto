@@ -93,13 +93,13 @@
 
     <div id="clients" class="tab-content">
       <div class="section" id="client-search-card">
-        <div class="section-header">
-            <h3 class="section-title"><i class="fas fa-search"></i> Поиск по базе клиентов</h3>
-        </div>
         <div class="section-content" style="padding: 16px;">
             <div class="client-search-container">
                 <div class="client-search-wrapper">
-                    <input type="text" id="client-search-input" class="form-control" placeholder="Имя или телефон клиента...">
+                    <div class="input-with-icon">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="client-search-input" class="form-control" placeholder="Поиск клиента...">
+                    </div>
                     <div class="search-results-list" id="client-search-results"></div>
                 </div>
             </div>
@@ -148,7 +148,7 @@
                 <span><strong>Внимание:</strong> Действия в этой секции необратимы.</span>
             </div>
             <button class="btn btn-biohazard" data-action="clear-data" title="Сбросить все данные">
-                <i class="fas fa-skull-crossbones"></i>
+                <i class="fas fa-radiation"></i>
             </button>
         </div>
       </div>
