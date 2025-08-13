@@ -7,6 +7,15 @@ export const formatCurrency = (value) => new Intl.NumberFormat('ru-RU', { style:
 
 export const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('ru-RU');
 
+export const formatDateTime = (dateStr) => {
+    const date = new Date(dateStr);
+    const options = {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit'
+    };
+    return date.toLocaleString('ru-RU', options);
+};
+
 export function showNotification(message, type = 'success') {
   const container = document.getElementById('notification-root');
   if (!container) return;

@@ -328,7 +328,35 @@ span.flatpickr-weekday {
     z-index: 2;
 }
 
-/* Styles for a smaller amount input */
-.amount-input {
-    max-width: 150px;
+.form-group label > span.required-asterisk {
+    color: var(--danger-color, #dc2626);
+    margin-left: 4px;
+}
+
+/* Styles for the amount input with suffix */
+.amount-input-group {
+    display: flex;
+    align-items: center;
+}
+.amount-input-group input[type="number"] {
+    border-radius: 8px 0 0 8px !important;
+    border-right: none !important;
+    text-align: right;
+    flex-grow: 1;
+}
+.amount-input-group .amount-suffix {
+    padding: 0 12px;
+    height: 40px;
+    line-height: 40px;
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    border-left: none;
+    border-radius: 0 8px 8px 0;
+    color: var(--text-muted);
+}
+
+/* Style for validation errors */
+.has-error {
+    border-color: #dc2626 !important; /* Red-600 */
+    box-shadow: 0 0 0 2px color-mix(in srgb, #dc2626 20%, transparent) !important;
 }
