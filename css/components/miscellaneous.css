@@ -239,3 +239,35 @@
 .salary-item.bonus-awarded .master-icon {
     color: var(--gold);
 }
+
+/* Client List */
+.client-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.client-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background-color: var(--bg);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.client-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.client-name {
+  font-weight: 600;
+}
+.client-phone {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+.client-actions {
+  display: flex;
+  gap: 8px;
+}

@@ -5,7 +5,7 @@
 
 import { state, isPrivileged } from './state.js';
 import { renderContent, renderOrdersPage, renderArchivePage } from './ui.js';
-import { openOrderModal, openConfirmationModal, openClearDataCaptchaModal, openBonusModal, openArchivedWeekModal, openWeekReportModal, openClientHistoryModal } from './modals.js';
+import { openOrderModal, openClientModal, openConfirmationModal, openClearDataCaptchaModal, openBonusModal, openArchivedWeekModal, openWeekReportModal, openClientHistoryModal } from './modals.js';
 import { logout } from './app.js';
 import { showNotification, downloadCSV } from './utils.js';
 
@@ -21,7 +21,16 @@ export function handleAction(target) {
     },
     'logout': logout,
     'add-order': () => openOrderModal(),
-    'view-clients': () => showNotification('Раздел "Клиенты" находится в разработке.', 'success'),
+    'add-client': () => openClientModal(),
+    'edit-client': () => {
+        const client = state.data.clients.find(c => c.id === id);
+        if (client) openClientModal(client);
+    },
+    'view-client-history': () => {
+        const client = state.data.clients.find(c => c.id === id);
+        if (client) openClientHistoryModal(client);
+    },
+    'view-clients': () => document.querySelector('.nav-tab[data-tab="clients"]').click(),
     'export-csv-archive': () => exportData(),
     'set-archive-period': () => {
         if (!flatpickrInstance) return;

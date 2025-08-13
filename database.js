@@ -175,6 +175,15 @@ module.exports = {
     db.clients.push(client);
     await saveDB();
   },
+  updateClient: async (updatedClient) => {
+    const clientIndex = db.clients.findIndex(c => c.id === updatedClient.id);
+    if (clientIndex !== -1) {
+      db.clients[clientIndex] = { ...db.clients[clientIndex], ...updatedClient };
+      await saveDB();
+      return true;
+    }
+    return false;
+  },
   closeWeek: async (payload) => {
     const { salaryReport } = payload;
     db.history.unshift({

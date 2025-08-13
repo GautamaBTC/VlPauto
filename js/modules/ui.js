@@ -29,12 +29,46 @@ export function renderContent() {
   const handlers = {
     home: renderHomePage,
     orders: renderOrdersPage,
+    clients: renderClientsPage,
     archive: renderArchivePage,
     finance: renderFinancePage
   };
   if (handlers[state.activeTab]) {
     handlers[state.activeTab]();
   }
+}
+
+function renderClientsPage() {
+  const container = document.getElementById('client-list-container');
+  if (!container) return;
+
+  const clients = state.data.clients || [];
+
+  if (clients.length === 0) {
+    container.innerHTML = '<div class="empty-state"><p>Клиентов нет.</p></div>';
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="client-list">
+      ${clients.map(client => `
+        <div class="client-list-item">
+          <div class="client-info">
+            <span class="client-name">${client.name}</span>
+            <span class="client-phone">${client.phone}</span>
+          </div>
+          <div class="client-actions">
+            <button class="btn btn-secondary btn-sm" data-action="edit-client" data-id="${client.id}" title="Редактировать">
+              <i class="fas fa-pen"></i>
+            </button>
+            <button class="btn btn-secondary btn-sm" data-action="view-client-history" data-id="${client.id}" title="История клиента">
+              <i class="fas fa-history"></i>
+            </button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
 }
 
 function renderHomePage() {
