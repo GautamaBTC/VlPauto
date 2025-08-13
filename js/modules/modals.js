@@ -171,6 +171,19 @@ export function openClientModal(client = null) {
               <input type="tel" id="clientPhone" name="phone" required value="${isEdit ? (client.phone || '').replace(/^\+?7/, '') : ''}" placeholder="(918) 123-45-67" inputmode="numeric">
             </div>
           </div>
+          <div class="form-row">
+            <div class="form-group">
+                <label for="carModel">Модель авто</label>
+                <input type="text" id="carModel" name="carModel" value="${isEdit ? client.carModel || '' : ''}" placeholder="Lada Vesta">
+            </div>
+            <div class="form-group">
+                <label for="licensePlateMain">Гос. номер</label>
+                <div class="plate-input-group">
+                    <input type="text" id="licensePlateMain" name="licensePlateMain" class="plate-main-input" placeholder="А123ВС" maxlength="6">
+                    <input type="text" id="licensePlateRegion" name="licensePlateRegion" class="plate-region-input" placeholder="777" maxlength="3" inputmode="numeric">
+                </div>
+            </div>
+          </div>
           <div class="form-group explainer-text"><span>*</span> Обязательные поля для заполнения</div>
         </div>
         <div class="modal-footer">
@@ -180,6 +193,17 @@ export function openClientModal(client = null) {
       </form>
     </div>`;
   document.body.appendChild(modal);
+
+  if (isEdit && client.licensePlate) {
+    const plateRegex = /^([А-ЯA-Z0-9]+)(\d{2,3})$/;
+    const match = client.licensePlate.replace(/[^a-zA-Zа-яА-Я0-9]/g, '').toUpperCase().match(plateRegex);
+    if (match) {
+        modal.querySelector('[name="licensePlateMain"]').value = match[1];
+        modal.querySelector('[name="licensePlateRegion"]').value = match[2];
+    } else {
+        modal.querySelector('[name="licensePlateMain"]').value = client.licensePlate;
+    }
+  }
 
   modal.addEventListener('click', (e) => {
     if (e.target.closest('[data-action="close-modal"]') || e.target === modal) {
@@ -198,6 +222,9 @@ export function openClientModal(client = null) {
     }
 
     data.phone = `+7${data.phone.replace(/^\+?7/, '')}`;
+    data.licensePlate = `${data.licensePlateMain || ''}${data.licensePlateRegion || ''}`;
+    delete data.licensePlateMain;
+    delete data.licensePlateRegion;
 
     openConfirmationModal({
       title: isEdit ? 'Сохранить изменения?' : 'Добавить клиента?',

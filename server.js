@@ -130,7 +130,7 @@ io.on('connection', (socket) => {
   socket.on('addOrder', async (orderData) => {
     if (!isPrivileged(socket.user)) orderData.masterName = socket.user.name;
 
-    const { clientName, clientPhone } = orderData;
+    const { clientName, clientPhone, carModel, licensePlate } = orderData;
     let client = db.findClientByPhone(clientPhone);
 
     if (!client && clientPhone) { // Create new client only if phone is provided
@@ -138,7 +138,9 @@ io.on('connection', (socket) => {
             id: `client-${Date.now()}`,
             name: clientName || 'Новый клиент',
             phone: clientPhone,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            carModel: carModel || '',
+            licensePlate: licensePlate || ''
         };
         await db.addClient(client);
     }

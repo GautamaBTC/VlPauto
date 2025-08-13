@@ -271,3 +271,29 @@
   display: flex;
   gap: 8px;
 }
+.client-main-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+.client-phone {
+  text-decoration: none;
+  color: var(--text-muted);
+  transition: var(--transition);
+}
+.client-phone:hover {
+  color: var(--accent);
+}
+.client-car-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.header-stats {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-right: auto;
+}
