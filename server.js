@@ -36,6 +36,7 @@ const prepareDataForUser = (user) => {
     const allWeekOrders = getWeekOrders();
     const users = db.getUsers();
     const history = db.getHistory();
+    const clients = db.getClients();
     // Final, most robust filter to ensure Director is never included, by specific name.
     const masters = Object.values(users)
         .filter(u => u.name !== 'Владимир Орлов')
@@ -68,7 +69,8 @@ const prepareDataForUser = (user) => {
         leaderboard,
         masters,
         user,
-        history: history || []
+        history: history || [],
+        clients: clients || []
     };
 };
 
@@ -104,6 +106,25 @@ io.on('connection', (socket) => {
   socket.on('searchClients', (query) => {
     const results = db.searchClients(query);
     socket.emit('clientSearchResults', results);
+  });
+
+  socket.on('addClient', async (clientData) => {
+    if (isPrivileged(socket.user)) {
+      const newClient = {
+        ...clientData,
+        id: `client-${Date.now()}`,
+        createdAt: new Date().toISOString()
+      };
+      await db.addClient(newClient);
+      broadcastUpdates();
+    }
+  });
+
+  socket.on('updateClient', async (clientData) => {
+    if (isPrivileged(socket.user)) {
+      await db.updateClient(clientData);
+      broadcastUpdates();
+    }
   });
 
   socket.on('addOrder', async (orderData) => {

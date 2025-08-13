@@ -145,6 +145,71 @@ export function openOrderModal(order = null) {
   });
 }
 
+export function openClientModal(client = null) {
+  closeModal();
+  const isEdit = !!client;
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop show';
+
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 class="modal-title">${isEdit ? 'Редактировать' : 'Добавить'} клиента</h3>
+        <button class="modal-close-btn" data-action="close-modal">&times;</button>
+      </div>
+      <form id="client-form" class="compact-form">
+        <div class="modal-body">
+          <input type="hidden" name="id" value="${isEdit ? client.id : ''}">
+          <div class="form-group">
+            <label for="clientName">Имя клиента*</label>
+            <input type="text" id="clientName" name="name" required value="${isEdit ? client.name : ''}">
+          </div>
+          <div class="form-group">
+            <label for="clientPhone">Телефон клиента*</label>
+            <div class="phone-input-group">
+              <span class="phone-prefix-static">+7</span>
+              <input type="tel" id="clientPhone" name="phone" required value="${isEdit ? (client.phone || '').replace(/^\+?7/, '') : ''}" placeholder="(918) 123-45-67" inputmode="numeric">
+            </div>
+          </div>
+          <div class="form-group explainer-text"><span>*</span> Обязательные поля для заполнения</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-action="close-modal">Отмена</button>
+          <button type="submit" class="btn btn-success">${isEdit ? 'Сохранить' : 'Добавить'}</button>
+        </div>
+      </form>
+    </div>`;
+  document.body.appendChild(modal);
+
+  modal.addEventListener('click', (e) => {
+    if (e.target.closest('[data-action="close-modal"]') || e.target === modal) {
+      closeModal();
+    }
+  });
+
+  modal.querySelector('#client-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    if (!data.name || !data.phone) {
+      return showNotification('Пожалуйста, заполните все обязательные поля.', 'error');
+    }
+
+    data.phone = `+7${data.phone.replace(/^\+?7/, '')}`;
+
+    openConfirmationModal({
+      title: isEdit ? 'Сохранить изменения?' : 'Добавить клиента?',
+      text: 'Вы уверены, что хотите продолжить?',
+      onConfirm: () => {
+        state.socket.emit(isEdit ? 'updateClient' : 'addClient', data);
+        closeModal();
+      }
+    });
+  });
+}
+
 export function openConfirmationModal({ title, text, onConfirm }) {
     closeModal();
     const modal = document.createElement('div');
