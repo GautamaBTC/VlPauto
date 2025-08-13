@@ -80,8 +80,9 @@
 }
 .nav-tab.active { color: #166534; } /* Dark Green for Home */
 .nav-tab[data-tab="finance"].active { color: var(--gold); }
+.nav-tab[data-tab="clients"].active { color: #2563eb; } /* Blue */
 .nav-tab[data-tab="archive"].active { color: #ffffff; text-shadow: 0 0 3px rgba(0,0,0,0.4); }
-.nav-tab[data-tab="orders"].active { color: #7e22ce; } /* Purple */
+.nav-tab[data-tab="orders"].active { color: #dc2626; } /* Red */
 
 /* Light theme overrides for active nav icons */
 html:not([data-theme="dark"]) .nav-tab[data-tab="finance"].active {
