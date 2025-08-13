@@ -91,3 +91,34 @@
 }
 
 .finance-header { margin-bottom: 16px; }
+
+/* Order Stats */
+#orders-stats-container {
+  background-color: var(--bg-primary);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  text-align: center;
+}
+
+.stat-item {
+  padding: 12px 8px;
+  background-color: var(--bg-secondary);
+  border-radius: 8px;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}

@@ -169,6 +169,13 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('updateOrderStatus', async ({ id, status }) => {
+    // For now, any authenticated user can change status.
+    // Add role checks here if needed in the future.
+    await db.updateOrderStatus(id, status);
+    broadcastUpdates();
+  });
+
   socket.on('closeWeek', async (payload) => {
     if (isPrivileged(socket.user) && db.getOrders().length) {
       await db.closeWeek(payload);

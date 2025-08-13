@@ -111,6 +111,7 @@ const seedDatabaseWithTestData = () => {
             clientName: randomClient.name,
             clientPhone: randomClient.phone,
             clientId: randomClient.id,
+            status: 'new'
         });
     }
     db.orders = testOrders;
@@ -139,13 +140,23 @@ module.exports = {
 
   // Функции для изменения данных
   addOrder: async (order) => {
-    db.orders.unshift(order);
+    const orderWithStatus = { ...order, status: 'new' };
+    db.orders.unshift(orderWithStatus);
     await saveDB();
   },
   updateOrder: async (updatedOrder) => {
     const orderIndex = db.orders.findIndex(o => o.id === updatedOrder.id);
     if (orderIndex !== -1) {
       db.orders[orderIndex] = { ...db.orders[orderIndex], ...updatedOrder };
+      await saveDB();
+      return true;
+    }
+    return false;
+  },
+  updateOrderStatus: async (id, status) => {
+    const orderIndex = db.orders.findIndex(o => o.id === id);
+    if (orderIndex !== -1) {
+      db.orders[orderIndex].status = status;
       await saveDB();
       return true;
     }
