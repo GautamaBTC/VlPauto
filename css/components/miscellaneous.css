@@ -249,48 +249,46 @@
 .client-list-item {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 12px;
   background-color: var(--bg);
   border-radius: 8px;
   border: 1px solid var(--border);
 }
 .client-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+    display: grid;
+    grid-template-columns: minmax(150px, 1fr) auto;
+    grid-template-rows: auto auto;
+    gap: 4px 16px;
+    align-items: center;
+    flex-grow: 1;
 }
 .client-name {
   font-weight: 600;
+  grid-column: 1 / 2;
 }
 .client-phone {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-}
-.client-actions {
-  display: flex;
-  gap: 8px;
-}
-.client-main-info {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 8px;
-}
-.client-phone {
+  grid-column: 2 / 3;
+  justify-self: start;
   text-decoration: none;
   color: var(--text-muted);
   transition: var(--transition);
 }
 .client-phone:hover {
-  color: var(--accent);
+    color: var(--accent);
 }
-.client-car-info {
+.client-car-model {
+    grid-column: 1 / 2;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+.client-info .license-plate {
+    grid-column: 2 / 3;
+    justify-self: start;
+}
+.client-actions {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  color: var(--text);
-  font-size: 0.9rem;
+  gap: 8px;
 }
 .header-stats {
   font-size: 0.9rem;

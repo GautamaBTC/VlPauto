@@ -65,14 +65,10 @@ function renderClientsPage() {
       ${clients.map(client => `
         <div class="client-list-item">
           <div class="client-info">
-            <div class="client-main-info">
-                <span class="client-name">${client.name}</span>
-                <a href="tel:${client.phone}" class="client-phone"><i class="fas fa-phone"></i> ${client.phone}</a>
-            </div>
-            <div class="client-car-info">
-                <span>${client.carModel}</span>
-                ${formatPlate(client.licensePlate)}
-            </div>
+            <span class="client-name">${client.name}</span>
+            <a href="tel:${client.phone}" class="client-phone"><i class="fas fa-phone"></i> ${client.phone}</a>
+            <span class="client-car-model">${client.carModel || ''}</span>
+            ${formatPlate(client.licensePlate || '')}
           </div>
           <div class="client-actions">
             <button class="btn btn-secondary btn-sm" data-action="edit-client" data-id="${client.id}" title="Редактировать">
