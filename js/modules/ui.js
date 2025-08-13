@@ -4,7 +4,7 @@
 ─────────────────────────────────────────────*/
 
 import { state, isPrivileged } from './state.js';
-import { formatCurrency, formatDate, canEditOrder } from './utils.js';
+import { formatCurrency, formatDateTime, canEditOrder } from './utils.js';
 
 export function updateAndRender(data, isInitialLoad = false) {
   state.data = data;
@@ -287,7 +287,9 @@ export function renderOrdersList(container, orders) {
   };
 
   container.innerHTML = '';
-  orders.forEach(order => {
+  // Safeguard sort: ensure newest orders are always at the top.
+  [...orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .forEach(order => {
     const item = document.createElement('div');
     item.className = 'order-item';
     const smsBody = encodeURIComponent(`Здравствуйте, ${order.clientName || 'клиент'}. Ваш автомобиль ${order.carModel || ''} готов к выдаче. С уважением, VipАвто.`);
@@ -303,7 +305,7 @@ export function renderOrdersList(container, orders) {
           ${order.clientName ? `<span><i class="fas fa-user-tie"></i>${order.clientName}</span>` : ''}
           ${order.clientPhone ? `<span><i class="fas fa-phone"></i><a href="tel:${order.clientPhone}">${order.clientPhone}</a></span>` : ''}
           <span><i class="fas fa-tag"></i>${order.paymentType}</span>
-          <span><i class="far fa-calendar-alt"></i>${formatDate(order.createdAt)}</span>
+          <span><i class="far fa-calendar-alt"></i>${formatDateTime(order.createdAt)}</span>
         </div>
       </div>
       <div class="order-amount">

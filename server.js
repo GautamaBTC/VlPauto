@@ -36,7 +36,8 @@ const prepareDataForUser = (user) => {
     const allWeekOrders = getWeekOrders();
     const users = db.getUsers();
     const history = db.getHistory();
-    const masters = Object.values(users).filter(u => u.role === 'MASTER' || u.role === 'SENIOR_MASTER').map(u => u.name);
+    // More robust filter to ensure Director is never included.
+    const masters = Object.values(users).filter(u => u.role !== 'DIRECTOR').map(u => u.name);
 
     const userIsPrivileged = isPrivileged(user);
     const relevantOrders = userIsPrivileged ? allWeekOrders : allWeekOrders.filter(o => o.masterName === user.name);
@@ -87,10 +88,10 @@ io.use((socket, next) => {
 
 io.on('connection', (socket) => {
   console.log(`[Socket] Подключился: '${socket.user.name}'`);
-  socket.user.activePeriod = 'week'; // Default period
 
-  socket.emit('initialData', prepareDataForUser(socket.user, socket.user.activePeriod));
+  socket.emit('initialData', prepareDataForUser(socket.user));
 
+  // Temporarily disable this while the feature is reverted
   socket.on('getDashboardData', (period) => {
     if (period === 'week' || period === 'month') {
       socket.user.activePeriod = period;
