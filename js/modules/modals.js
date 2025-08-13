@@ -380,7 +380,7 @@ export function openClientHistoryModal(client) {
       </div>`;
     document.body.appendChild(modal);
     modal.addEventListener('click', (e) => { if (e.target.closest('[data-action="close-modal"]') || e.target === modal) closeModal(); });
-    renderOrdersList(modal.querySelector('#client-history-orders-container'), clientOrders);
+    renderOrdersList(modal.querySelector('#client-history-orders-container'), clientOrders, 'history_modal');
 }
 
 export function openWeekReportModal(weekData) {
