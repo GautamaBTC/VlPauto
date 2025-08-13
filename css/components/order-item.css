@@ -188,3 +188,16 @@ html[data-theme="dark"] .order-meta a {
 .master-stats-details ul li strong {
     color: var(--text);
 }
+
+/* Order Item Status */
+.order-item--done {
+  opacity: 0.65;
+  background-color: var(--bg-secondary);
+}
+
+.order-item--done .order-title .order-description,
+.order-item--done .order-work-description {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  text-decoration-color: var(--text-muted);
+}

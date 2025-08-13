@@ -42,6 +42,27 @@ function renderHomePage() {
   renderMainContributionChart();
 }
 
+function renderOrderStats(orders) {
+  const statsContainer = document.getElementById('orders-stats-container');
+  if (!statsContainer) return;
+
+  const doneCount = orders.filter(o => o.status === 'done').length;
+  const todoCount = orders.length - doneCount;
+
+  statsContainer.innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-value">${todoCount}</div>
+        <div class="stat-label">Сделать</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-value">${doneCount}</div>
+        <div class="stat-label">Сделано</div>
+      </div>
+    </div>
+  `;
+}
+
 export function renderOrdersPage() {
     const container = document.getElementById('ordersList');
     const masterFilter = document.getElementById('master-filter');
@@ -62,6 +83,7 @@ export function renderOrdersPage() {
         if (filterContainer) filterContainer.style.display = 'none';
     }
 
+    renderOrderStats(orders);
     renderOrdersList(container, orders);
 }
 
@@ -291,7 +313,8 @@ export function renderOrdersList(container, orders) {
   [...orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .forEach(order => {
     const item = document.createElement('div');
-    item.className = 'order-item';
+    const isDone = order.status === 'done';
+    item.className = `order-item ${isDone ? 'order-item--done' : ''}`;
     const smsBody = encodeURIComponent(`Здравствуйте, ${order.clientName || 'клиент'}. Ваш автомобиль ${order.carModel || ''} готов к выдаче. С уважением, VipАвто.`);
     item.innerHTML = `
       <div>
@@ -311,6 +334,9 @@ export function renderOrdersList(container, orders) {
       <div class="order-amount">
         <div class="order-amount-value">${formatCurrency(order.amount)}</div>
         <div class="order-actions">
+          <button class="btn btn-sm ${isDone ? 'btn-secondary' : 'btn-success'}" data-action="toggle-order-status" data-id="${order.id}" data-status="${order.status}" title="${isDone ? 'Вернуть в работу' : 'Завершить'}">
+            <i class="fas ${isDone ? 'fa-undo' : 'fa-check'}"></i>
+          </button>
           ${order.clientPhone ? `<a href="sms:${order.clientPhone}?body=${smsBody}" class="btn btn-secondary btn-sm" title="Отправить SMS"><i class="fas fa-comment-sms"></i></a>` : ''}
           ${canEditOrder(order, state.user) ? `<button class="btn btn-secondary btn-sm" data-action="edit-order" data-id="${order.id}"><i class="fas fa-pen"></i></button>` : ''}
           ${isPrivileged() ? `<button class="btn btn-danger btn-sm" data-action="delete-order" data-id="${order.id}"><i class="fas fa-trash"></i></button>` : ''}

@@ -12,9 +12,13 @@ import { showNotification, downloadCSV } from './utils.js';
 let flatpickrInstance = null;
 
 export function handleAction(target) {
-  const { action, id, masterName, weekId, period } = target.dataset;
+  const { action, id, masterName, weekId, period, status } = target.dataset;
 
   const actions = {
+    'toggle-order-status': () => {
+      const newStatus = status === 'done' ? 'new' : 'done';
+      state.socket.emit('updateOrderStatus', { id, status: newStatus });
+    },
     'logout': logout,
     'add-order': () => openOrderModal(),
     'view-clients': () => showNotification('Раздел "Клиенты" находится в разработке.', 'success'),
