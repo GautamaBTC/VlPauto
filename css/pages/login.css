@@ -25,9 +25,9 @@
 .login-car-image {
   display: block;
   width: 100%;
-  max-width: 200px;
+  max-width: 100px;
   margin: 0 auto 1.5rem auto;
-  opacity: 0.6;
+  opacity: 1;
 }
 
 .input-wrapper { position: relative; }
