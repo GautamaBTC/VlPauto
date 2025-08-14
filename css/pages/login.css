@@ -15,12 +15,20 @@
   background-color: var(--panel-bg);
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  margin-top: -10vh; /* Сдвигаем блок вверх */
+  margin-top: -15vh; /* Сдвигаем блок вверх */
 }
 .title-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
 .login-title { font-size: 2rem; font-weight: 700; }
 .login-title .title-auto { color: var(--text-muted); }
 .login-subtitle { text-align: center; color: var(--text-muted); margin-bottom: 2rem; }
+
+.login-car-image {
+  display: block;
+  width: 100%;
+  max-width: 200px;
+  margin: 0 auto 2rem auto;
+  opacity: 0.8;
+}
 
 .input-wrapper { position: relative; }
 .input-icon { position: absolute; top: 50%; transform: translateY(-50%); left: 15px; color: var(--text-muted); }
