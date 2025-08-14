@@ -26,8 +26,8 @@
   display: block;
   width: 100%;
   max-width: 200px;
-  margin: 0 auto 2rem auto;
-  opacity: 0.8;
+  margin: 0 auto 1.5rem auto;
+  opacity: 0.6;
 }
 
 .input-wrapper { position: relative; }
