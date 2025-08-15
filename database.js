@@ -1,225 +1,197 @@
 /*────────────────────────────────────────────
   database.js
-  Модуль для управления базой данных (db.json)
+  Модуль для управления базой данных (PostgreSQL)
 ─────────────────────────────────────────────*/
 
-const fs = require('fs').promises;
-const path = require('path');
+const { Pool } = require('pg');
 
-const DB_PATH = path.join(__dirname, 'db.json');
-
-// Внутреннее состояние базы данных
-let db = { users: {}, orders: [], history: [], clients: [] };
+// Пул соединений будет использовать переменную окружения DATABASE_URL
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
+});
 
 /**
- * Сохраняет текущее состояние БД в файл db.json
+ * Выполняет SQL-запрос к базе данных
+ * @param {string} text - Текст запроса
+ * @param {Array} params - Параметры запроса
+ * @returns {Promise<QueryResult<any>>}
  */
-const saveDB = async () => {
+const query = (text, params) => pool.query(text, params);
+
+// --- Функции для работы с данными ---
+
+// Геттеры для получения данных
+const getUsers = async () => {
+  const { rows } = await query('SELECT * FROM users');
+  // Преобразуем массив в объект для совместимости со старой логикой
+  return rows.reduce((acc, user) => {
+    acc[user.login] = {
+      password: user.password,
+      role: user.role,
+      name: user.name
+    };
+    return acc;
+  }, {});
+};
+
+const getOrders = async () => {
+  const { rows } = await query('SELECT * FROM orders ORDER BY created_at DESC');
+  return rows;
+};
+
+const getHistory = async () => {
+  // Эта функция станет сложнее, пока вернем пустой массив
+  // для совместимости. Логика будет реализована в closeWeek.
+  return [];
+};
+
+const getClients = async () => {
+  const { rows } = await query('SELECT * FROM clients ORDER BY created_at DESC');
+  return rows;
+};
+
+const findClientByPhone = async (phone) => {
+  const { rows } = await query('SELECT * FROM clients WHERE phone = $1', [phone]);
+  return rows[0]; // Возвращаем первого найденного или undefined
+};
+
+const searchClients = async (searchQuery) => {
+  if (!searchQuery) return [];
+  const lowerCaseQuery = searchQuery.toLowerCase();
+  const { rows } = await query(
+    "SELECT * FROM clients WHERE LOWER(name) LIKE $1 OR phone LIKE $1 LIMIT 10",
+    [`%${lowerCaseQuery}%`]
+  );
+  return rows;
+};
+
+// Функции для изменения данных
+const addOrder = async (order) => {
+  const { id, masterName, carModel, licensePlate, description, amount, paymentType, status, clientId, clientName, clientPhone, createdAt } = order;
+  const sql = `
+    INSERT INTO orders (id, master_name, car_model, license_plate, description, amount, payment_type, status, client_id, client_name, client_phone, created_at)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    RETURNING *;
+  `;
+  const params = [id, masterName, carModel, licensePlate, description, amount, paymentType, status || 'new', clientId, clientName, clientPhone, createdAt];
+  const { rows } = await query(sql, params);
+  return rows[0];
+};
+
+const updateOrder = async (updatedOrder) => {
+  const { id, master_name, car_model, license_plate, description, amount, payment_type } = updatedOrder;
+  const sql = `
+    UPDATE orders
+    SET master_name = $2, car_model = $3, license_plate = $4, description = $5, amount = $6, payment_type = $7
+    WHERE id = $1
+    RETURNING *;
+  `;
+  const params = [id, master_name, car_model, license_plate, description, amount, payment_type];
+  const { rows } = await query(sql, params);
+  return rows[0];
+};
+
+const updateOrderStatus = async (id, status) => {
+  const { rows } = await query('UPDATE orders SET status = $1 WHERE id = $2 RETURNING *', [status, id]);
+  return rows[0];
+};
+
+const deleteOrder = async (id) => {
+  await query('DELETE FROM orders WHERE id = $1', [id]);
+  return true;
+};
+
+const addClient = async (client) => {
+  const { id, name, phone, carModel, licensePlate, createdAt } = client;
+  const sql = `
+    INSERT INTO clients (id, name, phone, car_model, license_plate, created_at)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING *;
+  `;
+  const params = [id, name, phone, carModel, licensePlate, createdAt];
+  const { rows } = await query(sql, params);
+  return rows[0];
+};
+
+const updateClient = async (updatedClient) => {
+  const { id, name, phone, car_model, license_plate } = updatedClient;
+  const sql = `
+    UPDATE clients SET name = $2, phone = $3, car_model = $4, license_plate = $5
+    WHERE id = $1 RETURNING *;
+  `;
+  const params = [id, name, phone, car_model, license_plate];
+  const { rows } = await query(sql, params);
+  return rows[0];
+};
+
+const closeWeek = async (payload) => {
+  const { salaryReport } = payload;
+  const client = await pool.connect();
   try {
-    await fs.writeFile(DB_PATH, JSON.stringify(db, null, 2));
-  } catch (err) {
-    console.error('!!! ОШИБКА СОХРАНЕНИЯ БД:', err);
+    await client.query('BEGIN');
+
+    const weekId = `week-${Date.now()}`;
+    await client.query('INSERT INTO history_weeks (id) VALUES ($1)', [weekId]);
+
+    // Копируем заказы в историю
+    await client.query(`
+      INSERT INTO history_orders (original_order_id, week_id, master_name, car_model, license_plate, description, amount, payment_type, client_name, client_phone, created_at)
+      SELECT id, $1, master_name, car_model, license_plate, description, amount, payment_type, client_name, client_phone, created_at FROM orders
+    `, [weekId]);
+
+    // Сохраняем отчет по зарплатам
+    if (salaryReport && salaryReport.length) {
+      for (const report of salaryReport) {
+        const { masterName, revenue, ordersCount, salary } = report;
+        await client.query(
+          'INSERT INTO salary_reports (week_id, master_name, revenue, orders_count, salary) VALUES ($1, $2, $3, $4, $5)',
+          [weekId, masterName, revenue, ordersCount, salary]
+        );
+      }
+    }
+
+    await client.query('TRUNCATE TABLE orders');
+    await client.query('COMMIT');
+    return true;
+
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
   }
 };
 
-/**
- * Загружает БД из файла db.json. Если файл не найден или пуст,
- * создает новую БД с тестовыми данными.
- */
-const loadDB = async () => {
-  try {
-    const fileContent = await fs.readFile(DB_PATH, 'utf-8');
-    if (fileContent.length < 20) throw new Error("Empty DB file");
-    const parsedDb = JSON.parse(fileContent);
-
-    // Убедимся, что все части БД существуют
-    db = { users: {}, orders: [], history: [], clients: [], ...parsedDb };
-
-    if (!db.orders || db.orders.length === 0) {
-      console.log(`[DB] База пуста. Заполняем тестовыми данными.`);
-      seedDatabaseWithTestData();
-      await saveDB();
-    } else {
-      console.log(`[DB] База успешно загружена. Заказов: ${db.orders.length}, Клиентов: ${db.clients.length}`);
-    }
-  } catch (error) {
-    console.log(`[DB] Файл db.json не найден или поврежден. Создаем новую базу.`);
-    db = { users: {}, orders: [], history: [], clients: [] };
-    seedDatabaseWithTestData();
-    await saveDB();
-  }
+const clearData = async () => {
+  // Очищает текущие заказы и всю историю. Пользователей и клиентов не трогает.
+  await query('TRUNCATE TABLE orders, history_weeks, salary_reports, history_orders RESTART IDENTITY');
+  return true;
 };
 
-/**
- * Заполняет базу данных начальными тестовыми данными.
- */
-const seedDatabaseWithTestData = () => {
-    console.log('[SEED] Запуск генерации тестовых данных...');
-    db.users = {
-        'director': { password: 'Dir7wK9c', role: 'DIRECTOR', name: 'Владимир Орлов' },
-        'vladimir.ch': { password: 'Vch4R5tG', role: 'SENIOR_MASTER', name: 'Владимир Ч.' },
-        'vladimir.a': { password: 'Vla9L2mP', role: 'MASTER', name: 'Владимир А.' },
-        'andrey': { password: 'And3Z8xY', role: 'MASTER', name: 'Андрей' },
-        'danila': { password: 'Dan6J1vE', role: 'MASTER', name: 'Данила' },
-        'maxim': { password: 'Max2B7nS', role: 'MASTER', name: 'Максим' },
-        'artyom': { password: 'Art5H4qF', role: 'MASTER', name: 'Артём' }
-    };
-
-    const masterNames = Object.values(db.users).filter(u => u.role.includes('MASTER')).map(u => u.name);
-    const carBrands = ['Lada Vesta', 'Toyota Camry', 'Ford Focus', 'BMW X5', 'Mercedes C-Class', 'Audi A6', 'Kia Rio', 'Hyundai Solaris'];
-    const services = ['Замена масла ДВС', 'Комплексный шиномонтаж', 'Диагностика ходовой', 'Ремонт тормозной системы', 'Замена ГРМ'];
-
-    const generateLicensePlate = () => {
-        const letters = 'АВЕКМНОРСТУХ';
-        const region = ['77', '99', '177', '199', '777', '161', '61', '93', '123'][Math.floor(Math.random() * 9)];
-        const l1 = letters[Math.floor(Math.random() * letters.length)];
-        const d1 = String(Math.floor(Math.random() * 10));
-        const d2 = String(Math.floor(Math.random() * 10));
-        const d3 = String(Math.floor(Math.random() * 10));
-        const l2 = letters[Math.floor(Math.random() * letters.length)];
-        const l3 = letters[Math.floor(Math.random() * letters.length)];
-        return `${l1} ${d1}${d2}${d3} ${l2}${l3} ${region}`;
-    };
-
-    const clientsData = [
-        { name: 'Иван Петров', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
-        { name: 'Сергей Смирнов', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
-        { name: 'Анна Кузнецова', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
-        { name: 'Ольга Васильева', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
-        { name: 'Дмитрий Попов', phone: `+79${String(Math.floor(100000000 + Math.random() * 900000000)).padStart(9, '0')}` },
-    ];
-
-    db.clients = clientsData.map((c, i) => ({
-        ...c,
-        id: `client-${Date.now()}-${i}`,
-        createdAt: new Date().toISOString(),
-        carModel: carBrands[Math.floor(Math.random() * carBrands.length)],
-        licensePlate: generateLicensePlate()
-    }));
-
-    let testOrders = [];
-    for (let i = 0; i < 50; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - Math.floor(Math.random() * 7));
-        date.setHours(Math.floor(Math.random() * 10) + 9, Math.floor(Math.random() * 60));
-
-        const randomClient = db.clients[Math.floor(Math.random() * db.clients.length)];
-
-        const generateLicensePlate = () => {
-            const letters = 'АВЕКМНОРСТУХ';
-            const region = ['77', '99', '177', '199', '777', '161', '61', '93', '123'][Math.floor(Math.random() * 9)];
-            const l1 = letters[Math.floor(Math.random() * letters.length)];
-            const d1 = String(Math.floor(Math.random() * 10));
-            const d2 = String(Math.floor(Math.random() * 10));
-            const d3 = String(Math.floor(Math.random() * 10));
-            const l2 = letters[Math.floor(Math.random() * letters.length)];
-            const l3 = letters[Math.floor(Math.random() * letters.length)];
-            return `${l1} ${d1}${d2}${d3} ${l2}${l3} ${region}`;
-        };
-
-        testOrders.push({
-            id: `ord-${Date.now()}-${i}`,
-            masterName: masterNames[Math.floor(Math.random() * masterNames.length)],
-            carModel: carBrands[Math.floor(Math.random() * carBrands.length)],
-            licensePlate: generateLicensePlate(),
-            description: services[Math.floor(Math.random() * services.length)],
-            amount: Math.floor(Math.random() * 2500 + 500),
-            paymentType: ['Картой', 'Наличные', 'Перевод'][Math.floor(Math.random() * 3)],
-            createdAt: date.toISOString(),
-            clientName: randomClient.name,
-            clientPhone: randomClient.phone,
-            clientId: randomClient.id,
-            status: 'new'
-        });
-    }
-    db.orders = testOrders;
-    console.log(`[SEED] Создано ${testOrders.length} тестовых заказ-нарядов и ${db.clients.length} клиентов.`);
+const clearHistory = async () => {
+  await query('TRUNCATE TABLE history_weeks, salary_reports, history_orders RESTART IDENTITY');
+  return true;
 };
 
 // Экспортируем функции для работы с БД
 module.exports = {
-  // Инициализация
-  loadDB,
-
-  // Геттеры для получения данных
-  getUsers: () => db.users,
-  getOrders: () => db.orders,
-  getHistory: () => db.history,
-  getClients: () => db.clients,
-  findClientByPhone: (phone) => db.clients.find(c => c.phone === phone),
-  searchClients: (query) => {
-    if (!query) return [];
-    const lowerCaseQuery = query.toLowerCase();
-    return db.clients.filter(c =>
-        c.name.toLowerCase().includes(lowerCaseQuery) ||
-        c.phone.includes(query)
-    ).slice(0, 10);
-  },
-
-  // Функции для изменения данных
-  addOrder: async (order) => {
-    const orderWithStatus = { ...order, status: 'new' };
-    db.orders.unshift(orderWithStatus);
-    await saveDB();
-  },
-  updateOrder: async (updatedOrder) => {
-    const orderIndex = db.orders.findIndex(o => o.id === updatedOrder.id);
-    if (orderIndex !== -1) {
-      db.orders[orderIndex] = { ...db.orders[orderIndex], ...updatedOrder };
-      await saveDB();
-      return true;
-    }
-    return false;
-  },
-  updateOrderStatus: async (id, status) => {
-    const orderIndex = db.orders.findIndex(o => o.id === id);
-    if (orderIndex !== -1) {
-      db.orders[orderIndex].status = status;
-      await saveDB();
-      return true;
-    }
-    return false;
-  },
-  deleteOrder: async (id) => {
-    const initialLength = db.orders.length;
-    db.orders = db.orders.filter(o => o.id !== id);
-    if (db.orders.length < initialLength) {
-      await saveDB();
-      return true;
-    }
-    return false;
-  },
-  addClient: async (client) => {
-    db.clients.push(client);
-    await saveDB();
-  },
-  updateClient: async (updatedClient) => {
-    const clientIndex = db.clients.findIndex(c => c.id === updatedClient.id);
-    if (clientIndex !== -1) {
-      db.clients[clientIndex] = { ...db.clients[clientIndex], ...updatedClient };
-      await saveDB();
-      return true;
-    }
-    return false;
-  },
-  closeWeek: async (payload) => {
-    const { salaryReport } = payload;
-    db.history.unshift({
-      weekId: `week-${Date.now()}`,
-      orders: [...db.orders],
-      salaryReport: salaryReport || []
-    });
-    db.orders = [];
-    await saveDB();
-  },
-  clearData: async () => {
-    db.orders = [];
-    db.history = [];
-    // Не очищаем клиентов и пользователей при этой операции
-    await saveDB();
-  },
-  clearHistory: async () => {
-    db.history = [];
-    await saveDB();
-  }
+  query, // Экспортируем для скрипта миграции
+  getUsers,
+  getOrders,
+  getHistory,
+  getClients,
+  findClientByPhone,
+  searchClients,
+  addOrder,
+  updateOrder,
+  updateOrderStatus,
+  deleteOrder,
+  addClient,
+  updateClient,
+  closeWeek,
+  clearData,
+  clearHistory
 };

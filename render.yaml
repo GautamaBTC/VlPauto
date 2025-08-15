@@ -1,0 +1,36 @@
+# render.yaml
+# Configuration for deploying the application on Render.
+
+services:
+  # A web service for our Node.js backend
+  - type: web
+    name: vipauto-server
+    env: node
+    # The region to deploy to. 'frankfurt' is a good choice for Europe.
+    region: frankfurt
+    plan: free # Or your desired plan
+
+    # Commands to build and start the service
+    buildCommand: "yarn install" # Installs backend dependencies
+    startCommand: "node server.js"
+
+    # Environment variables
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        # This value should be taken from your Neon database settings.
+        # It's a "secret", so it should be configured in the Render dashboard, not here.
+        fromDatabase:
+          name: vipauto-db # The name we will give our Neon DB on Render
+          property: connectionString
+      - key: JWT_SECRET
+        # It is recommended to generate a new secure secret and set it in the Render dashboard.
+        generateValue: true
+
+  # A database service using Neon
+  - type: psql
+    name: vipauto-db
+    provider: neon
+    region: frankfurt
+    plan: free # Or your desired Neon plan

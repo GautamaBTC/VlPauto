@@ -1,0 +1,11 @@
+/*
+  index.css
+  Главный файл стилей, импортирующий все остальные.
+*/
+
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+@import './css/base/variables.css';
+@import './css/base/global.css';
+@import './css/layout.css';
+
+/* Здесь позже будут импорты для компонентов */

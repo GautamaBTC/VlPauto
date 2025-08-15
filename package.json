@@ -1,18 +1,21 @@
 {
-  "name": "vip-auto-logbook",
-  "version": "1.0.0",
-  "description": "Cloud logbook for auto service",
+  "name": "vip-auto-logbook-v2",
+  "version": "2.0.0",
+  "description": "Cloud logbook for auto service (React/Postgres version)",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build:client": "yarn --cwd client install && yarn --cwd client build",
+    "postinstall": "yarn --cwd client install && yarn --cwd client build"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
-    "motion": "^12.23.12",
+    "pg": "^8.11.5",
     "socket.io": "^4.7.5"
   },
   "engines": {
