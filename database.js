@@ -5,13 +5,26 @@
 
 const { Pool } = require('pg');
 
-// Пул соединений будет использовать переменную окружения DATABASE_URL
+// --- Конфигурация подключения к Neon ---
+
+// Собираем строку подключения вручную для поддержки SNI в средах типа Render.
+// Это требует отдельных переменных окружения, которые пользователь должен установить.
+const { PGHOST, PGDATABASE, PGUSER, PGPASSWORD, ENDPOINT_ID } = process.env;
+
+// Проверяем, заданы ли все необходимые переменные, чтобы избежать падения при запуске
+if (!PGHOST || !PGDATABASE || !PGUSER || !PGPASSWORD || !ENDPOINT_ID) {
+  console.error('[FATAL] Missing required environment variables for Neon database connection.');
+  // В реальном приложении можно было бы выйти с ошибкой: process.exit(1);
+  // Но для простоты оставим так, ошибка проявится при первом запросе.
+}
+
+// Формируем строку подключения с параметром `options=endpoint=...` для SNI.
+const connectionString = `postgresql://${PGUSER}:${PGPASSWORD}@${PGHOST}/${PGDATABASE}?sslmode=require&options=endpoint%3D${ENDPOINT_ID}`;
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  connectionString,
 });
+
 
 /**
  * Выполняет SQL-запрос к базе данных
