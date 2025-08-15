@@ -26,12 +26,19 @@ app.use(express.static(path.join(__dirname, 'client/dist')));
 const isPrivileged = (user) => user && (user.role === 'DIRECTOR' || user.role === 'SENIOR_MASTER');
 
 app.post('/login', async (req, res) => {
-  const { login, password } = req.body;
-  const users = await db.getUsers();
-  const userRecord = users[login];
-  if (!userRecord || userRecord.password !== password) return res.status(401).json({ message: 'Неверный логин или пароль' });
-  const token = jwt.sign({ login, role: userRecord.role, name: userRecord.name }, JWT_SECRET, { expiresIn: '24h' });
-  res.json({ token, user: { login, name: userRecord.name, role: userRecord.role } });
+  try {
+    const { login, password } = req.body;
+    const users = await db.getUsers();
+    const userRecord = users[login];
+    if (!userRecord || userRecord.password !== password) {
+      return res.status(401).json({ message: 'Неверный логин или пароль' });
+    }
+    const token = jwt.sign({ login, role: userRecord.role, name: userRecord.name }, JWT_SECRET, { expiresIn: '24h' });
+    res.json({ token, user: { login, name: userRecord.name, role: userRecord.role } });
+  } catch (error) {
+    console.error('[CRITICAL] Failed to process login request:', error);
+    res.status(500).json({ message: 'Ошибка сервера при попытке входа. Проверьте подключение к БД.' });
+  }
 });
 
 const getWeekOrders = async () => (await db.getOrders() || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -104,7 +111,12 @@ io.use((socket, next) => {
 io.on('connection', async (socket) => {
   console.log(`[Socket] Подключился: '${socket.user.name}'`);
 
-  socket.emit('initialData', await prepareDataForUser(socket.user));
+  try {
+    socket.emit('initialData', await prepareDataForUser(socket.user));
+  } catch (error) {
+    console.error('[CRITICAL] Failed to fetch initial data on user connection:', error);
+    socket.emit('serverError', 'Не удалось загрузить начальные данные. Проблема с подключением к БД.');
+  }
 
   // Temporarily disable this while the feature is reverted
   socket.on('getDashboardData', async (period) => {
