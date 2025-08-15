@@ -11,7 +11,7 @@ services:
     plan: free # Or your desired plan
 
     # Commands to build and start the service
-    buildCommand: "yarn install" # Installs backend dependencies
+    buildCommand: "yarn install && yarn build:client" # Installs dependencies and builds the client
     startCommand: "node server.js"
 
     # Environment variables
