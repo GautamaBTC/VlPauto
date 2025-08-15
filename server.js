@@ -1,12 +1,14 @@
 /*────────────────────────────────────────────
   server.js
-  Финальная полировка - Версия 9.0
+  Миграция на React/PostgreSQL - Версия 10.0
 ─────────────────────────────────────────────*/
 
+require('dotenv').config();
 const http = require('http');
 const express = require('express');
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 const db = require('./database');
 
 const PORT = process.env.PORT || 3000;
@@ -17,26 +19,37 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.json());
-app.use(express.static(__dirname));
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, 'client/dist')));
 
 const isPrivileged = (user) => user && (user.role === 'DIRECTOR' || user.role === 'SENIOR_MASTER');
 
-const getWeekOrders = () => (db.getOrders() || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+app.post('/login', async (req, res) => {
+  const { login, password } = req.body;
+  const users = await db.getUsers();
+  const userRecord = users[login];
+  if (!userRecord || userRecord.password !== password) return res.status(401).json({ message: 'Неверный логин или пароль' });
+  const token = jwt.sign({ login, role: userRecord.role, name: userRecord.name }, JWT_SECRET, { expiresIn: '24h' });
+  res.json({ token, user: { login, name: userRecord.name, role: userRecord.role } });
+});
 
-const getMonthOrders = () => {
+const getWeekOrders = async () => (await db.getOrders() || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+const getMonthOrders = async () => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const allDbOrders = [...db.getOrders(), ...db.getHistory().flatMap(h => h.orders)];
+    const allDbOrders = [...(await db.getOrders()), ...(await db.getHistory()).flatMap(h => h.orders)];
     return allDbOrders
         .filter(o => new Date(o.createdAt) >= startOfMonth)
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 };
 
-const prepareDataForUser = (user) => {
-    const allWeekOrders = getWeekOrders();
-    const users = db.getUsers();
-    const history = db.getHistory();
-    const clients = db.getClients();
+const prepareDataForUser = async (user) => {
+    const allWeekOrders = await getWeekOrders();
+    const users = await db.getUsers();
+    const history = await db.getHistory();
+    const clients = await db.getClients();
     // Final, most robust filter to ensure Director is never included, by specific name.
     const masters = Object.values(users)
         .filter(u => u.name !== 'Владимир Орлов')
@@ -74,37 +87,35 @@ const prepareDataForUser = (user) => {
     };
 };
 
-const broadcastUpdates = () => io.sockets.sockets.forEach(s => s.user && s.emit('dataUpdate', prepareDataForUser(s.user)));
-
-app.post('/login', (req, res) => {
-  const { login, password } = req.body;
-  const users = db.getUsers();
-  const userRecord = users[login];
-  if (!userRecord || userRecord.password !== password) return res.status(401).json({ message: 'Неверный логин или пароль' });
-  const token = jwt.sign({ login, role: userRecord.role, name: userRecord.name }, JWT_SECRET, { expiresIn: '24h' });
-  res.json({ token, user: { login, name: userRecord.name, role: userRecord.role } });
-});
+const broadcastUpdates = async () => {
+    const sockets = await io.fetchSockets();
+    for (const socket of sockets) {
+        if (socket.user) {
+            socket.emit('dataUpdate', await prepareDataForUser(socket.user));
+        }
+    }
+};
 
 io.use((socket, next) => {
   try { socket.user = jwt.verify(socket.handshake.auth.token, JWT_SECRET); next(); }
   catch (err) { next(new Error('Invalid token')); }
 });
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
   console.log(`[Socket] Подключился: '${socket.user.name}'`);
 
-  socket.emit('initialData', prepareDataForUser(socket.user));
+  socket.emit('initialData', await prepareDataForUser(socket.user));
 
   // Temporarily disable this while the feature is reverted
-  socket.on('getDashboardData', (period) => {
+  socket.on('getDashboardData', async (period) => {
     if (period === 'week' || period === 'month') {
       socket.user.activePeriod = period;
-      socket.emit('dataUpdate', prepareDataForUser(socket.user, socket.user.activePeriod));
+      socket.emit('dataUpdate', await prepareDataForUser(socket.user, socket.user.activePeriod));
     }
   });
 
-  socket.on('searchClients', (query) => {
-    const results = db.searchClients(query);
+  socket.on('searchClients', async (query) => {
+    const results = await db.searchClients(query);
     socket.emit('clientSearchResults', results);
   });
 
@@ -131,7 +142,7 @@ io.on('connection', (socket) => {
     if (!isPrivileged(socket.user)) orderData.masterName = socket.user.name;
 
     const { clientName, clientPhone, carModel, licensePlate } = orderData;
-    let client = db.findClientByPhone(clientPhone);
+    let client = await db.findClientByPhone(clientPhone);
 
     if (!client && clientPhone) { // Create new client only if phone is provided
         client = {
@@ -157,7 +168,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('updateOrder', async (orderData) => {
-    const allOrders = db.getOrders();
+    const allOrders = await db.getOrders();
     const orderIndex = allOrders.findIndex(o => o.id === orderData.id);
     if (orderIndex === -1) return socket.emit('serverError', 'Заказ-наряд не найден.');
 
@@ -200,7 +211,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('closeWeek', async (payload) => {
-    if (isPrivileged(socket.user) && db.getOrders().length) {
+    const orders = await db.getOrders();
+    if (isPrivileged(socket.user) && orders.length) {
       await db.closeWeek(payload);
       broadcastUpdates();
     }
@@ -223,7 +235,12 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => console.log(`[Socket] Отключился: '${socket.user.name}'`));
 });
 
-server.listen(PORT, async () => {
-  await db.loadDB();
-  console.log(`>>> Сервер VIPавто v9.0 запущен на порту ${PORT} <<<`);
+// The "catchall" handler: for any request that doesn't match one above,
+// send back React's index.html file. This should be the last route.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client/dist', 'index.html'));
+});
+
+server.listen(PORT, () => {
+  console.log(`>>> Сервер VIPавто v10.0 запущен на порту ${PORT} <<<`);
 });
