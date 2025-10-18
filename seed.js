@@ -19,13 +19,13 @@ const query = (text, params) => pool.query(text, params);
 const seedUsers = async () => {
     console.log('[SEED] Создание пользователей...');
     const users = [
-        { login: 'director', password: 'Dir7wK9c', role: 'DIRECTOR', name: 'Владимир Орлов' },
-        { login: 'vladimir.ch', password: 'Vch4R5tG', role: 'SENIOR_MASTER', name: 'Владимир Ч.' },
-        { login: 'vladimir.a', password: 'Vla9L2mP', role: 'MASTER', name: 'Владимир А.' },
-        { login: 'andrey', password: 'And3Z8xY', role: 'MASTER', name: 'Андрей' },
-        { login: 'danila', password: 'Dan6J1vE', role: 'MASTER', name: 'Данила' },
-        { login: 'maxim', password: 'Max2B7nS', role: 'MASTER', name: 'Максим' },
-        { login: 'artyom', password: 'Art5H4qF', role: 'MASTER', name: 'Артём' }
+        { login: 'director', password: 'password', role: 'DIRECTOR', name: 'Владимир Орлов' },
+        { login: 'vladimir.ch', password: 'password', role: 'SENIOR_MASTER', name: 'Владимир Ч.' },
+        { login: 'vladimir.a', password: 'password', role: 'MASTER', name: 'Владимир А.' },
+        { login: 'andrey', password: 'password', role: 'MASTER', name: 'Андрей' },
+        { login: 'danila', password: 'password', role: 'MASTER', name: 'Данила' },
+        { login: 'maxim', password: 'password', role: 'MASTER', name: 'Максим' },
+        { login: 'artyom', password: 'password', role: 'MASTER', name: 'Артём' }
     ];
 
     for (const user of users) {
