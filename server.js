@@ -12,7 +12,13 @@ const path = require('path');
 const db = require('./database');
 
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-for-vipauto-dont-share-it';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.error('[FATAL] JWT_SECRET is not defined in environment variables.');
+  console.error('Please provide a strong secret in the .env file.');
+  process.exit(1);
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -57,9 +63,9 @@ const prepareDataForUser = async (user) => {
     const users = await db.getUsers();
     const history = await db.getHistory();
     const clients = await db.getClients();
-    // Final, most robust filter to ensure Director is never included, by specific name.
+    // Фильтруем пользователей, чтобы в список мастеров не попадал директор
     const masters = Object.values(users)
-        .filter(u => u.name !== 'Владимир Орлов')
+        .filter(u => u.role !== 'DIRECTOR')
         .map(u => u.name);
 
     const userIsPrivileged = isPrivileged(user);
