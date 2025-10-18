@@ -31,7 +31,7 @@ app.use(express.static(path.join(__dirname, 'client/dist')));
 
 const isPrivileged = (user) => user && (user.role === 'DIRECTOR' || user.role === 'SENIOR_MASTER');
 
-app.post('/login', async (req, res) => {
+app.post('/api/login', async (req, res) => {
   try {
     const { login, password } = req.body;
     const users = await db.getUsers();
