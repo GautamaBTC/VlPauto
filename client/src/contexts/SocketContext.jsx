@@ -19,7 +19,7 @@ export const SocketProvider = ({ children }) => {
 
     useEffect(() => {
         if (isAuthenticated && token) {
-            const newSocket = io({
+            const newSocket = io(import.meta.env.VITE_API_BASE_URL, {
                 auth: { token }
             });
 
