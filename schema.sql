@@ -1,71 +1,74 @@
--- Схема данных для проекта VIPавто (PostgreSQL)
+-- Схема данных для проекта VIPавто (SQLite)
 
 -- Таблица пользователей
 CREATE TABLE users (
-    id SERIAL PRIMARY KEY,
-    login VARCHAR(50) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL, -- В реальном проекте пароли должны быть хешированы
-    role VARCHAR(20) NOT NULL CHECK (role IN ('DIRECTOR', 'SENIOR_MASTER', 'MASTER')),
-    name VARCHAR(100) NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    login TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    role TEXT NOT NULL CHECK (role IN ('DIRECTOR', 'SENIOR_MASTER', 'MASTER')),
+    name TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Таблица клиентов
 CREATE TABLE clients (
-    id VARCHAR(50) PRIMARY KEY, -- Сохраняем строковый ID для совместимости
-    name VARCHAR(100) NOT NULL,
-    phone VARCHAR(20) UNIQUE,
-    car_model VARCHAR(100),
-    license_plate VARCHAR(20),
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    phone TEXT UNIQUE,
+    car_model TEXT,
+    license_plate TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Таблица заказ-нарядов (текущие)
 CREATE TABLE orders (
-    id VARCHAR(50) PRIMARY KEY, -- Сохраняем строковый ID для совместимости
-    master_name VARCHAR(100) NOT NULL,
-    car_model VARCHAR(100),
-    license_plate VARCHAR(20),
+    id TEXT PRIMARY KEY,
+    master_name TEXT NOT NULL,
+    car_model TEXT,
+    license_plate TEXT,
     description TEXT,
-    amount NUMERIC(10, 2) NOT NULL,
-    payment_type VARCHAR(50),
-    status VARCHAR(20) DEFAULT 'new' NOT NULL,
-    client_id VARCHAR(50) REFERENCES clients(id) ON DELETE SET NULL,
-    client_name VARCHAR(100),
-    client_phone VARCHAR(20),
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    amount REAL NOT NULL,
+    payment_type TEXT,
+    status TEXT DEFAULT 'new' NOT NULL,
+    client_id TEXT,
+    client_name TEXT,
+    client_phone TEXT,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL
 );
 
 -- Таблица для хранения информации о закрытых неделях
 CREATE TABLE history_weeks (
-    id VARCHAR(50) PRIMARY KEY, -- week-timestamp
-    closed_at TIMESTAMPTZ DEFAULT NOW()
+    id TEXT PRIMARY KEY,
+    closed_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Таблица для хранения архивных заказ-нарядов
 CREATE TABLE history_orders (
-    id SERIAL PRIMARY KEY,
-    original_order_id VARCHAR(50),
-    week_id VARCHAR(50) NOT NULL REFERENCES history_weeks(id) ON DELETE CASCADE,
-    master_name VARCHAR(100),
-    car_model VARCHAR(100),
-    license_plate VARCHAR(20),
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    original_order_id TEXT,
+    week_id TEXT NOT NULL,
+    master_name TEXT,
+    car_model TEXT,
+    license_plate TEXT,
     description TEXT,
-    amount NUMERIC(10, 2),
-    payment_type VARCHAR(50),
-    client_name VARCHAR(100),
-    client_phone VARCHAR(20),
-    created_at TIMESTAMPTZ
+    amount REAL,
+    payment_type TEXT,
+    client_name TEXT,
+    client_phone TEXT,
+    created_at TEXT,
+    FOREIGN KEY (week_id) REFERENCES history_weeks(id) ON DELETE CASCADE
 );
 
 -- Таблица для хранения отчетов по зарплатам
 CREATE TABLE salary_reports (
-    id SERIAL PRIMARY KEY,
-    week_id VARCHAR(50) NOT NULL REFERENCES history_weeks(id) ON DELETE CASCADE,
-    master_name VARCHAR(100) NOT NULL,
-    revenue NUMERIC(10, 2),
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    week_id TEXT NOT NULL,
+    master_name TEXT NOT NULL,
+    revenue REAL,
     orders_count INTEGER,
-    salary NUMERIC(10, 2)
+    salary REAL,
+    FOREIGN KEY (week_id) REFERENCES history_weeks(id) ON DELETE CASCADE
 );
 
 -- Индексы для ускорения поиска

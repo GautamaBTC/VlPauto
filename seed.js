@@ -1,22 +1,17 @@
 /*────────────────────────────────────────────
   seed.js
-  Скрипт для создания таблиц и наполнения БД
+  Скрипт для создания таблиц и наполнения БД (SQLite)
   Запуск: node seed.js
 ─────────────────────────────────────────────*/
 
 require('dotenv').config();
 const fs = require('fs').promises;
 const path = require('path');
-const { Pool } = require('pg');
+const sqlite3 = require('sqlite3').verbose();
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
+const dbPath = process.env.DATABASE_URL || 'vipauto.sqlite';
 
-const query = (text, params) => pool.query(text, params);
-
-const seedUsers = async () => {
+const seedUsers = async (db) => {
     console.log('[SEED] Создание пользователей...');
     const users = [
         { login: 'director', password: 'password', role: 'DIRECTOR', name: 'Владимир Орлов' },
@@ -28,17 +23,20 @@ const seedUsers = async () => {
         { login: 'artyom', password: 'password', role: 'MASTER', name: 'Артём' }
     ];
 
+    const sql = 'INSERT INTO users (login, password, role, name) VALUES (?, ?, ?, ?)';
     for (const user of users) {
-        await query(
-            'INSERT INTO users (login, password, role, name) VALUES ($1, $2, $3, $4)',
-            [user.login, user.password, user.role, user.name]
-        );
+        await new Promise((resolve, reject) => {
+            db.run(sql, [user.login, user.password, user.role, user.name], (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
     }
     console.log(`[SEED] ✓ ${users.length} пользователей создано.`);
     return users;
 };
 
-const seedClientsAndOrders = async (users) => {
+const seedClientsAndOrders = async (db, users) => {
     console.log('[SEED] Создание клиентов и заказ-нарядов...');
     const masterNames = users.filter(u => u.role.includes('MASTER')).map(u => u.name);
     const carBrands = ['Lada Vesta', 'Toyota Camry', 'Ford Focus', 'BMW X5', 'Mercedes C-Class', 'Audi A6', 'Kia Rio', 'Hyundai Solaris'];
@@ -59,6 +57,7 @@ const seedClientsAndOrders = async (users) => {
     ];
 
     const insertedClients = [];
+    const clientSql = 'INSERT INTO clients (id, name, phone, car_model, license_plate, created_at) VALUES (?, ?, ?, ?, ?, ?)';
     for (const c of clientsData) {
         const client = {
             id: `client-${Date.now()}-${Math.random()}`,
@@ -68,14 +67,20 @@ const seedClientsAndOrders = async (users) => {
             licensePlate: generateLicensePlate(),
             createdAt: new Date().toISOString()
         };
-        await query(
-            'INSERT INTO clients (id, name, phone, car_model, license_plate, created_at) VALUES ($1, $2, $3, $4, $5, $6)',
-            [client.id, client.name, client.phone, client.carModel, client.licensePlate, client.createdAt]
-        );
+        await new Promise((resolve, reject) => {
+            db.run(clientSql, [client.id, client.name, client.phone, client.carModel, client.licensePlate, client.createdAt], (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
         insertedClients.push(client);
     }
     console.log(`[SEED] ✓ ${insertedClients.length} клиентов создано.`);
 
+    const orderSql = `
+        INSERT INTO orders (id, master_name, car_model, license_plate, description, amount, payment_type, status, client_id, client_name, client_phone, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
     let testOrders = [];
     for (let i = 0; i < 50; i++) {
         const date = new Date();
@@ -98,11 +103,12 @@ const seedClientsAndOrders = async (users) => {
             clientPhone: randomClient.phone,
             status: 'new'
         };
-        await query(
-            `INSERT INTO orders (id, master_name, car_model, license_plate, description, amount, payment_type, status, client_id, client_name, client_phone, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-            [order.id, order.masterName, order.carModel, order.licensePlate, order.description, order.amount, order.paymentType, order.status, order.clientId, order.clientName, order.clientPhone, order.createdAt]
-        );
+        await new Promise((resolve, reject) => {
+            db.run(orderSql, [order.id, order.masterName, order.carModel, order.licensePlate, order.description, order.amount, order.paymentType, order.status, order.clientId, order.clientName, order.clientPhone, order.createdAt], (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
         testOrders.push(order);
     }
     console.log(`[SEED] ✓ ${testOrders.length} заказ-нарядов создано.`);
@@ -110,27 +116,50 @@ const seedClientsAndOrders = async (users) => {
 
 const main = async () => {
     try {
-        console.log('--- Запуск скрипта наполнения БД ---');
+        console.log('--- Запуск скрипта наполнения БД (SQLite) ---');
 
-        console.log('[SEED] Чтение файла schema.sql...');
-        const schemaSql = await fs.readFile(path.join(__dirname, 'schema.sql'), 'utf-8');
+        // Удаление старого файла БД, если он существует
+        try {
+            await fs.unlink(dbPath);
+            console.log(`[SEED] Старый файл БД '${dbPath}' удален.`);
+        } catch (error) {
+            if (error.code !== 'ENOENT') throw error; // Игнорируем, если файла нет
+        }
 
-        console.log('[SEED] Удаление старых таблиц (если существуют)...');
-        await query('DROP TABLE IF EXISTS salary_reports, history_orders, history_weeks, orders, clients, users CASCADE');
+        const db = new sqlite3.Database(dbPath);
 
-        console.log('[SEED] Создание таблиц по схеме...');
-        await query(schemaSql);
-        console.log('[SEED] ✓ Схема успешно создана.');
+        await new Promise((resolve, reject) => {
+            db.serialize(async () => {
+                try {
+                    console.log('[SEED] Чтение файла schema.sql...');
+                    const schemaSql = await fs.readFile(path.join(__dirname, 'schema.sql'), 'utf-8');
 
-        const users = await seedUsers();
-        await seedClientsAndOrders(users);
+                    console.log('[SEED] Создание таблиц по схеме...');
+                    await new Promise((resolve, reject) => {
+                        db.exec(schemaSql, (err) => {
+                            if (err) reject(err);
+                            else resolve();
+                        });
+                    });
+                    console.log('[SEED] ✓ Схема успешно создана.');
 
-        console.log('--- Скрипт успешно завершен ---');
+                    const users = await seedUsers(db);
+                    await seedClientsAndOrders(db, users);
+
+                    console.log('--- Скрипт успешно завершен ---');
+                    resolve();
+                } catch (error) {
+                    reject(error);
+                } finally {
+                    db.close((err) => {
+                        if (err) console.error('Ошибка при закрытии БД:', err.message);
+                        else console.log('Соединение с БД закрыто.');
+                    });
+                }
+            });
+        });
     } catch (error) {
         console.error('!!! КРИТИЧЕСКАЯ ОШИБКА СКРИПТА:', error);
-    } finally {
-        await pool.end();
-        console.log('Пул соединений с БД закрыт.');
     }
 };
 
