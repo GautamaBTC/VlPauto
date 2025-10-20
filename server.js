@@ -61,15 +61,18 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-const getWeekOrders = async () => (await db.getOrders() || []).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+const getWeekOrders = async () => snakeToCamel(await db.getOrders() || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
 const getMonthOrders = async () => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const allDbOrders = [...(await db.getOrders()), ...(await db.getHistory()).flatMap(h => h.orders)];
+    const allDbOrders = [
+        ...snakeToCamel(await db.getOrders()),
+        ...snakeToCamel((await db.getHistory()).flatMap(h => h.orders))
+    ];
     return allDbOrders
-        .filter(o => new Date(o.created_at) >= startOfMonth)
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        .filter(o => new Date(o.createdAt) >= startOfMonth)
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 };
 
 const prepareDataForUser = async (user) => {
@@ -83,7 +86,7 @@ const prepareDataForUser = async (user) => {
         .map(u => u.name);
 
     const userIsPrivileged = isPrivileged(user);
-    const relevantOrders = userIsPrivileged ? allWeekOrders : allWeekOrders.filter(o => o.master_name === user.name);
+    const relevantOrders = userIsPrivileged ? allWeekOrders : allWeekOrders.filter(o => o.masterName === user.name);
 
     const weekStats = {
         revenue: relevantOrders.reduce((s, o) => s + o.amount, 0),
@@ -92,21 +95,21 @@ const prepareDataForUser = async (user) => {
     };
 
     const leaderboard = Object.values(allWeekOrders.reduce((acc, o) => {
-        if (!acc[o.master_name]) acc[o.master_name] = { name: o.master_name, revenue: 0, ordersCount: 0 };
-        acc[o.master_name].revenue += o.amount;
-        acc[o.master_name].ordersCount++;
+        if (!acc[o.masterName]) acc[o.masterName] = { name: o.masterName, revenue: 0, ordersCount: 0 };
+        acc[o.masterName].revenue += o.amount;
+        acc[o.masterName].ordersCount++;
         return acc;
     }, {})).sort((a, b) => b.revenue - a.revenue);
 
-    const todayOrders = relevantOrders.filter(o => o.created_at.slice(0, 10) === new Date().toISOString().slice(0, 10));
+    const todayOrders = relevantOrders.filter(o => o.createdAt.slice(0, 10) === new Date().toISOString().slice(0, 10));
 
     // NOTE: This is a temporary simplification to fix a bug.
     // The data structure is reverted to the old format.
     return {
-        weekOrders: snakeToCamel(relevantOrders),
+        weekOrders: relevantOrders,
         weekStats: weekStats, // Reverted from dashboardStats
-        todayOrders: snakeToCamel(todayOrders),
-        leaderboard: snakeToCamel(leaderboard),
+        todayOrders: todayOrders,
+        leaderboard: leaderboard,
         masters,
         user,
         history: history || [],
@@ -200,13 +203,13 @@ io.on('connection', async (socket) => {
   });
 
   socket.on('updateOrder', async (orderData) => {
-    const allOrders = await db.getOrders();
+    const allOrders = snakeToCamel(await db.getOrders());
     const orderIndex = allOrders.findIndex(o => o.id === orderData.id);
     if (orderIndex === -1) return socket.emit('serverError', 'Заказ-наряд не найден.');
 
     const order = allOrders[orderIndex];
     const user = socket.user;
-    const orderAge = Date.now() - new Date(order.created_at).getTime();
+    const orderAge = Date.now() - new Date(order.createdAt).getTime();
     const twoHours = 2 * 60 * 60 * 1000;
     const sevenDays = 7 * 24 * 60 * 60 * 1000;
 
@@ -215,7 +218,7 @@ io.on('connection', async (socket) => {
         return orderAge < sevenDays;
       }
       if (user.role === 'MASTER') {
-        return order.master_name === user.name && orderAge < twoHours;
+        return order.masterName === user.name && orderAge < twoHours;
       }
       return false;
     })();
