@@ -1,44 +1,73 @@
 /*────────────────────────────────────────────
   database.js
-  Модуль для управления базой данных (PostgreSQL)
+  Модуль для управления базой данных (SQLite)
 ─────────────────────────────────────────────*/
 
-const { Pool } = require('pg');
+const sqlite3 = require('sqlite3').verbose();
 
-// --- Конфигурация подключения к PostgreSQL ---
+// --- Конфигурация подключения к SQLite ---
+const dbPath = process.env.DATABASE_URL || 'vipauto.sqlite';
 
-// Используем стандартную переменную окружения DATABASE_URL.
-// Это обеспечивает гибкость при локальной разработке и развертывании.
-const connectionString = process.env.DATABASE_URL;
-
-if (!connectionString) {
+if (!dbPath) {
   console.error('[FATAL] DATABASE_URL is not defined in environment variables.');
-  console.error('Please create a .env file with DATABASE_URL=postgresql://user:password@host:port/database');
-  process.exit(1); // Завершаем работу, если нет подключения к БД
+  console.error('Please create a .env file with DATABASE_URL=your_database_name.sqlite');
+  process.exit(1);
 }
 
-const pool = new Pool({
-  connectionString,
-  // В окружении Render или других облачных провайдерах может потребоваться SSL.
-  // Для локальной разработки ssl обычно не нужен.
-  // Эта конфигурация будет работать как локально, так и в облаке.
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+const db = new sqlite3.Database(dbPath, (err) => {
+  if (err) {
+    console.error('[FATAL] Could not connect to database:', err.message);
+    process.exit(1);
+  }
+  console.log('[DATABASE] Connected to SQLite database:', dbPath);
 });
 
+// Включаем поддержку внешних ключей для целостности данных
+db.run('PRAGMA foreign_keys = ON;');
 
 /**
- * Выполняет SQL-запрос к базе данных
+ * Выполняет SQL-запрос (SELECT) к базе данных, возвращающий строки
  * @param {string} text - Текст запроса
  * @param {Array} params - Параметры запроса
- * @returns {Promise<QueryResult<any>>}
+ * @returns {Promise<Array>}
  */
-const query = (text, params) => pool.query(text, params);
+const query = (text, params = []) => {
+  return new Promise((resolve, reject) => {
+    db.all(text, params, (err, rows) => {
+      if (err) {
+        console.error('Database query error:', text, params, err.message);
+        reject(err);
+      } else {
+        resolve(rows);
+      }
+    });
+  });
+};
+
+/**
+ * Выполняет SQL-запрос (INSERT, UPDATE, DELETE) к базе данных
+ * @param {string} text - Текст запроса
+ * @param {Array} params - Параметры запроса
+ * @returns {Promise<{ changes: number, lastID: number }>}
+ */
+const run = (text, params = []) => {
+  return new Promise((resolve, reject) => {
+    db.run(text, params, function(err) { // Обычная функция для доступа к `this`
+      if (err) {
+        console.error('Database run error:', text, params, err.message);
+        reject(err);
+      } else {
+        resolve({ changes: this.changes, lastID: this.lastID });
+      }
+    });
+  });
+};
 
 // --- Функции для работы с данными ---
 
 // Геттеры для получения данных
 const getUsers = async () => {
-  const { rows } = await query('SELECT * FROM users');
+  const rows = await query('SELECT * FROM users');
   // Преобразуем массив в объект для совместимости со старой логикой
   return rows.reduce((acc, user) => {
     acc[user.login] = {
@@ -51,8 +80,7 @@ const getUsers = async () => {
 };
 
 const getOrders = async () => {
-  const { rows } = await query('SELECT * FROM orders ORDER BY created_at DESC');
-  return rows;
+  return await query('SELECT * FROM orders ORDER BY created_at DESC');
 };
 
 const getHistory = async () => {
@@ -62,23 +90,20 @@ const getHistory = async () => {
 };
 
 const getClients = async () => {
-  const { rows } = await query('SELECT * FROM clients ORDER BY created_at DESC');
-  return rows;
+  return await query('SELECT * FROM clients ORDER BY created_at DESC');
 };
 
 const findClientByPhone = async (phone) => {
-  const { rows } = await query('SELECT * FROM clients WHERE phone = $1', [phone]);
+  const rows = await query('SELECT * FROM clients WHERE phone = ?', [phone]);
   return rows[0]; // Возвращаем первого найденного или undefined
 };
 
 const searchClients = async (searchQuery) => {
   if (!searchQuery) return [];
   const lowerCaseQuery = searchQuery.toLowerCase();
-  const { rows } = await query(
-    "SELECT * FROM clients WHERE LOWER(name) LIKE $1 OR phone LIKE $1 LIMIT 10",
-    [`%${lowerCaseQuery}%`]
-  );
-  return rows;
+  const queryText = "SELECT * FROM clients WHERE LOWER(name) LIKE ? OR phone LIKE ? LIMIT 10";
+  const params = [`%${lowerCaseQuery}%`, `%${lowerCaseQuery}%`];
+  return await query(queryText, params);
 };
 
 // Функции для изменения данных
@@ -86,34 +111,35 @@ const addOrder = async (order) => {
   const { id, masterName, carModel, licensePlate, description, amount, paymentType, status, clientId, clientName, clientPhone, createdAt } = order;
   const sql = `
     INSERT INTO orders (id, master_name, car_model, license_plate, description, amount, payment_type, status, client_id, client_name, client_phone, created_at)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-    RETURNING *;
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   const params = [id, masterName, carModel, licensePlate, description, amount, paymentType, status || 'new', clientId, clientName, clientPhone, createdAt];
-  const { rows } = await query(sql, params);
-  return rows[0];
+  await run(sql, params);
+  const [newOrder] = await query('SELECT * FROM orders WHERE id = ?', [id]);
+  return newOrder;
 };
 
 const updateOrder = async (updatedOrder) => {
-  const { id, master_name, car_model, license_plate, description, amount, payment_type } = updatedOrder;
+  const { id, masterName, carModel, licensePlate, description, amount, paymentType } = updatedOrder;
   const sql = `
     UPDATE orders
-    SET master_name = $2, car_model = $3, license_plate = $4, description = $5, amount = $6, payment_type = $7
-    WHERE id = $1
-    RETURNING *;
+    SET master_name = ?, car_model = ?, license_plate = ?, description = ?, amount = ?, payment_type = ?
+    WHERE id = ?
   `;
-  const params = [id, master_name, car_model, license_plate, description, amount, payment_type];
-  const { rows } = await query(sql, params);
-  return rows[0];
+  const params = [masterName, carModel, licensePlate, description, amount, paymentType, id];
+  await run(sql, params);
+  const [result] = await query('SELECT * FROM orders WHERE id = ?', [id]);
+  return result;
 };
 
 const updateOrderStatus = async (id, status) => {
-  const { rows } = await query('UPDATE orders SET status = $1 WHERE id = $2 RETURNING *', [status, id]);
-  return rows[0];
+  await run('UPDATE orders SET status = ? WHERE id = ?', [status, id]);
+  const [result] = await query('SELECT * FROM orders WHERE id = ?', [id]);
+  return result;
 };
 
 const deleteOrder = async (id) => {
-  await query('DELETE FROM orders WHERE id = $1', [id]);
+  await run('DELETE FROM orders WHERE id = ?', [id]);
   return true;
 };
 
@@ -121,77 +147,85 @@ const addClient = async (client) => {
   const { id, name, phone, carModel, licensePlate, createdAt } = client;
   const sql = `
     INSERT INTO clients (id, name, phone, car_model, license_plate, created_at)
-    VALUES ($1, $2, $3, $4, $5, $6)
-    RETURNING *;
+    VALUES (?, ?, ?, ?, ?, ?)
   `;
   const params = [id, name, phone, carModel, licensePlate, createdAt];
-  const { rows } = await query(sql, params);
-  return rows[0];
+  await run(sql, params);
+  const [newClient] = await query('SELECT * FROM clients WHERE id = ?', [id]);
+  return newClient;
 };
 
 const updateClient = async (updatedClient) => {
-  const { id, name, phone, car_model, license_plate } = updatedClient;
+  const { id, name, phone, carModel, licensePlate } = updatedClient;
   const sql = `
-    UPDATE clients SET name = $2, phone = $3, car_model = $4, license_plate = $5
-    WHERE id = $1 RETURNING *;
+    UPDATE clients SET name = ?, phone = ?, car_model = ?, license_plate = ?
+    WHERE id = ?
   `;
-  const params = [id, name, phone, car_model, license_plate];
-  const { rows } = await query(sql, params);
-  return rows[0];
+  const params = [name, phone, carModel, licensePlate, id];
+  await run(sql, params);
+  const [result] = await query('SELECT * FROM clients WHERE id = ?', [id]);
+  return result;
 };
 
 const closeWeek = async (payload) => {
   const { salaryReport } = payload;
-  const client = await pool.connect();
   try {
-    await client.query('BEGIN');
+    await run('BEGIN TRANSACTION');
 
     const weekId = `week-${Date.now()}`;
-    await client.query('INSERT INTO history_weeks (id) VALUES ($1)', [weekId]);
+    await run('INSERT INTO history_weeks (id) VALUES (?)', [weekId]);
 
     // Копируем заказы в историю
-    await client.query(`
+    await run(`
       INSERT INTO history_orders (original_order_id, week_id, master_name, car_model, license_plate, description, amount, payment_type, client_name, client_phone, created_at)
-      SELECT id, $1, master_name, car_model, license_plate, description, amount, payment_type, client_name, client_phone, created_at FROM orders
+      SELECT id, ?, master_name, car_model, license_plate, description, amount, payment_type, client_name, client_phone, created_at FROM orders
     `, [weekId]);
 
     // Сохраняем отчет по зарплатам
     if (salaryReport && salaryReport.length) {
       for (const report of salaryReport) {
         const { masterName, revenue, ordersCount, salary } = report;
-        await client.query(
-          'INSERT INTO salary_reports (week_id, master_name, revenue, orders_count, salary) VALUES ($1, $2, $3, $4, $5)',
+        await run(
+          'INSERT INTO salary_reports (week_id, master_name, revenue, orders_count, salary) VALUES (?, ?, ?, ?, ?)',
           [weekId, masterName, revenue, ordersCount, salary]
         );
       }
     }
 
-    await client.query('TRUNCATE TABLE orders');
-    await client.query('COMMIT');
+    await run('DELETE FROM orders');
+    await run('COMMIT');
     return true;
 
   } catch (e) {
-    await client.query('ROLLBACK');
+    await run('ROLLBACK');
     throw e;
-  } finally {
-    client.release();
   }
 };
 
 const clearData = async () => {
   // Очищает текущие заказы и всю историю. Пользователей и клиентов не трогает.
-  await query('TRUNCATE TABLE orders, history_weeks, salary_reports, history_orders RESTART IDENTITY');
+  await run('DELETE FROM orders');
+  await run('DELETE FROM history_weeks');
+  await run('DELETE FROM salary_reports');
+  await run('DELETE FROM history_orders');
+  // Сброс счетчиков автоинкремента
+  await run("DELETE FROM sqlite_sequence WHERE name IN ('users', 'history_orders', 'salary_reports')").catch(() => {}); // Игнорируем ошибку, если таблицы нет
   return true;
 };
 
 const clearHistory = async () => {
-  await query('TRUNCATE TABLE history_weeks, salary_reports, history_orders RESTART IDENTITY');
+  await run('DELETE FROM history_weeks');
+  await run('DELETE FROM salary_reports');
+  await run('DELETE FROM history_orders');
+  await run("DELETE FROM sqlite_sequence WHERE name IN ('history_orders', 'salary_reports')").catch(() => {}); // Игнорируем ошибку, если таблицы нет
   return true;
 };
 
 // Экспортируем функции для работы с БД
 module.exports = {
-  query, // Экспортируем для скрипта миграции
+  db, // Экспортируем для seed.js
+  query,
+  run, // Экспортируем для seed.js
   getUsers,
   getOrders,
   getHistory,

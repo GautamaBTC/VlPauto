@@ -3,6 +3,7 @@
 
 # Local database file
 db.json
+*.sqlite
 
 # Log files
 npm-debug.log*
