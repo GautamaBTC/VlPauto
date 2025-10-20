@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 const OrdersPage = () => <h2>Заказ-наряды</h2>;
 const ClientsPage = () => <h2>Клиенты</h2>;
 const ArchivePage = () => <h2>Архив</h2>;
+const FinancePage = () => <h2>Финансы</h2>;
 const NotFoundPage = () => <h1>404 - Страница не найдена</h1>;
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
           <Route path="orders" element={<OrdersPage />} />
           <Route path="clients" element={<ClientsPage />} />
           <Route path="archive" element={<ArchivePage />} />
+          <Route path="finance" element={<FinancePage />} />
         </Route>
       </Route>
 

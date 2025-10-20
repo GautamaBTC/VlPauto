@@ -44,7 +44,11 @@ const MainLayout = () => {
                     <NavLink to="/archive" className="nav-tab" title="Архив">
                         <i className="fas fa-archive"></i><span>Архив</span>
                     </NavLink>
-                    {/* Privileged routes can be added here based on user role */}
+                    {user && user.role === 'DIRECTOR' && (
+                        <NavLink to="/finance" className="nav-tab" title="Финансы">
+                            <i className="fas fa-ruble-sign"></i><span>Финансы</span>
+                        </NavLink>
+                    )}
                 </div>
             </nav>
         </>
